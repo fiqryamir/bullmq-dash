@@ -1,0 +1,25 @@
+name: Feature request
+description: Propose an idea for bullmq-dash
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What would you like bullmq-dash to do that it doesn't?
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: Why it matters
+      description: What problem does this solve, and how do you work around it today?
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked the open issues — this isn't already tracked
+          required: true
+        - label: I checked the wayfinder map — this isn't already charted or out of scope
+          required: true
