@@ -23,3 +23,7 @@ _Avoid_: Provider, driver
 **Metrics store**:
 The dashboard-owned Redis keyspace holding per-queue aggregate metric history (counts, duration, wait time) as auto-expiring time buckets.
 _Avoid_: Metrics database, time series DB
+
+**Job search**:
+Querying jobs by id or name across all queues (or scoped to one) through the core's search endpoint, filtered by state.
+_Avoid_: Find jobs, job query
