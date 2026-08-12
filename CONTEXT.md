@@ -19,3 +19,7 @@ _Avoid_: Plugin, connector
 **Queue adapter**:
 The wrapper that adapts a BullMQ `Queue` (and supporting classes) to the dashboard core's view of a queue.
 _Avoid_: Provider, driver
+
+**Metrics store**:
+The dashboard-owned Redis keyspace holding per-queue aggregate metric history (counts, duration, wait time) as auto-expiring time buckets.
+_Avoid_: Metrics database, time series DB
