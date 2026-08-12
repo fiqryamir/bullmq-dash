@@ -27,3 +27,7 @@ _Avoid_: Metrics database, time series DB
 **Job search**:
 Querying jobs by id or name across all queues (or scoped to one) through the core's search endpoint, filtered by state.
 _Avoid_: Find jobs, job query
+
+**Flow view**:
+The per-queue graph of job flows — root jobs expanded into their child trees, state-colored; clicking a node opens the job's detail.
+_Avoid_: Flow diagram, pipeline map
