@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<!-- PROTOTYPE — throwaway. Question: what should the bullmq-dash React UI look like?
+     Three variants of the queue dashboard, switchable via ?variant=A|B|C and the floating bottom bar.
+     Plan: A = dense dark ops-console w/ sidebar (Tailwind/shadcn aesthetic), B = light airy studio cards w/ tabs (Mantine aesthetic), C = dark command-palette/search-first minimal (kbar/Linear aesthetic).
+     No persistence, fake data, no framework — double-click to open. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>bullmq-dash UI prototype</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: #0b0e14; color: #e6e9ef; }
+
+  /* ---------- switcher (not part of any variant) ---------- */
+  #switcher { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; background: #1c2230; border: 1px solid #3a4356; border-radius: 999px; padding: 8px 16px; z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,.5); font-size: 13px; }
+  #switcher button { background: #2b3348; color: #e6e9ef; border: 1px solid #4a5470; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; line-height: 1; }
+  #switcher button:hover { background: #3a4356; }
+  #switcher .lbl { font-weight: 600; min-width: 200px; text-align: center; }
+  #switcher .hint { color: #8b93a7; }
+
+  /* ---------- VARIANT A — Ops Console (dark, dense, sidebar) ---------- */
+  .va { display: grid; grid-template-columns: 260px 1fr; height: 100vh; background: #0d1117; color: #e6edf3; }
+  .va-side { background: #10151d; border-right: 1px solid #21262d; display: flex; flex-direction: column; }
+  .va-logo { padding: 16px; font-weight: 700; font-size: 15px; letter-spacing: .3px; border-bottom: 1px solid #21262d; display:flex; align-items:center; gap:8px;}
+  .va-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; }
+  .va-queues { flex: 1; overflow-y: auto; padding: 8px; }
+  .va-q { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #c9d1d9; }
+  .va-q:hover { background: #161b22; }
+  .va-q.active { background: #1f6feb22; color: #58a6ff; }
+  .va-q .name { flex: 1; font-weight: 600; }
+  .va-q .counts { display: flex; gap: 4px; font-size: 11px; }
+  .va-q .c { padding: 1px 6px; border-radius: 999px; background: #21262d; }
+  .va-q .c.w { background: #9e6a0322; color: #d29922; }
+  .va-q .c.f { background: #f8514922; color: #f85149; }
+  .va-conn { padding: 12px 16px; border-top: 1px solid #21262d; font-size: 12px; color: #8b949e; display:flex; align-items:center; gap:8px; }
+  .va-conn .dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; }
+  .va-main { display: flex; flex-direction: column; min-width: 0; }
+  .va-top { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #21262d; }
+  .va-top h1 { font-size: 16px; font-weight: 600; }
+  .va-top .sub { font-size: 12px; color: #8b949e; }
+  .va-search { margin-left: auto; background: #161b22; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 220px; }
+  .va-btn { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  .va-btn.primary { background: #238636; border-color: #2ea043; color: #fff; }
+  .va-btn.danger { background: #da363322; border-color: #f8514966; color: #f85149; }
+  .va-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; }
+  .va-stat { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 12px 14px; }
+  .va-stat .k { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: .5px; }
+  .va-stat .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .va-table-wrap { padding: 0 16px 16px; overflow-y: auto; flex: 1; }
+  .va-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #161b22; border: 1px solid #21262d; border-radius: 8px; overflow: hidden; }
+  .va-table th { text-align: left; padding: 8px 12px; color: #8b949e; font-weight: 600; font-size: 12px; border-bottom: 1px solid #21262d; background: #10151d; }
+  .va-table td { padding: 8px 12px; border-bottom: 1px solid #21262d22; }
+  .va-table tr:hover td { background: #1c212b; }
+  .chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .chip.completed { background: #3fb95022; color: #3fb950; }
+  .chip.failed { background: #f8514922; color: #f85149; }
+  .chip.active { background: #58a6ff22; color: #58a6ff; }
+  .chip.waiting { background: #d2992222; color: #d29922; }
+  .chip.delayed { background: #a371f722; color: #a371f7; }
+  .va-row-actions { display: flex; gap: 6px; }
+  .va-row-actions button { background: none; border: none; color: #58a6ff; cursor: pointer; font-size: 12px; padding: 2px 6px; }
+  .va-row-actions button:hover { text-decoration: underline; }
+
+  /* ---------- VARIANT B — Studio (light, cards, tabs) ---------- */
+  .vb { min-height: 100vh; background: #f6f7f9; color: #1f2328; }
+  .vb-header { background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
+  .vb-header .brand { font-weight: 700; font-size: 17px; color: #228be6; }
+  .vb-header .crumb { font-size: 13px; color: #868e96; }
+  .vb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 32px; }
+  .vb-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.03); transition: box-shadow .15s, transform .15s; }
+  .vb-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); transform: translateY(-2px); }
+  .vb-card h3 { font-size: 16px; margin-bottom: 4px; }
+  .vb-card .meta { font-size: 12px; color: #868e96; margin-bottom: 14px; }
+  .vb-card .nums { display: flex; gap: 16px; margin-bottom: 14px; }
+  .vb-card .nums .n { flex: 1; }
+  .vb-card .nums .v { font-size: 20px; font-weight: 700; }
+  .vb-card .nums .k { font-size: 11px; color: #868e96; text-transform: uppercase; letter-spacing: .5px; }
+  .vb-bars { display: flex; align-items: flex-end; gap: 3px; height: 36px; }
+  .vb-bars i { flex: 1; background: #4dabf7; border-radius: 2px 2px 0 0; opacity: .85; }
+  .vb-bars i.dim { background: #e9ecef; }
+  .vb-tabs { display: flex; gap: 4px; padding: 0 32px; border-bottom: 1px solid #e5e7eb; background: #ffffff; }
+  .vb-tab { padding: 10px 16px; font-size: 14px; color: #495057; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; }
+  .vb-tab.active { color: #228be6; border-bottom-color: #228be6; font-weight: 600; }
+  .vb-panel { padding: 24px 32px; }
+  .vb-list { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+  .vb-row { display: grid; grid-template-columns: 90px 1fr 120px 100px 140px; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f1f3f5; font-size: 13px; }
+  .vb-row.head { background: #f8f9fa; font-size: 12px; color: #868e96; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+  .vb-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .vb-pill.completed { background: #d3f9d8; color: #2b8a3e; }
+  .vb-pill.failed { background: #ffe3e3; color: #e03131; }
+  .vb-pill.active { background: #d0ebff; color: #1971c2; }
+  .vb-pill.waiting { background: #fff3bf; color: #f08c00; }
+  .vb-pill.delayed { background: #e5dbff; color: #7048e8; }
+  .vb-link { background: none; border: none; color: #228be6; cursor: pointer; font-size: 13px; }
+
+  /* ---------- VARIANT C — Command (dark, search-first, minimal) ---------- */
+  .vc { min-height: 100vh; background: #0a0a0f; color: #e4e4ef; display: flex; flex-direction: column; }
+  .vc-palette { max-width: 680px; margin: 60px auto 0; width: 100%; padding: 0 24px; }
+  .vc-palette .in { width: 100%; background: #14141c; border: 1px solid #2a2a38; border-radius: 12px; padding: 14px 18px; font-size: 16px; color: #e4e4ef; outline: none; }
+  .vc-palette .in:focus { border-color: #7c5cff; box-shadow: 0 0 0 3px #7c5cff22; }
+  .vc-kbd { display: flex; gap: 8px; margin-top: 12px; font-size: 11px; color: #6b6b7b; }
+  .vc-kbd kbd { background: #17171f; border: 1px solid #2a2a38; border-radius: 4px; padding: 2px 6px; font-family: inherit; }
+  .vc-filter { display: flex; gap: 8px; margin: 24px 0 0; flex-wrap: wrap; }
+  .vc-f { padding: 5px 12px; border-radius: 999px; font-size: 12px; background: #14141c; border: 1px solid #2a2a38; color: #9a9aad; cursor: pointer; }
+  .vc-f.on { background: #7c5cff; border-color: #7c5cff; color: #fff; }
+  .vc-list { max-width: 680px; margin: 8px auto 0; width: 100%; padding: 0 24px 80px; display: flex; flex-direction: column; gap: 6px; }
+  .vc-item { display: flex; align-items: center; gap: 14px; background: #101016; border: 1px solid #1d1d28; border-radius: 10px; padding: 12px 16px; font-size: 13px; }
+  .vc-item .jid { color: #7c5cff; font-weight: 600; min-width: 140px; }
+  .vc-item .jname { flex: 1; }
+  .vc-item .jmeta { color: #6b6b7b; font-size: 12px; }
+  .vc-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .vc-dot.completed { background: #3dd68c; }
+  .vc-dot.failed { background: #ff5c5c; }
+  .vc-dot.active { background: #4da3ff; }
+  .vc-dot.waiting { background: #ffb020; }
+  .vc-dot.delayed { background: #b380ff; }
+  .vc-foot { margin-top: auto; text-align: center; padding: 16px; color: #55555f; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<div id="switcher">
+  <button id="prev" title="Previous variant (←)">←</button>
+  <span class="lbl" id="lbl">A — Ops Console</span>
+  <button id="next" title="Next variant (→)">→</button>
+  <span class="hint">←/→ to switch · ?variant=A|B|C</span>
+</div>
+
+<script>
+const QUEUES = [
+  { name: "emails",   active: 2, waiting: 43, completed: 11840, failed: 3,  delayed: 0, bars: [6,9,7,11,8,13,9,14,10,12,15,11,8,9,13,10,12,9,14,11] },
+  { name: "billing",  active: 0, waiting: 7,  completed: 3820,  failed: 1,  delayed: 2, bars: [3,2,4,2,5,3,2,4,3,2,4,3,2,3,4,2,3,4,3,2] },
+  { name: "media-processing", active: 5, waiting: 128, completed: 9021, failed: 12, delayed: 4, bars: [8,9,7,6,8,10,9,7,8,9,10,8,7,9,8,10,9,8,7,9] },
+  { name: "webhooks", active: 1, waiting: 16, completed: 54120, failed: 0, delayed: 1, bars: [11,13,12,14,15,13,12,14,16,15,13,14,12,15,16,14,13,15,14,16] },
+];
+const JOBS = [
+  { id: "emails:77431", name: "welcome-email",   state: "completed", progress: 100, attempts: 1 },
+  { id: "emails:77432", name: "order-confirm",   state: "active",    progress: 42,  attempts: 1 },
+  { id: "emails:77433", name: "password-reset",  state: "waiting",   progress: 0,   attempts: 0 },
+  { id: "emails:77434", name: "digest-weekly",   state: "delayed",   progress: 0,   attempts: 0 },
+  { id: "emails:77435", name: "receipt-pdf",     state: "failed",    progress: 88,  attempts: 3 },
+  { id: "billing:2281", name: "invoice-generate",state: "completed", progress: 100, attempts: 1 },
+  { id: "media:90211", name: "transcode-1080p",  state: "active",    progress: 61,  attempts: 2 },
+  { id: "media:90212", name: "thumbnail",        state: "waiting",   progress: 0,   attempts: 0 },
+  { id: "webhooks:5521",name: "notify-slack",    state: "completed", progress: 100, attempts: 1 },
+];
+const chip = s => `<span class="chip ${s}">${s}</span>`;
+const pill = s => `<span class="vb-pill ${s}">${s}</span>`;
+
+/* ---------------- VARIANT A ---------------- */
+function VariantA() {
+  const q = QUEUES[0];
+  return `
+  <div class="va">
+    <aside class="va-side">
+      <div class="va-logo"><span class="dot"></span> bullmq-dash</div>
+      <nav class="va-queues">
+        ${QUEUES.map((x,i)=>`
+          <div class="va-q ${i===0?'active':''}">
+            <span class="name">${x.name}</span>
+            <span class="counts">
+              <span class="c w">${x.waiting}</span>
+              <span class="c">${x.completed}</span>
+              <span class="c f">${x.failed}</span>
+            </span>
+          </div>`).join("")}
+      </nav>
+      <div class="va-conn"><span class="dot"></span> redis://localhost:6379</div>
+    </aside>
+    <main class="va-main">
+      <div class="va-top">
+        <div><h1>${q.name}</h1><div class="sub">Queue · 4 workers · updated 2s ago</div></div>
+        <input class="va-search" placeholder="Search jobs… (the gap bull-board won't fill)" />
+        <button class="va-btn">Pause</button>
+        <button class="va-btn">Empty</button>
+        <button class="va-btn primary">Add job</button>
+      </div>
+      <div class="va-stats">
+        <div class="va-stat"><div class="k">Active</div><div class="v">${q.active}</div></div>
+        <div class="va-stat"><div class="k">Waiting</div><div class="v">${q.waiting}</div></div>
+        <div class="va-stat"><div class="k">Completed</div><div class="v">${q.completed}</div></div>
+        <div class="va-stat"><div class="k">Failed</div><div class="v" style="color:#f85149">${q.failed}</div></div>
+      </div>
+      <div class="va-table-wrap">
+        <table class="va-table">
+          <thead><tr><th>Job</th><th>Name</th><th>State</th><th>Progress</th><th>Attempts</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${JOBS.map(j=>`<tr>
+              <td style="font-family:ui-monospace,monospace;font-size:12px;color:#8b949e">${j.id}</td>
+              <td>${j.name}</td>
+              <td>${chip(j.state)}</td>
+              <td>${j.progress}%</td>
+              <td>${j.attempts}</td>
+              <td class="va-row-actions"><button>Retry</button><button>Promote</button><button>Clean</button><button style="color:#f85149">Remove</button></td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+        <div style="margin-top:12px;font-size:12px;color:#8b949e">Tabs available: Jobs · Flow · Metrics · Workers (same data, per-queue)</div>
+      </div>
+    </main>
+  </div>`;
+}
+
+/* ---------------- VARIANT B ---------------- */
+function VariantB() {
+  const q = QUEUES[0];
+  return `
+  <div class="vb">
+    <header class="vb-header">
+      <span class="brand">bullmq-dash</span>
+      <span class="crumb">/ queues / ${q.name}</span>
+    </header>
+    <div class="vb-tabs">
+      <button class="vb-tab active">Jobs</button>
+      <button class="vb-tab">Flow</button>
+      <button class="vb-tab">Metrics</button>
+      <button class="vb-tab">Workers</button>
+    </div>
+    <div class="vb-panel">
+      <div class="vb-list">
+        <div class="vb-row head"><span>Job</span><span>Name</span><span>State</span><span>Progress</span><span>Actions</span></div>
+        ${JOBS.map(j=>`<div class="vb-row">
+          <span style="font-family:ui-monospace,monospace;font-size:12px;color:#868e96">${j.id}</span>
+          <span>${j.name}</span>
+          <span>${pill(j.state)}</span>
+          <span>${j.progress}%</span>
+          <span><button class="vb-link">Retry</button> · <button class="vb-link">Details</button></span>
+        </div>`).join("")}
+      </div>
+      <div class="vb-grid" style="padding:20px 0 0">
+        ${QUEUES.slice(1).map(x=>`<div class="vb-card">
+          <h3>${x.name}</h3>
+          <div class="meta">${x.active} active · ${x.failed} failed</div>
+          <div class="nums">
+            <div class="n"><div class="v">${x.waiting}</div><div class="k">Waiting</div></div>
+            <div class="n"><div class="v">${x.completed}</div><div class="k">Done</div></div>
+          </div>
+          <div class="vb-bars">${x.bars.map(v=>`<i style="height:${v*2.2}px" class="${v<5?'dim':''}"></i>`).join("")}</div>
+        </div>`).join("")}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- VARIANT C ---------------- */
+function VariantC() {
+  return `
+  <div class="vc">
+    <div class="vc-palette">
+      <input class="in" placeholder="Search any job across all queues…" autofocus />
+      <div class="vc-kbd"><kbd>↑↓</kbd> navigate <kbd>↵</kbd> open <kbd>r</kbd> retry <kbd>x</kbd> remove</div>
+      <div class="vc-filter">
+        <span class="vc-f">all</span><span class="vc-f">active</span><span class="vc-f">waiting</span><span class="vc-f">completed</span><span class="vc-f on">failed</span><span class="vc-f">delayed</span>
+      </div>
+    </div>
+    <div class="vc-list">
+      ${JOBS.map(j=>`<div class="vc-item">
+        <span class="vc-dot ${j.state}"></span>
+        <span class="jid">${j.id}</span>
+        <span class="jname">${j.name}</span>
+        <span class="jmeta">${j.state} · ${j.progress}% · ${j.attempts} attempt${j.attempts===1?'':'s'}</span>
+      </div>`).join("")}
+    </div>
+    <div class="vc-foot">bullmq-dash — everything is a keystroke away</div>
+  </div>`;
+}
+
+/* ---------------- switcher logic ---------------- */
+const NAMES = { A: "A — Ops Console", B: "B — Studio Cards", C: "C — Command Palette" };
+const RENDER = { A: VariantA, B: VariantB, C: VariantC };
+const params = new URLSearchParams(location.search);
+let current = (params.get("variant") || "A").toUpperCase();
+if (!RENDER[current]) current = "A";
+
+function show() {
+  document.getElementById("root").innerHTML = RENDER[current]();
+  document.getElementById("lbl").textContent = NAMES[current];
+  history.replaceState(null, "", "?variant=" + current);
+}
+function cycle(d) {
+  const keys = Object.keys(RENDER);
+  current = keys[(keys.indexOf(current) + d + keys.length) % keys.length];
+  show();
+}
+document.getElementById("prev").onclick = () => cycle(-1);
+document.getElementById("next").onclick = () => cycle(1);
+document.addEventListener("keydown", e => {
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  if (e.key === "ArrowLeft") cycle(-1);
+  if (e.key === "ArrowRight") cycle(1);
+});
+show();
+</script>
+</body>
+</html>
