@@ -1,0 +1,21 @@
+# bullmq-dash
+
+A modern, open-source BullMQ dashboard UI package — embeddable in Node apps and runnable standalone.
+
+## Language
+
+**Standalone mode**:
+Running the dashboard as its own server via the `bullmq-dash` CLI — zero embedding code required.
+_Avoid_: Headless mode, detached mode
+
+**Embedded mode**:
+Serving the dashboard from inside an existing Node app through a server adapter (Express, Fastify, NestJS).
+_Avoid_: Integrated mode
+
+**Server adapter**:
+The per-framework bridge that mounts the dashboard's HTTP routes and UI assets into a host app.
+_Avoid_: Plugin, connector
+
+**Queue adapter**:
+The wrapper that adapts a BullMQ `Queue` (and supporting classes) to the dashboard core's view of a queue.
+_Avoid_: Provider, driver
