@@ -1,64 +1,37 @@
-import { STATUSES } from '../constants/statuses';
-import type { BullBoardRequest, ControllerHandlerReturnType, JobStatus } from '../typings/app';
-import { isReadOnlyQueue, paramValue, readOnlyError, resolveQueue } from './helpers';
+import { isCleanableStatus, isJobStatus, isRetriableStatus } from '../constants/statuses';
+import type { BullBoardRequest, ControllerHandlerReturnType } from '../typings/app';
+import { mutationQueue, paramValue } from './helpers';
 import { stringValue } from './query';
 
-const RETRIABLE_STATUSES = [STATUSES.failed, STATUSES.completed] as const;
-
-/**
- * The statuses BullMQ's `queue.clean` accepts, mapped onto the dashboard's
- * status names. `paused` is a presentation-only state here (v6 stores paused
- * jobs as waiting) and `waiting-children` is not a clean type.
- */
-const CLEANABLE_STATUSES = [
-  STATUSES.completed,
-  STATUSES.failed,
-  STATUSES.delayed,
-  STATUSES.waiting,
-  STATUSES.active,
-  STATUSES.prioritized,
-] as const;
-
 const DEFAULT_GRACE_SECONDS = 5;
-
-type RetriableStatus = (typeof RETRIABLE_STATUSES)[number];
-
-function isRetriableStatus(status: string): status is RetriableStatus {
-  return (RETRIABLE_STATUSES as readonly string[]).includes(status);
-}
-
-function isCleanableStatus(status: string): status is (typeof CLEANABLE_STATUSES)[number] {
-  return (CLEANABLE_STATUSES as readonly string[]).includes(status);
-}
 
 export async function retryAllHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
-
+  const queue = result.queue;
   const queueStatus = paramValue(req, 'queueStatus');
 
   if (!isRetriableStatus(queueStatus)) {
     return { status: 400, body: { error: 'Invalid retry status' } };
   }
 
-  // Counted first so a job finishing mid-request understates the gap rather than inventing one.
+  // Counted first so a job finishing mid-request understates the gap rather
+  // than inventing one; a retry that races a worker also lands in skipped.
   const counts = await queue.getJobCounts();
   const jobs = await queue.getJobs([queueStatus]);
-  await Promise.all(jobs.map((job) => job.retry(queueStatus)));
+  const results = await Promise.allSettled(jobs.map((job) => job.retry(queueStatus)));
+  const retried = results.filter((result) => result.status === 'fulfilled').length;
 
   return {
     body: {
-      retried: jobs.length,
-      skipped: Math.max(0, (counts[queueStatus] ?? 0) - jobs.length),
+      retried,
+      skipped: Math.max(0, (counts[queueStatus] ?? 0) - retried),
     },
   };
 }
@@ -66,17 +39,13 @@ export async function retryAllHandler(
 export async function promoteAllHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
-
-  await queue.promoteAll();
+  await result.queue.promoteAll();
 
   return { body: {} };
 }
@@ -84,14 +53,10 @@ export async function promoteAllHandler(
 export async function cleanAllHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
-  }
-
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
+  if (!('queue' in result)) {
+    return result;
   }
 
   const queueStatus = paramValue(req, 'queueStatus');
@@ -107,7 +72,7 @@ export async function cleanAllHandler(
     return { status: 400, body: { error: 'Invalid grace period' } };
   }
 
-  await queue.clean(queueStatus, Math.round(graceSeconds * 1000));
+  await result.queue.clean(queueStatus, Math.round(graceSeconds * 1000));
 
   return { body: {} };
 }
@@ -115,28 +80,25 @@ export async function cleanAllHandler(
 export async function removeAllHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
+  const queueStatus = paramValue(req, 'queueStatus');
 
-  const queueStatus = paramValue(req, 'queueStatus') as JobStatus;
-
-  if (!queue.getJobStatuses().includes(queueStatus)) {
+  if (!isJobStatus(queueStatus) || !result.queue.getJobStatuses().includes(queueStatus)) {
     return { status: 400, body: { error: 'Invalid status' } };
   }
 
-  const jobs = await queue.getJobs([queueStatus]);
-  await Promise.all(jobs.map((job) => job.remove()));
+  const jobs = await result.queue.getJobs([queueStatus]);
+  const results = await Promise.allSettled(jobs.map((job) => job.remove()));
+  const removed = results.filter((result) => result.status === 'fulfilled').length;
 
   return {
     body: {
-      removed: jobs.length,
+      removed,
     },
   };
 }
@@ -144,17 +106,13 @@ export async function removeAllHandler(
 export async function pauseQueueHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
-
-  await queue.pause();
+  await result.queue.pause();
 
   return { body: {} };
 }
@@ -162,17 +120,13 @@ export async function pauseQueueHandler(
 export async function resumeQueueHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
-
-  await queue.resume();
+  await result.queue.resume();
 
   return { body: {} };
 }
@@ -180,17 +134,13 @@ export async function resumeQueueHandler(
 export async function emptyQueueHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
-
-  await queue.empty();
+  await result.queue.empty();
 
   return { body: {} };
 }

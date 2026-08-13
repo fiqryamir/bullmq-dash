@@ -327,6 +327,34 @@ describe('QueueJobs actions', () => {
     );
   });
 
+  it('cleans the failed jobs from the failed tab after confirmation', async () => {
+    const fetchMock = stubJobsApi([]);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await user.click(screen.getByRole('button', { name: /failed/ }));
+    await user.click(screen.getByRole('button', { name: 'Clean failed' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/clean/failed?grace=5', {
+        method: 'PUT',
+      })
+    );
+  });
+
+  it('offers no row actions on active rows', async () => {
+    stubJobsApi([makeJob(0, { id: 'a1', name: 'running-email', state: 'active' })]);
+    renderQueueJobs();
+
+    const table = await screen.findByRole('table');
+    await waitFor(() => expect(within(table).getByText('running-email')).toBeInTheDocument());
+
+    expect(screen.queryByRole('button', { name: 'Remove job a1' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry job a1' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Promote job a1' })).not.toBeInTheDocument();
+  });
+
   it('removes all jobs in the active state after confirmation', async () => {
     const fetchMock = stubJobsApi([]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);

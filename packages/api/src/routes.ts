@@ -45,6 +45,9 @@ export const appRoutes: AppRouteDefs = {
     { method: 'put', route: '/api/queues/:queueName/empty', handler: emptyQueueHandler },
     { method: 'put', route: '/api/queues/:queueName/:jobId/retry', handler: retryJobHandler },
     { method: 'put', route: '/api/queues/:queueName/:jobId/promote', handler: promoteJobHandler },
+    // bull-board registers per-job remove under `/clean` (`job.remove()`); the
+    // alias is kept so the route table mirrors bull-board's exactly.
+    { method: 'put', route: '/api/queues/:queueName/:jobId/clean', handler: removeJobHandler },
     { method: 'put', route: '/api/queues/:queueName/:jobId/remove', handler: removeJobHandler },
   ],
 };

@@ -26,3 +26,24 @@ export function isReadOnlyQueue(req: BullBoardRequest, queue: BaseAdapter): bool
 export function readOnlyError(): ControllerHandlerReturnType {
   return { status: 403, body: { error: 'readOnly mode is enabled' } };
 }
+
+type MutationResult = { queue: BaseAdapter } | ControllerHandlerReturnType;
+
+/**
+ * The preconditions every mutating handler shares: the queue must be
+ * registered (404) and mutations must be allowed for this board or queue
+ * (403). The handlers then branch on whether the result carries a `queue`.
+ */
+export async function mutationQueue(req: BullBoardRequest): Promise<MutationResult> {
+  const queue = await resolveQueue(req);
+
+  if (!queue) {
+    return { status: 404, body: { error: 'Queue not found' } };
+  }
+
+  if (await isReadOnlyQueue(req, queue)) {
+    return readOnlyError();
+  }
+
+  return { queue };
+}

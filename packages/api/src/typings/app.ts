@@ -1,4 +1,5 @@
 import type { Job } from 'bullmq';
+import type { CleanableStatus } from '../constants/statuses';
 import type { BaseAdapter } from '../queueAdapters/base';
 
 export type BullBoardQueues = Map<string, BaseAdapter>;
@@ -19,18 +20,11 @@ export type Status =
 export type JobStatus = Exclude<Status, 'latest'>;
 
 /**
- * The statuses `clean` accepts — BullMQ's clean types mapped onto the
- * dashboard's status names. `paused` is a presentation-only state here (v6
- * stores paused jobs as waiting) and `waiting-children` is not a clean type.
+ * The statuses `clean` accepts — defined once alongside the validator in
+ * `CLEANABLE_STATUSES` so the type can never admit a status the runtime
+ * rejects.
  */
-export type JobCleanStatus =
-  | 'active'
-  | 'waiting'
-  | 'prioritized'
-  | 'completed'
-  | 'failed'
-  | 'delayed'
-  | 'paused';
+export type JobCleanStatus = CleanableStatus;
 
 export type JobCounts = Record<Status, number>;
 

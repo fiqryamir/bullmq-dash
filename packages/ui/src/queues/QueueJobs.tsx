@@ -49,26 +49,96 @@ type QueueJobsProps = {
 
 type RowAction = { label: string; run: () => Promise<unknown> | void };
 
+/**
+ * The row actions each state offers, in order. Active jobs hold a worker lock
+ * and cannot be removed, so the active state offers none.
+ */
+const ROW_ACTIONS_PER_STATE: Record<JobStatus, Array<'retry' | 'promote' | 'remove'>> = {
+  waiting: ['remove'],
+  active: [],
+  completed: ['retry', 'remove'],
+  failed: ['retry', 'remove'],
+  delayed: ['promote', 'remove'],
+  paused: ['remove'],
+  'waiting-children': [],
+  prioritized: [],
+};
+
 function rowActionsFor(job: AppJob, queue: AppQueue): RowAction[] {
   if (!job.id) {
     return [];
   }
 
   const actions: RowAction[] = [];
+  const kinds = ROW_ACTIONS_PER_STATE[job.state ?? 'waiting'];
 
-  if ((job.state === 'failed' && queue.allowRetries !== false) ||
-      (job.state === 'completed' && queue.allowCompletedRetries !== false)) {
-    actions.push({ label: 'Retry', run: () => retryJob(queue.name, job.id!) });
+  for (const kind of kinds) {
+    switch (kind) {
+      case 'retry': {
+        const allowed =
+          job.state === 'completed'
+            ? queue.allowCompletedRetries !== false
+            : queue.allowRetries !== false;
+        if (allowed) {
+          actions.push({ label: 'Retry', run: () => retryJob(queue.name, job.id!) });
+        }
+        break;
+      }
+      case 'promote':
+        actions.push({ label: 'Promote', run: () => promoteJob(queue.name, job.id!) });
+        break;
+      case 'remove':
+        actions.push({ label: 'Remove', run: () => removeJob(queue.name, job.id!) });
+        break;
+    }
   }
-
-  if (job.state === 'delayed') {
-    actions.push({ label: 'Promote', run: () => promoteJob(queue.name, job.id!) });
-  }
-
-  actions.push({ label: 'Remove', run: () => removeJob(queue.name, job.id!) });
 
   return actions;
 }
+
+type BulkActionSpec = {
+  label: string;
+  run: (queue: AppQueue) => Promise<unknown>;
+  confirm?: (queue: AppQueue) => string;
+  allowed?: (queue: AppQueue) => boolean;
+};
+
+const removeAllAction = (status: JobStatus): BulkActionSpec => ({
+  label: `Remove all ${status}`,
+  run: (queue) => removeJobs(queue.name, status),
+  confirm: (queue) => `Remove all ${status} jobs in ${queue.name}?`,
+});
+
+const retryAllAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
+  label: `Retry all ${status}`,
+  run: (queue) => retryJobs(queue.name, status),
+  allowed: (queue) =>
+    status === 'completed' ? queue.allowCompletedRetries !== false : queue.allowRetries !== false,
+});
+
+const cleanAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
+  label: `Clean ${status}`,
+  run: (queue) => cleanJobs(queue.name, status, DEFAULT_CLEAN_GRACE_SECONDS),
+  confirm: (queue) => `Clean ${status} jobs in ${queue.name}?`,
+});
+
+const promoteAllAction: BulkActionSpec = {
+  label: 'Promote all delayed',
+  run: (queue) => promoteJobs(queue.name),
+};
+
+const BULK_ACTIONS_PER_STATE: Record<JobStatus, BulkActionSpec[]> = {
+  waiting: [removeAllAction('waiting')],
+  active: [],
+  completed: [retryAllAction('completed'), cleanAction('completed'), removeAllAction('completed')],
+  failed: [retryAllAction('failed'), cleanAction('failed'), removeAllAction('failed')],
+  delayed: [promoteAllAction, removeAllAction('delayed')],
+  paused: [removeAllAction('paused')],
+  'waiting-children': [],
+  prioritized: [],
+};
+
+const DEFAULT_CLEAN_GRACE_SECONDS = 5;
 
 export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: QueueJobsProps) {
   const [activeState, setActiveState] = useState<JobStatus>('waiting');
@@ -113,49 +183,23 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: Queue
     []
   );
 
-  const bulkActions = useMemo(() => {
-    const actions: RowAction[] = [];
-    const run = (action: () => Promise<unknown>, label: string, confirmMessage?: string) => {
-      actions.push({
-        label,
-        run: () =>
-          runAction(async () => {
-            if (confirmMessage && !window.confirm(confirmMessage)) {
-              return;
-            }
-            await action();
-          }),
-      });
-    };
-
-    if (activeState === 'failed') {
-      if (queue.allowRetries !== false) {
-        run(() => retryJobs(queue.name, 'failed'), 'Retry all failed');
-      }
-      run(() => removeJobs(queue.name, 'failed'), 'Remove all failed', `Remove all failed jobs in ${queue.name}?`);
-    } else if (activeState === 'completed') {
-      if (queue.allowCompletedRetries !== false) {
-        run(() => retryJobs(queue.name, 'completed'), 'Retry all completed');
-      }
-      run(
-        () => cleanJobs(queue.name, 'completed', 5),
-        'Clean completed',
-        `Clean completed jobs in ${queue.name}?`
-      );
-      run(() => removeJobs(queue.name, 'completed'), 'Remove all completed', `Remove all completed jobs in ${queue.name}?`);
-    } else if (activeState === 'delayed') {
-      run(() => promoteJobs(queue.name), 'Promote all delayed');
-      run(() => removeJobs(queue.name, 'delayed'), 'Remove all delayed', `Remove all delayed jobs in ${queue.name}?`);
-    } else if (activeState === 'waiting' || activeState === 'paused') {
-      run(
-        () => removeJobs(queue.name, activeState),
-        `Remove all ${activeState}`,
-        `Remove all ${activeState} jobs in ${queue.name}?`
-      );
-    }
-
-    return actions;
-  }, [activeState, queue, runAction]);
+  const bulkActions = useMemo(
+    () =>
+      BULK_ACTIONS_PER_STATE[activeState]
+        .filter((spec) => spec.allowed?.(queue) ?? true)
+        .map((spec) => ({
+          label: spec.label,
+          run: () =>
+            runAction(async () => {
+              const message = spec.confirm?.(queue);
+              if (message && !window.confirm(message)) {
+                return;
+              }
+              await spec.run(queue);
+            }),
+        })),
+    [activeState, queue, runAction]
+  );
 
   const togglePause = () => {
     void runAction(

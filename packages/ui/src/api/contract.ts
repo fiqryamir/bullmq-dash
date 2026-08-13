@@ -119,34 +119,36 @@ export async function fetchJobLogs(
   return (await response.json()) as JobLogsResponse;
 }
 
-type MutatingResponse = { retried?: number; skipped?: number; removed?: number };
-
 async function mutate(
   path: string,
   options?: RequestInit
-): Promise<MutatingResponse | undefined> {
+): Promise<Record<string, unknown> | undefined> {
   const response = await fetch(path, { method: 'PUT', ...options });
   if (!response.ok) {
     throw new Error(`Mutation request failed with status ${response.status}`);
   }
-  return response.status === 204 ? undefined : ((await response.json()) as MutatingResponse);
+  return response.status === 204 ? undefined : ((await response.json()) as Record<string, unknown>);
+}
+
+function noContentAction(path: string): Promise<void> {
+  return mutate(path).then(() => undefined);
 }
 
 export function retryJob(queueName: string, jobId: string): Promise<void> {
-  return mutate(`api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/retry`).then(
-    () => undefined
+  return noContentAction(
+    `api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/retry`
   );
 }
 
 export function promoteJob(queueName: string, jobId: string): Promise<void> {
-  return mutate(`api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/promote`).then(
-    () => undefined
+  return noContentAction(
+    `api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/promote`
   );
 }
 
 export function removeJob(queueName: string, jobId: string): Promise<void> {
-  return mutate(`api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/remove`).then(
-    () => undefined
+  return noContentAction(
+    `api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/remove`
   );
 }
 
@@ -155,11 +157,11 @@ export async function retryJobs(
   status: JobStatus
 ): Promise<{ retried: number; skipped: number }> {
   const body = await mutate(`api/queues/${encodeURIComponent(queueName)}/retry/${status}`);
-  return { retried: body?.retried ?? 0, skipped: body?.skipped ?? 0 };
+  return { retried: Number(body?.retried ?? 0), skipped: Number(body?.skipped ?? 0) };
 }
 
 export function promoteJobs(queueName: string): Promise<void> {
-  return mutate(`api/queues/${encodeURIComponent(queueName)}/promote`).then(() => undefined);
+  return noContentAction(`api/queues/${encodeURIComponent(queueName)}/promote`);
 }
 
 export async function cleanJobs(
@@ -176,17 +178,17 @@ export async function removeJobs(
   status: JobStatus
 ): Promise<{ removed: number }> {
   const body = await mutate(`api/queues/${encodeURIComponent(queueName)}/remove/${status}`);
-  return { removed: body?.removed ?? 0 };
+  return { removed: Number(body?.removed ?? 0) };
 }
 
 export function pauseQueue(queueName: string): Promise<void> {
-  return mutate(`api/queues/${encodeURIComponent(queueName)}/pause`).then(() => undefined);
+  return noContentAction(`api/queues/${encodeURIComponent(queueName)}/pause`);
 }
 
 export function resumeQueue(queueName: string): Promise<void> {
-  return mutate(`api/queues/${encodeURIComponent(queueName)}/resume`).then(() => undefined);
+  return noContentAction(`api/queues/${encodeURIComponent(queueName)}/resume`);
 }
 
 export function emptyQueue(queueName: string): Promise<void> {
-  return mutate(`api/queues/${encodeURIComponent(queueName)}/empty`).then(() => undefined);
+  return noContentAction(`api/queues/${encodeURIComponent(queueName)}/empty`);
 }

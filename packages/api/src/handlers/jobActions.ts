@@ -1,30 +1,17 @@
-import type {
-  BullBoardRequest,
-  ControllerHandlerReturnType,
-  JobStatus,
-} from '../typings/app';
-import { isReadOnlyQueue, paramValue, readOnlyError, resolveQueue } from './helpers';
-
-type RetriableState = Extract<JobStatus, 'failed' | 'completed'>;
-
-function isRetriableState(state: string): state is RetriableState {
-  return state === 'failed' || state === 'completed';
-}
+import { isRetriableStatus } from '../constants/statuses';
+import type { BullBoardRequest, ControllerHandlerReturnType } from '../typings/app';
+import { mutationQueue, paramValue } from './helpers';
 
 export async function retryJobHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
-
-  const job = await queue.getJob(paramValue(req, 'jobId'));
+  const job = await result.queue.getJob(paramValue(req, 'jobId'));
 
   if (!job) {
     return { status: 404, body: { error: 'Job not found' } };
@@ -32,7 +19,7 @@ export async function retryJobHandler(
 
   const state = await job.getState();
 
-  if (!isRetriableState(state)) {
+  if (!isRetriableStatus(state)) {
     return { status: 400, body: { error: 'Job is not retriable' } };
   }
 
@@ -44,17 +31,13 @@ export async function retryJobHandler(
 export async function promoteJobHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
-
-  const job = await queue.getJob(paramValue(req, 'jobId'));
+  const job = await result.queue.getJob(paramValue(req, 'jobId'));
 
   if (!job) {
     return { status: 404, body: { error: 'Job not found' } };
@@ -68,17 +51,13 @@ export async function promoteJobHandler(
 export async function removeJobHandler(
   req: BullBoardRequest
 ): Promise<ControllerHandlerReturnType> {
-  const queue = await resolveQueue(req);
+  const result = await mutationQueue(req);
 
-  if (!queue) {
-    return { status: 404, body: { error: 'Queue not found' } };
+  if (!('queue' in result)) {
+    return result;
   }
 
-  if (await isReadOnlyQueue(req, queue)) {
-    return readOnlyError();
-  }
-
-  const job = await queue.getJob(paramValue(req, 'jobId'));
+  const job = await result.queue.getJob(paramValue(req, 'jobId'));
 
   if (!job) {
     return { status: 404, body: { error: 'Job not found' } };

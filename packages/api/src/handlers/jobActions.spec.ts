@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Queue, Worker } from 'bullmq';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BullMQAdapter } from '../queueAdapters/bullMQ';
+import { pollUntil } from '../testUtils/pollUntil';
 import type {
   BullBoardQueues,
   BullBoardRequest,
@@ -13,17 +14,6 @@ const connection = {
   host: process.env.REDIS_HOST ?? 'localhost',
   port: Number(process.env.REDIS_PORT ?? 6379),
 };
-
-async function pollUntil(predicate: () => Promise<boolean>, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await predicate()) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error(`condition not met within ${timeoutMs}ms`);
-}
 
 describe('job action handlers', () => {
   const queueName = `bullmq-dash-test-job-actions-${randomUUID()}`;
@@ -122,6 +112,34 @@ describe('job action handlers', () => {
 
     expect(response.status).toBe(204);
     expect(await queue.getJob(waitingJobId)).toBeUndefined();
+  });
+
+  it('answers a 409 when removing a job a worker is holding', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const worker = new Worker(
+      queueName,
+      async (job) => {
+        if (job.name === 'hold-me') {
+          await gate;
+          return 'released';
+        }
+        throw new Error('boom');
+      },
+      { connection, concurrency: 5 }
+    );
+
+    const held = await queue.add('hold-me', { index: 9 });
+    await pollUntil(async () => (await held.getState()) === 'active', 10_000);
+
+    const response = await send(removeJobHandler, held.id!);
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({ error: 'Job is active' });
+
+    release();
+    await worker.close();
   });
 
   it('reports an unknown job as not found', async () => {

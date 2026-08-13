@@ -215,6 +215,16 @@ describe('createBullBoard', () => {
       });
       expect(serverAdapter.uiConfig?.readOnly).toBe(false);
     });
+
+    it('honors a uiConfig readOnly when the board option is absent', () => {
+      const serverAdapter = new TestServerAdapter();
+      createBullBoard({
+        queues: [],
+        serverAdapter,
+        options: { uiConfig: { readOnly: true } },
+      });
+      expect(serverAdapter.uiConfig?.readOnly).toBe(true);
+    });
   });
 
   describe('UI wiring', () => {
@@ -285,6 +295,7 @@ describe('createBullBoard', () => {
       expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/empty' }),
       expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/:jobId/retry' }),
       expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/:jobId/promote' }),
+      expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/:jobId/clean' }),
       expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/:jobId/remove' }),
     ]);
   });

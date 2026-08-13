@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Queue, Worker } from 'bullmq';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BullMQAdapter } from '../queueAdapters/bullMQ';
+import { pollUntil } from '../testUtils/pollUntil';
 import type { BullBoardQueues, BullBoardRequest, ControllerHandlerReturnType } from '../typings/app';
 import {
   cleanAllHandler,
@@ -17,17 +18,6 @@ const connection = {
   host: process.env.REDIS_HOST ?? 'localhost',
   port: Number(process.env.REDIS_PORT ?? 6379),
 };
-
-async function pollUntil(predicate: () => Promise<boolean>, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await predicate()) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error(`condition not met within ${timeoutMs}ms`);
-}
 
 describe('queue action handlers', () => {
   const queueName = `bullmq-dash-test-queue-actions-${randomUUID()}`;
@@ -174,10 +164,11 @@ describe('queue action handlers', () => {
 
   it('removes the paused jobs while the queue is paused', async () => {
     await queue.pause();
+    await queue.add('pause-me', { index: 11 });
     const response = await send(removeAllHandler, { queueStatus: 'paused' });
     await queue.resume();
 
-    expect(response.body).toEqual({ removed: 0 });
+    expect(response.body).toEqual({ removed: 1 });
     expect(await queue.getJobCountByTypes('waiting')).toBe(0);
   });
 

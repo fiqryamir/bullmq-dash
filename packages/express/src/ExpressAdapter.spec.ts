@@ -7,23 +7,13 @@ import { Queue, Worker } from 'bullmq';
 import express, { type Express } from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { pollUntil } from '../../api/src/testUtils/pollUntil';
 import { ExpressAdapter } from './index';
 
 const connection = {
   host: process.env.REDIS_HOST ?? 'localhost',
   port: Number(process.env.REDIS_PORT ?? 6379),
 };
-
-async function pollUntil(predicate: () => Promise<boolean>, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await predicate()) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error(`condition not met within ${timeoutMs}ms`);
-}
 
 describe('ExpressAdapter', () => {
   describe('embedded in a host app', () => {
@@ -286,6 +276,12 @@ describe('ExpressAdapter', () => {
       expect(await queue.getJob(jobId)).toBeUndefined();
     });
 
+    it('removes a job from its bull-board clean alias', async () => {
+      const job = await queue.add('wait', { index: 6 });
+      await request(app).put(`/api/queues/${queueName}/${job.id}/clean`).expect(204);
+      expect(await queue.getJob(job.id!)).toBeUndefined();
+    });
+
     it('retries every failed job in bulk', async () => {
       const worker = new Worker(queueName, async () => Promise.reject(new Error('boom')), {
         connection,
@@ -365,13 +361,19 @@ describe('ExpressAdapter', () => {
 
     it('blocks every mutation with a 403', async () => {
       await request(app).put(`/api/queues/${queueName}/pause`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/resume`).expect(403);
       await request(app).put(`/api/queues/${queueName}/empty`).expect(403);
       await request(app).put(`/api/queues/${queueName}/retry/failed`).expect(403);
       await request(app).put(`/api/queues/${queueName}/promote`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/clean/completed`).expect(403);
       await request(app).put(`/api/queues/${queueName}/remove/failed`).expect(403);
-      await request(app)
-        .put(`/api/queues/${queueName}/clean/completed`)
-        .expect(403);
+
+      const [job] = await queue.getJobs(['waiting']);
+      await request(app).put(`/api/queues/${queueName}/${job!.id}/retry`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/${job!.id}/promote`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/${job!.id}/clean`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/${job!.id}/remove`).expect(403);
+
       expect(await queue.isPaused()).toBe(false);
       expect(await queue.getJobCountByTypes('waiting')).toBe(1);
     });
