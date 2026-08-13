@@ -1,65 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createBullBoard } from './index';
-import { BaseAdapter } from './queueAdapters/base';
+import type { BaseAdapter } from './queueAdapters/base';
+import { TestQueueAdapter } from './testUtils/TestQueueAdapter';
 import type {
   AppControllerRoute,
   BullBoardQueues,
   ControllerHandlerReturnType,
   IServerAdapter,
-  JobCounts,
-  JobStatus,
-  QueueJob,
-  Status,
   UIConfig,
 } from './typings/app';
-
-class TestQueueAdapter extends BaseAdapter {
-  constructor(public readonly name: string) {
-    super('bullmq');
-  }
-
-  getName(): string {
-    return this.name;
-  }
-
-  async getJobCounts(): Promise<JobCounts> {
-    return {
-      latest: 0,
-      active: 0,
-      waiting: 0,
-      'waiting-children': 0,
-      prioritized: 0,
-      completed: 0,
-      failed: 0,
-      delayed: 0,
-      paused: 0,
-    };
-  }
-
-  async getJobs(_jobStatuses: JobStatus[], _start?: number, _end?: number): Promise<QueueJob[]> {
-    return [];
-  }
-
-  async isPaused(): Promise<boolean> {
-    return false;
-  }
-
-  async getGlobalConcurrency(): Promise<number | null> {
-    return null;
-  }
-
-  async getJobSchedulersCount(): Promise<number> {
-    return 0;
-  }
-
-  getStatuses(): Status[] {
-    return ['latest', ...this.getJobStatuses()];
-  }
-
-  getJobStatuses(): JobStatus[] {
-    return ['active', 'waiting', 'completed', 'failed', 'delayed'];
-  }
-}
 
 class TestServerAdapter implements IServerAdapter {
   public queues: BullBoardQueues | undefined;

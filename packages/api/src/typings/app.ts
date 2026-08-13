@@ -51,7 +51,7 @@ export interface AppJob {
   finishedOn?: number;
   progress: Job['progress'];
   attempts: number;
-  failedReason: string;
+  failedReason: string | undefined;
   stacktrace: string[];
   delay: number | undefined;
   opts: Job['opts'];

@@ -37,14 +37,14 @@ describe('queuesHandler', () => {
       body: {},
       headers: {},
     };
-  });
+  }, 30_000);
 
   afterAll(async () => {
     await queueA.obliterate({ force: true });
     await queueB.obliterate({ force: true });
     await queueA.close();
     await queueB.close();
-  });
+  }, 30_000);
 
   const send = async (query: Record<string, unknown> = {}): Promise<AppQueue[]> => {
     const { body } = await queuesHandler({ ...request, query });

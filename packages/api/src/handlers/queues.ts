@@ -40,18 +40,18 @@ function getPagination(
   statuses: JobStatus[],
   counts: JobCounts,
   currentPage: number,
-  jobsPerPage: number
+  jobsPerPage: number,
+  isLatestView: boolean
 ): Pagination {
-  const isLatestStatus = statuses.length > 1;
   const [firstStatus] = statuses;
-  const total = isLatestStatus
+  const total = isLatestView
     ? statuses.reduce((total, status) => total + Math.min(counts[status] ?? 0, jobsPerPage), 0)
     : firstStatus
       ? (counts[firstStatus] ?? 0)
       : 0;
 
-  const start = isLatestStatus ? 0 : (currentPage - 1) * jobsPerPage;
-  const pageCount = isLatestStatus ? 1 : Math.ceil(total / jobsPerPage);
+  const start = isLatestView ? 0 : (currentPage - 1) * jobsPerPage;
+  const pageCount = isLatestView ? 1 : Math.ceil(total / jobsPerPage);
 
   return {
     pageCount,
@@ -65,12 +65,33 @@ async function getHasWorkers(queue: BaseAdapter, showWorkers: boolean): Promise<
   }
 
   const workers = await queue.getWorkers().catch(() => null);
-  return workers && workers.length > 0;
+  if (!workers) {
+    return null;
+  }
+  return workers.length > 0;
 }
 
-function queryString(query: Record<string, unknown>, key: string): string | undefined {
-  const value = query[key];
-  return typeof value === 'string' ? value : undefined;
+type QueueQuery = {
+  activeQueue: string;
+  jobsPerPage: number;
+  status: string | undefined;
+  page: number;
+};
+
+function parseQueueQuery(query: Record<string, unknown>): QueueQuery {
+  const stringValue = (key: string): string | undefined => {
+    const value = query[key];
+    return typeof value === 'string' ? value : undefined;
+  };
+
+  const activeQueue = stringValue('activeQueue');
+
+  return {
+    activeQueue: activeQueue === undefined ? '' : decodeURIComponent(activeQueue),
+    jobsPerPage: Number(stringValue('jobsPerPage')) || 10,
+    status: stringValue('status'),
+    page: Number(stringValue('page')) || 1,
+  };
 }
 
 async function getAppQueues(
@@ -78,20 +99,17 @@ async function getAppQueues(
   query: Record<string, unknown>,
   showWorkers: boolean
 ): Promise<AppQueue[]> {
+  const { activeQueue, jobsPerPage, status: statusQuery, page: currentPage } =
+    parseQueueQuery(query);
+
   return Promise.all(
     pairs.map(async ([queueName, queue]) => {
-      const activeQueue = queryString(query, 'activeQueue');
-      const isActiveQueue = activeQueue !== undefined && decodeURIComponent(activeQueue) === queueName;
-      const jobsPerPage = Number(queryString(query, 'jobsPerPage')) || 10;
+      const isActiveQueue = activeQueue !== '' && activeQueue === queueName;
 
       const jobStatuses = queue.getJobStatuses();
 
-      const statusQuery = queryString(query, 'status');
-      const status: JobStatus[] =
-        !isActiveQueue || !statusQuery || statusQuery === 'latest'
-          ? jobStatuses
-          : [statusQuery as JobStatus];
-      const currentPage = Number(queryString(query, 'page')) || 1;
+      const isLatestView = !isActiveQueue || !statusQuery || statusQuery === 'latest';
+      const status: JobStatus[] = isLatestView ? jobStatuses : [statusQuery as JobStatus];
 
       const counts = await queue.getJobCounts();
       const isPaused = await queue.isPaused();
@@ -99,7 +117,7 @@ async function getAppQueues(
       const jobSchedulerCount = await queue.getJobSchedulersCount();
       const hasWorkers = await getHasWorkers(queue, showWorkers);
 
-      const pagination = getPagination(status, counts, currentPage, jobsPerPage);
+      const pagination = getPagination(status, counts, currentPage, jobsPerPage, isLatestView);
       const jobs = isActiveQueue
         ? await queue.getJobs(status, pagination.range.start, pagination.range.end)
         : [];

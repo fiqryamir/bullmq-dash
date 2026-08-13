@@ -19,7 +19,12 @@ export class BullMQAdapter extends BaseAdapter {
 
   /** BullMQ v6 dropped the paused job state; a paused queue's jobs are stored as waiting. */
   private get hasPausedState(): boolean {
-    return typeof (this.queue as unknown as { getBackend?: () => unknown }).getBackend !== 'function';
+    return !this.isBullMqV6;
+  }
+
+  /** v6 moved the connection behind pluggable backends; v5 exposes the client directly. */
+  private get isBullMqV6(): boolean {
+    return typeof (this.queue as unknown as { getBackend?: () => unknown }).getBackend === 'function';
   }
 
   public getName(): string {

@@ -33,12 +33,12 @@ describe('ExpressAdapter', () => {
 
       app = express();
       app.use(serverAdapter.getRouter());
-    });
+    }, 30_000);
 
     afterAll(async () => {
       await queue.obliterate({ force: true });
       await queue.close();
-    });
+    }, 30_000);
 
     it('serves every registered queue with its counts from GET /api/queues', async () => {
       const response = await request(app).get('/api/queues').expect(200);

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Queue, QueueEvents, Worker } from 'bullmq';
+import { Queue, Worker } from 'bullmq';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BullMQAdapter } from './bullMQ';
 
@@ -7,6 +7,17 @@ const connection = {
   host: process.env.REDIS_HOST ?? 'localhost',
   port: Number(process.env.REDIS_PORT ?? 6379),
 };
+
+async function pollUntil(predicate: () => Promise<boolean>, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await predicate()) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(`condition not met within ${timeoutMs}ms`);
+}
 
 describe('BullMQAdapter', () => {
   const queueName = `bullmq-dash-test-${randomUUID()}`;
@@ -16,7 +27,6 @@ describe('BullMQAdapter', () => {
   beforeAll(async () => {
     queue = new Queue(queueName, { connection });
 
-    const queueEvents = new QueueEvents(queueName, { connection });
     const worker = new Worker(
       queueName,
       async (job) => {
@@ -30,24 +40,24 @@ describe('BullMQAdapter', () => {
 
     const completedJob = await queue.add('done-job', { payload: 4 });
     const failedJob = await queue.add('failed-job', { payload: 5 });
-    await Promise.allSettled([
-      completedJob.waitUntilFinished(queueEvents),
-      failedJob.waitUntilFinished(queueEvents),
-    ]);
+
+    await pollUntil(
+      async () => (await completedJob.isCompleted()) && (await failedJob.isFailed()),
+      10_000
+    );
     await worker.close();
-    await queueEvents.close();
 
     await queue.add('waiting-job', { payload: 1 });
     await queue.add('waiting-job', { payload: 2 });
     await queue.add('delayed-job', { payload: 3 }, { delay: 60_000 });
 
     adapter = new BullMQAdapter(queue);
-  });
+  }, 30_000);
 
   afterAll(async () => {
     await queue.obliterate({ force: true });
     await queue.close();
-  });
+  }, 30_000);
 
   it('returns the queue name', () => {
     expect(adapter.getName()).toBe(queueName);
@@ -116,13 +126,13 @@ describe('BullMQAdapter workers', () => {
   beforeAll(async () => {
     queue = new Queue(queueName, { connection });
     adapter = new BullMQAdapter(queue);
-  });
+  }, 30_000);
 
   afterAll(async () => {
     await worker?.close();
     await queue.obliterate({ force: true });
     await queue.close();
-  });
+  }, 30_000);
 
   it('reports an empty worker list when nobody consumes the queue', async () => {
     expect(await adapter.getWorkers()).toEqual([]);
