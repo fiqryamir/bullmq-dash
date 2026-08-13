@@ -1,0 +1,157 @@
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { BullMQAdapter, createBullBoard, type AppQueue } from '@bullmq-dash/api';
+import { Queue } from 'bullmq';
+import express, { type Express } from 'express';
+import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { ExpressAdapter } from './index';
+
+const connection = {
+  host: process.env.REDIS_HOST ?? 'localhost',
+  port: Number(process.env.REDIS_PORT ?? 6379),
+};
+
+describe('ExpressAdapter', () => {
+  describe('embedded in a host app', () => {
+    const queueName = `bullmq-dash-express-${randomUUID()}`;
+    let queue: Queue;
+    let app: Express;
+
+    beforeAll(async () => {
+      queue = new Queue(queueName, { connection });
+      await queue.add('email', { to: 'a@example.com' });
+      await queue.add('email', { to: 'b@example.com' });
+
+      const serverAdapter = new ExpressAdapter();
+      createBullBoard({
+        queues: [new BullMQAdapter(queue)],
+        serverAdapter,
+      });
+
+      app = express();
+      app.use(serverAdapter.getRouter());
+    });
+
+    afterAll(async () => {
+      await queue.obliterate({ force: true });
+      await queue.close();
+    });
+
+    it('serves every registered queue with its counts from GET /api/queues', async () => {
+      const response = await request(app).get('/api/queues').expect(200);
+      const queues = response.body.queues as AppQueue[];
+      expect(queues).toHaveLength(1);
+      expect(queues[0]).toMatchObject({
+        name: queueName,
+        type: 'bullmq',
+        counts: expect.objectContaining({ waiting: 2 }),
+      });
+      expect(queues[0]?.jobs).toEqual([]);
+    });
+
+    it('returns the active queue jobs through the REST contract', async () => {
+      const response = await request(app)
+        .get(`/api/queues?activeQueue=${queueName}&status=waiting&page=1&jobsPerPage=10`)
+        .expect(200);
+      const queues = response.body.queues as AppQueue[];
+      expect(queues[0]?.jobs.map((job) => job.name)).toEqual(['email', 'email']);
+    });
+
+    it('serves the routes under the host-app base path', async () => {
+      const serverAdapter = new ExpressAdapter();
+      serverAdapter.setBasePath('/board');
+      createBullBoard({
+        queues: [new BullMQAdapter(queue)],
+        serverAdapter,
+      });
+
+      const mounted = express();
+      mounted.use('/board', serverAdapter.getRouter());
+
+      const response = await request(mounted).get('/board/api/queues').expect(200);
+      const queues = response.body.queues as AppQueue[];
+      expect(queues).toHaveLength(1);
+    });
+  });
+
+  describe('as a fluent adapter', () => {
+    it('returns itself from setBasePath and a router from getRouter', () => {
+      const adapter = new ExpressAdapter();
+      expect(adapter.setBasePath('/board')).toBe(adapter);
+      expect(typeof adapter.getRouter()).toBe('function');
+    });
+
+    it('throws when api routes are set before the error handler', () => {
+      const adapter = new ExpressAdapter();
+      expect(() => adapter.setApiRoutes([])).toThrow(
+        `Please call 'setErrorHandler' before calling 'setApiRoutes'`
+      );
+    });
+
+    it('throws when api routes are set before the queues', () => {
+      const adapter = new ExpressAdapter();
+      adapter.setErrorHandler(() => ({ status: 500, body: 'error' }));
+      expect(() => adapter.setApiRoutes([])).toThrow(
+        `Please call 'setQueues' before calling 'setApiRoutes'`
+      );
+    });
+
+    it('bridges handler failures through the error handler', async () => {
+      const adapter = new ExpressAdapter();
+      adapter.setQueues(new Map());
+      adapter.setErrorHandler((error) => ({
+        status: 500,
+        body: { error: 'Queue error', details: error.message },
+      }));
+      adapter.setApiRoutes([
+        {
+          method: 'get',
+          route: '/api/broken',
+          handler: () => {
+            throw new Error('boom');
+          },
+        },
+      ]);
+
+      const response = await request(adapter.getRouter()).get('/api/broken').expect(500);
+      expect(response.body).toEqual({ error: 'Queue error', details: 'boom' });
+    });
+  });
+
+  describe('views and static assets', () => {
+    let dir: string;
+    let adapter: ExpressAdapter;
+
+    beforeAll(() => {
+      dir = mkdtempSync(join(tmpdir(), 'bullmq-dash-'));
+      mkdirSync(join(dir, 'static'));
+      writeFileSync(join(dir, 'static', 'asset.txt'), 'asset-content');
+      writeFileSync(join(dir, 'board.ejs'), '<h1><%= title %></h1>');
+
+      adapter = new ExpressAdapter();
+      adapter.setViewsPath(dir);
+      adapter.setStaticPath('/static', join(dir, 'static'));
+      adapter.setEntryRoute({
+        method: 'get',
+        route: '/',
+        handler: () => ({ name: 'board', params: { title: 'Hello Board' } }),
+      });
+    });
+
+    afterAll(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('serves static assets', async () => {
+      await request(adapter.getRouter()).get('/static/asset.txt').expect(200, 'asset-content');
+    });
+
+    it('renders the entry route view', async () => {
+      const response = await request(adapter.getRouter()).get('/').expect(200);
+      expect(response.text).toContain('Hello Board');
+    });
+  });
+});

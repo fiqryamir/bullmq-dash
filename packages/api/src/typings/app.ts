@@ -1,6 +1,98 @@
+import type { Job } from 'bullmq';
 import type { BaseAdapter } from '../queueAdapters/base';
 
 export type BullBoardQueues = Map<string, BaseAdapter>;
+
+export type QueueJob = Job;
+
+export type Status =
+  | 'latest'
+  | 'active'
+  | 'waiting'
+  | 'waiting-children'
+  | 'prioritized'
+  | 'completed'
+  | 'failed'
+  | 'delayed'
+  | 'paused';
+
+export type JobStatus = Exclude<Status, 'latest'>;
+
+export type JobCounts = Record<Status, number>;
+
+export type QueueType = 'bull' | 'bullmq';
+
+export type QueueAdapterOptions = {
+  readOnlyMode: boolean;
+  allowRetries: boolean;
+  allowCompletedRetries: boolean;
+  prefix: string;
+  delimiter: string;
+  description: string;
+  displayName: string;
+};
+
+/**
+ * A single worker connection, as reported by Redis `CLIENT LIST`.
+ */
+export interface QueueWorker {
+  id: string;
+  name: string | null;
+  addr: string;
+  age: number;
+}
+
+export interface AppJob {
+  id: string | undefined;
+  name: string;
+  timestamp: number;
+  processedOn?: number;
+  processedBy?: string;
+  finishedOn?: number;
+  progress: Job['progress'];
+  attempts: number;
+  failedReason: string;
+  stacktrace: string[];
+  delay: number | undefined;
+  opts: Job['opts'];
+  data: Job['data'];
+  returnValue: Job['returnvalue'];
+  isFailed: boolean;
+}
+
+export interface Pagination {
+  pageCount: number;
+  range: {
+    start: number;
+    end: number;
+  };
+}
+
+export interface AppQueue {
+  delimiter: string;
+  name: string;
+  displayName?: string;
+  description?: string;
+  counts: Record<Status, number>;
+  jobs: AppJob[];
+  statuses: Status[];
+  pagination: Pagination;
+  readOnlyMode: boolean;
+  allowRetries: boolean;
+  allowCompletedRetries: boolean;
+  isPaused: boolean;
+  type: QueueType;
+  globalConcurrency: number | null;
+  jobSchedulerCount: number;
+  hasWorkers: boolean | null;
+}
+
+export type FormatterField = 'data' | 'returnValue' | 'name' | 'progress';
+
+export type AppRouteDefs = {
+  entryPoint?: AppViewRoute;
+  api: AppControllerRoute[];
+};
 
 export type HTTPMethod = 'get' | 'post' | 'put' | 'patch';
 

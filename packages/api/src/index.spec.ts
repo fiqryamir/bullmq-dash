@@ -1,21 +1,71 @@
 import { describe, expect, it } from 'vitest';
 import { createBullBoard } from './index';
 import { BaseAdapter } from './queueAdapters/base';
-import type { BullBoardQueues, IServerAdapter, UIConfig } from './typings/app';
+import type {
+  AppControllerRoute,
+  BullBoardQueues,
+  ControllerHandlerReturnType,
+  IServerAdapter,
+  JobCounts,
+  JobStatus,
+  QueueJob,
+  Status,
+  UIConfig,
+} from './typings/app';
 
 class TestQueueAdapter extends BaseAdapter {
   constructor(public readonly name: string) {
-    super();
+    super('bullmq');
   }
 
   getName(): string {
     return this.name;
+  }
+
+  async getJobCounts(): Promise<JobCounts> {
+    return {
+      latest: 0,
+      active: 0,
+      waiting: 0,
+      'waiting-children': 0,
+      prioritized: 0,
+      completed: 0,
+      failed: 0,
+      delayed: 0,
+      paused: 0,
+    };
+  }
+
+  async getJobs(_jobStatuses: JobStatus[], _start?: number, _end?: number): Promise<QueueJob[]> {
+    return [];
+  }
+
+  async isPaused(): Promise<boolean> {
+    return false;
+  }
+
+  async getGlobalConcurrency(): Promise<number | null> {
+    return null;
+  }
+
+  async getJobSchedulersCount(): Promise<number> {
+    return 0;
+  }
+
+  getStatuses(): Status[] {
+    return ['latest', ...this.getJobStatuses()];
+  }
+
+  getJobStatuses(): JobStatus[] {
+    return ['active', 'waiting', 'completed', 'failed', 'delayed'];
   }
 }
 
 class TestServerAdapter implements IServerAdapter {
   public queues: BullBoardQueues | undefined;
   public uiConfig: UIConfig | undefined;
+  public apiRoutes: AppControllerRoute[] | undefined;
+  public errorHandler: ((error: Error) => ControllerHandlerReturnType) | undefined;
 
   setQueues(queues: BullBoardQueues): IServerAdapter {
     this.queues = queues;
@@ -39,11 +89,13 @@ class TestServerAdapter implements IServerAdapter {
     return this;
   }
 
-  setErrorHandler(): IServerAdapter {
+  setErrorHandler(handler: (error: Error) => ControllerHandlerReturnType): IServerAdapter {
+    this.errorHandler = handler;
     return this;
   }
 
-  setApiRoutes(): IServerAdapter {
+  setApiRoutes(routes: AppControllerRoute[]): IServerAdapter {
+    this.apiRoutes = routes;
     return this;
   }
 }
@@ -184,5 +236,36 @@ describe('createBullBoard', () => {
     const serverAdapter = new TestServerAdapter();
     createBullBoard({ queues: [], serverAdapter });
     expect(serverAdapter.uiConfig?.boardTitle).toBe('Bull Dashboard');
+  });
+
+  it('registers the api routes on the server adapter', () => {
+    const { serverAdapter } = createBoard();
+    expect(serverAdapter.apiRoutes).toEqual([
+      expect.objectContaining({ method: 'get', route: '/api/queues' }),
+    ]);
+  });
+
+  it('registers an error handler on the server adapter', () => {
+    const { serverAdapter } = createBoard();
+    expect(typeof serverAdapter.errorHandler).toBe('function');
+  });
+
+  it('turns handler errors into a 500 with the stack as details', () => {
+    const { serverAdapter } = createBoard();
+    const response = serverAdapter.errorHandler!(new Error('kaboom'));
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({
+      error: 'Queue error',
+      details: expect.stringContaining('kaboom'),
+    });
+  });
+
+  it('falls back to the message when an error has no stack', () => {
+    const { serverAdapter } = createBoard();
+    const response = serverAdapter.errorHandler!({ message: 'no stack' } as Error);
+    expect(response.body).toEqual({
+      error: 'Queue error',
+      details: 'no stack',
+    });
   });
 });
