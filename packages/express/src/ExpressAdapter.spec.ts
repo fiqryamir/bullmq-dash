@@ -24,6 +24,7 @@ describe('ExpressAdapter', () => {
       queue = new Queue(queueName, { connection });
       await queue.add('email', { to: 'a@example.com' });
       await queue.add('email', { to: 'b@example.com' });
+      await queue.add('reminder', { to: 'later@example.com' }, { delay: 60_000 });
 
       const serverAdapter = new ExpressAdapter();
       createBullBoard({
@@ -58,6 +59,74 @@ describe('ExpressAdapter', () => {
         .expect(200);
       const queues = response.body.queues as AppQueue[];
       expect(queues[0]?.jobs.map((job) => job.name)).toEqual(['email', 'email']);
+    });
+
+    describe('GET /api/queues/:queueName/jobs', () => {
+      it('pages the jobs of a state through the pagination contract', async () => {
+        const response = await request(app)
+          .get(`/api/queues/${queueName}/jobs`)
+          .query({ status: 'waiting', page: 1, jobsPerPage: 1 })
+          .expect(200);
+
+        expect(response.body.jobs).toHaveLength(1);
+        expect(response.body.jobs[0]).toMatchObject({
+          name: 'email',
+          state: 'waiting',
+          attempts: 0,
+        });
+        expect(response.body.pagination).toEqual({ pageCount: 2, range: { start: 0, end: 0 } });
+      });
+
+      it('honors the page offset for the next page', async () => {
+        const response = await request(app)
+          .get(`/api/queues/${queueName}/jobs`)
+          .query({ status: 'waiting', page: 2, jobsPerPage: 1 })
+          .expect(200);
+
+        expect(response.body.jobs).toHaveLength(1);
+        expect(response.body.pagination).toEqual({ pageCount: 2, range: { start: 1, end: 1 } });
+        expect(response.body.jobs[0].id).toBeTruthy();
+      });
+
+      it('serves every state the switcher offers', async () => {
+        const delayed = await request(app)
+          .get(`/api/queues/${queueName}/jobs`)
+          .query({ status: 'delayed' })
+          .expect(200);
+        const delayedJobs = delayed.body.jobs as { name: string }[];
+        expect(delayedJobs.map((job) => job.name)).toEqual(['reminder']);
+
+        const failed = await request(app)
+          .get(`/api/queues/${queueName}/jobs`)
+          .query({ status: 'failed' })
+          .expect(200);
+        expect(failed.body.jobs).toEqual([]);
+        expect(failed.body.pagination).toEqual({ pageCount: 0, range: { start: 0, end: 9 } });
+      });
+
+      it('lists the waiting jobs under the paused state while the queue is paused', async () => {
+        await queue.pause();
+        const response = await request(app)
+          .get(`/api/queues/${queueName}/jobs`)
+          .query({ status: 'paused' })
+          .expect(200);
+        await queue.resume();
+
+        const jobs = response.body.jobs as { name: string; state: string }[];
+        expect(jobs.map((job) => job.name)).toEqual(['email', 'email']);
+        expect(jobs.map((job) => job.state)).toEqual(['paused', 'paused']);
+      });
+
+      it('answers unknown queues with 404 and unknown states with 400', async () => {
+        await request(app)
+          .get('/api/queues/not-a-queue/jobs')
+          .query({ status: 'waiting' })
+          .expect(404);
+        await request(app)
+          .get(`/api/queues/${queueName}/jobs`)
+          .query({ status: 'nonsense' })
+          .expect(400);
+      });
     });
 
     it('serves the routes under the host-app base path', async () => {

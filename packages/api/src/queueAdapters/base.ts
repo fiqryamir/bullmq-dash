@@ -67,6 +67,15 @@ export abstract class BaseAdapter {
 
   public abstract getJobCounts(): Promise<JobCounts>;
 
+  /**
+   * The number of jobs in a single state. Adapters whose backing library
+   * stores a state differently than the dashboard presents it override this.
+   */
+  public async getJobCountForStatus(status: JobStatus): Promise<number> {
+    const counts = await this.getJobCounts();
+    return counts[status] ?? 0;
+  }
+
   public abstract getJobs(jobStatuses: JobStatus[], start?: number, end?: number): Promise<QueueJob[]>;
 
   public abstract isPaused(): Promise<boolean>;

@@ -88,8 +88,22 @@ describe('BullMQAdapter', () => {
       'completed',
       'failed',
       'delayed',
+      'paused',
     ]);
     expect(adapter.getJobStatuses()).not.toContain('latest');
+  });
+
+  it('reports no paused jobs while the queue is not paused', async () => {
+    expect(await adapter.getJobCountForStatus('paused')).toBe(0);
+    expect(await adapter.getJobs(['paused'])).toEqual([]);
+  });
+
+  it('lists the paused queue jobs under the paused state', async () => {
+    await queue.pause();
+    expect(await adapter.getJobCountForStatus('paused')).toBe(2);
+    const pausedJobs = await adapter.getJobs(['paused']);
+    expect(pausedJobs.map((job) => job.name)).toEqual(['waiting-job', 'waiting-job']);
+    await queue.resume();
   });
 
   it('pages jobs in a state', async () => {

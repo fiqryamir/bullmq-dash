@@ -58,6 +58,16 @@ export interface AppJob {
   data: Job['data'];
   returnValue: Job['returnvalue'];
   isFailed: boolean;
+  /**
+   * The job's state as the dashboard serves it — present on the per-queue jobs
+   * endpoint, absent from the jobs embedded in the queues response.
+   */
+  state?: JobStatus;
+}
+
+export interface QueueJobsResponse {
+  jobs: AppJob[];
+  pagination: Pagination;
 }
 
 export interface Pagination {
