@@ -8,7 +8,8 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "pnpm --filter \"./packages/*\" run typecheck",
-    "build": "pnpm --filter \"./packages/*\" run build"
+    "build": "pnpm --filter \"./packages/*\" run build",
+    "release": "pnpm run build && pnpm changeset publish"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild"]
