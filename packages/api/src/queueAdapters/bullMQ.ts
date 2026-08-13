@@ -1,6 +1,6 @@
 import { Queue, type Job, type JobType } from 'bullmq';
 import { STATUSES } from '../constants/statuses';
-import type { JobCounts, JobStatus, QueueAdapterOptions, QueueWorker, Status } from '../typings/app';
+import type { JobCounts, JobLogs, JobStatus, QueueAdapterOptions, QueueWorker, Status } from '../typings/app';
 import { BaseAdapter } from './base';
 
 /** The `:w:<name>` suffix BullMQ appends to the connection name of a named worker. */
@@ -53,6 +53,14 @@ export class BullMQAdapter extends BaseAdapter {
 
     const jobs = (await this.queue.getJobs(statuses, start, end)) as (Job | undefined)[];
     return jobs.filter((job): job is Job => !!job);
+  }
+
+  public async getJob(jobId: string): Promise<Job | null> {
+    return (await this.queue.getJob(jobId)) ?? null;
+  }
+
+  public async getJobLogs(jobId: string, start: number, end: number): Promise<JobLogs> {
+    return this.queue.getJobLogs(jobId, start, end, false);
   }
 
   private async resolveJobStatuses(jobStatuses: JobStatus[]): Promise<JobType[]> {

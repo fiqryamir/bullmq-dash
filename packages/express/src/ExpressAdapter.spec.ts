@@ -129,6 +129,67 @@ describe('ExpressAdapter', () => {
       });
     });
 
+    describe('GET /api/queues/:queueName/:jobId', () => {
+      it('returns the job detail with its data through the REST contract', async () => {
+        const [job] = await queue.getJobs(['waiting']);
+        const response = await request(app).get(`/api/queues/${queueName}/${job!.id}`).expect(200);
+
+        expect(response.body.job).toMatchObject({
+          id: job!.id,
+          name: 'email',
+        });
+        expect(response.body.job.data).toEqual(job!.data);
+        expect(response.body.status).toBe('waiting');
+      });
+
+      it('returns the job logs through the REST contract', async () => {
+        const [job] = await queue.getJobs(['waiting']);
+        await queue.addJobLog(job!.id!, 'http log row');
+
+        const response = await request(app)
+          .get(`/api/queues/${queueName}/${job!.id}/logs`)
+          .expect(200);
+
+        expect(response.body.logs).toEqual(['http log row']);
+        expect(response.body.count).toBe(1);
+        expect(response.body.pagination).toEqual({ pageCount: 1, range: { start: 0, end: 9 } });
+      });
+
+      it('pages the job logs through the REST contract', async () => {
+        const [delayed] = await queue.getJobs(['delayed']);
+        await queue.addJobLog(delayed!.id!, 'http log 1');
+        await queue.addJobLog(delayed!.id!, 'http log 2');
+        await queue.addJobLog(delayed!.id!, 'http log 3');
+
+        const first = await request(app)
+          .get(`/api/queues/${queueName}/${delayed!.id}/logs`)
+          .query({ page: 1, logsPerPage: 2 })
+          .expect(200);
+        expect(first.body.logs).toEqual(['http log 3', 'http log 2']);
+        expect(first.body.count).toBe(3);
+        expect(first.body.pagination).toEqual({ pageCount: 2, range: { start: 0, end: 1 } });
+
+        const second = await request(app)
+          .get(`/api/queues/${queueName}/${delayed!.id}/logs`)
+          .query({ page: 2, logsPerPage: 2 })
+          .expect(200);
+        expect(second.body.logs).toEqual(['http log 1']);
+        expect(second.body.pagination).toEqual({ pageCount: 2, range: { start: 2, end: 3 } });
+      });
+
+      it('keeps the literal jobs list route ahead of the job detail route', async () => {
+        const response = await request(app)
+          .get(`/api/queues/${queueName}/jobs`)
+          .query({ status: 'waiting' })
+          .expect(200);
+        expect(Array.isArray(response.body.jobs)).toBe(true);
+      });
+
+      it('answers unknown jobs with 404', async () => {
+        await request(app).get(`/api/queues/${queueName}/missing`).expect(404);
+      });
+    });
+
     it('serves the routes under the host-app base path', async () => {
       const serverAdapter = new ExpressAdapter();
       serverAdapter.setBasePath('/board');

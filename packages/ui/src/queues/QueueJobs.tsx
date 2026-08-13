@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { AppJob, AppQueue, JobStatus } from '../api/contract';
+import { formatProgress } from './formatProgress';
 import { useQueueJobs } from './useQueueJobs';
 
 export const JOB_STATES: JobStatus[] = [
@@ -20,10 +21,6 @@ export const JOB_STATES: JobStatus[] = [
 
 const JOBS_PER_PAGE = 100;
 
-function formatProgress(progress: number | object): string {
-  return typeof progress === 'number' ? `${progress}%` : JSON.stringify(progress);
-}
-
 function stateCount(queue: AppQueue, state: JobStatus): number {
   if (state === 'paused' && queue.isPaused) {
     return queue.counts.waiting ?? 0;
@@ -35,9 +32,10 @@ type QueueJobsProps = {
   queue: AppQueue;
   pollingInterval?: number;
   onBack: () => void;
+  onSelectJob: (job: AppJob) => void;
 };
 
-export function QueueJobs({ queue, pollingInterval, onBack }: QueueJobsProps) {
+export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: QueueJobsProps) {
   const [activeState, setActiveState] = useState<JobStatus>('waiting');
   const [page, setPage] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -68,7 +66,9 @@ export function QueueJobs({ queue, pollingInterval, onBack }: QueueJobsProps) {
         accessorKey: 'state',
         header: 'State',
         cell: (info) => (
-          <span className={`chip chip--${String(info.getValue())}`}>{String(info.getValue())}</span>
+          <span className={`chip chip--${String(info.getValue() ?? '')}`}>
+            {String(info.getValue() ?? '')}
+          </span>
         ),
       },
       {
@@ -147,6 +147,15 @@ export function QueueJobs({ queue, pollingInterval, onBack }: QueueJobsProps) {
               return (
                 <tr
                   key={row.id}
+                  className="job-table__row"
+                  tabIndex={0}
+                  onClick={() => onSelectJob(row.original)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onSelectJob(row.original);
+                    }
+                  }}
                   style={{
                     position: 'absolute',
                     top: 0,

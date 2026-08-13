@@ -70,6 +70,20 @@ export interface QueueJobsResponse {
   pagination: Pagination;
 }
 
+export interface JobDetailResponse {
+  job: AppJob;
+  status: JobStatus | 'unknown';
+}
+
+export interface JobLogs {
+  logs: string[];
+  count: number;
+}
+
+export interface JobLogsResponse extends JobLogs {
+  pagination: Pagination;
+}
+
 export interface Pagination {
   pageCount: number;
   range: {

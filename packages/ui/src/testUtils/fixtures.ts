@@ -34,6 +34,9 @@ export function makeJob(
     progress: index * 10,
     attempts: 1,
     timestamp: 1700000000000 + index,
+    stacktrace: [],
+    opts: { attempts: 1 },
+    data: { index },
     ...overrides,
   };
 }

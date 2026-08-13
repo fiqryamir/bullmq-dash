@@ -1,5 +1,6 @@
 import type {
   JobCounts,
+  JobLogs,
   JobStatus,
   QueueAdapterOptions,
   QueueJob,
@@ -35,6 +36,14 @@ export class TestQueueAdapter extends BaseAdapter {
 
   async getJobs(_jobStatuses: JobStatus[], _start?: number, _end?: number): Promise<QueueJob[]> {
     return [];
+  }
+
+  async getJob(_jobId: string): Promise<QueueJob | null> {
+    return null;
+  }
+
+  async getJobLogs(_jobId: string, _start: number, _end: number): Promise<JobLogs> {
+    return { logs: [], count: 0 };
   }
 
   async isPaused(): Promise<boolean> {
