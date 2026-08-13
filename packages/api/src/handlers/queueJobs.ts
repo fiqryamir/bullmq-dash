@@ -1,3 +1,4 @@
+import { isJobStatus } from '../constants/statuses';
 import type {
   BullBoardRequest,
   ControllerHandlerReturnType,
@@ -19,12 +20,14 @@ export async function queueJobsHandler(
     return { status: 404, body: { error: 'Queue not found' } };
   }
 
-  const status = stringValue(req.query, 'status') as JobStatus | undefined;
-  const { page, pageSize } = parsePageQuery(req.query, 'jobsPerPage', JOBS_PER_PAGE);
+  const statusQuery = stringValue(req.query, 'status');
 
-  if (!status || !queue.getJobStatuses().includes(status)) {
+  if (!statusQuery || !isJobStatus(statusQuery) || !queue.getJobStatuses().includes(statusQuery)) {
     return { status: 400, body: { error: 'Invalid status' } };
   }
+
+  const status: JobStatus = statusQuery;
+  const { page, pageSize } = parsePageQuery(req.query, 'jobsPerPage', JOBS_PER_PAGE);
 
   const total = await queue.getJobCountForStatus(status);
   const pagination = {

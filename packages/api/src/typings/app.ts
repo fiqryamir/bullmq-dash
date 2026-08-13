@@ -1,4 +1,5 @@
 import type { Job } from 'bullmq';
+import type { CleanableStatus } from '../constants/statuses';
 import type { BaseAdapter } from '../queueAdapters/base';
 
 export type BullBoardQueues = Map<string, BaseAdapter>;
@@ -17,6 +18,13 @@ export type Status =
   | 'paused';
 
 export type JobStatus = Exclude<Status, 'latest'>;
+
+/**
+ * The statuses `clean` accepts — defined once alongside the validator in
+ * `CLEANABLE_STATUSES` so the type can never admit a status the runtime
+ * rejects.
+ */
+export type JobCleanStatus = CleanableStatus;
 
 export type JobCounts = Record<Status, number>;
 
@@ -168,6 +176,11 @@ export interface IServerAdapter {
 export type BoardOptions = {
   uiBasePath?: string;
   uiConfig?: UIConfig;
+  /**
+   * Disables every mutation end to end — the REST contract answers each
+   * mutating route with a 403 and the UI hides the action controls.
+   */
+  readOnly?: boolean;
 };
 
 export type IMiscLink = {
@@ -188,6 +201,11 @@ export type DateFormats = {
 
 export type UIConfig = Partial<{
   boardTitle: string;
+  /**
+   * The board-level `readOnly` option on `createBullBoard`. Core-owned: the
+   * board's own value always wins over anything a caller puts in `uiConfig`.
+   */
+  readOnly: boolean;
   boardLogo: { path: string; width?: number | string; height?: number | string };
   miscLinks: IMiscLink[];
   hideDocsLink: boolean;

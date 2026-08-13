@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -7,6 +7,18 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { AppJob, AppQueue, JobStatus } from '../api/contract';
+import {
+  cleanJobs,
+  emptyQueue,
+  pauseQueue,
+  promoteJob,
+  promoteJobs,
+  removeJob,
+  removeJobs,
+  resumeQueue,
+  retryJob,
+  retryJobs,
+} from '../api/contract';
 import { formatProgress } from './formatProgress';
 import { useQueueJobs } from './useQueueJobs';
 
@@ -35,18 +47,117 @@ type QueueJobsProps = {
   onSelectJob: (job: AppJob) => void;
 };
 
+type RowAction = { label: string; run: () => Promise<unknown> | void };
+
+/**
+ * The row actions each state offers, in order. Active jobs hold a worker lock
+ * and cannot be removed, so the active state offers none.
+ */
+const ROW_ACTIONS_PER_STATE: Record<JobStatus, Array<'retry' | 'promote' | 'remove'>> = {
+  waiting: ['remove'],
+  active: [],
+  completed: ['retry', 'remove'],
+  failed: ['retry', 'remove'],
+  delayed: ['promote', 'remove'],
+  paused: ['remove'],
+  'waiting-children': [],
+  prioritized: [],
+};
+
+function rowActionsFor(job: AppJob, queue: AppQueue): RowAction[] {
+  if (!job.id) {
+    return [];
+  }
+
+  const actions: RowAction[] = [];
+  const kinds = ROW_ACTIONS_PER_STATE[job.state ?? 'waiting'];
+
+  for (const kind of kinds) {
+    switch (kind) {
+      case 'retry': {
+        const allowed =
+          job.state === 'completed'
+            ? queue.allowCompletedRetries !== false
+            : queue.allowRetries !== false;
+        if (allowed) {
+          actions.push({ label: 'Retry', run: () => retryJob(queue.name, job.id!) });
+        }
+        break;
+      }
+      case 'promote':
+        actions.push({ label: 'Promote', run: () => promoteJob(queue.name, job.id!) });
+        break;
+      case 'remove':
+        actions.push({ label: 'Remove', run: () => removeJob(queue.name, job.id!) });
+        break;
+    }
+  }
+
+  return actions;
+}
+
+type BulkActionSpec = {
+  label: string;
+  run: (queue: AppQueue) => Promise<unknown>;
+  confirm?: (queue: AppQueue) => string;
+  allowed?: (queue: AppQueue) => boolean;
+};
+
+const removeAllAction = (status: JobStatus): BulkActionSpec => ({
+  label: `Remove all ${status}`,
+  run: (queue) => removeJobs(queue.name, status),
+  confirm: (queue) => `Remove all ${status} jobs in ${queue.name}?`,
+});
+
+const retryAllAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
+  label: `Retry all ${status}`,
+  run: (queue) => retryJobs(queue.name, status),
+  allowed: (queue) =>
+    status === 'completed' ? queue.allowCompletedRetries !== false : queue.allowRetries !== false,
+});
+
+const cleanAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
+  label: `Clean ${status}`,
+  run: (queue) => cleanJobs(queue.name, status, DEFAULT_CLEAN_GRACE_SECONDS),
+  confirm: (queue) => `Clean ${status} jobs in ${queue.name}?`,
+});
+
+const promoteAllAction: BulkActionSpec = {
+  label: 'Promote all delayed',
+  run: (queue) => promoteJobs(queue.name),
+};
+
+const BULK_ACTIONS_PER_STATE: Record<JobStatus, BulkActionSpec[]> = {
+  waiting: [removeAllAction('waiting')],
+  active: [],
+  completed: [retryAllAction('completed'), cleanAction('completed'), removeAllAction('completed')],
+  failed: [retryAllAction('failed'), cleanAction('failed'), removeAllAction('failed')],
+  delayed: [promoteAllAction, removeAllAction('delayed')],
+  paused: [removeAllAction('paused')],
+  'waiting-children': [],
+  prioritized: [],
+};
+
+const DEFAULT_CLEAN_GRACE_SECONDS = 5;
+
 export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: QueueJobsProps) {
   const [activeState, setActiveState] = useState<JobStatus>('waiting');
   const [page, setPage] = useState(1);
+  const [revision, setRevision] = useState(0);
+  const [pausedOverride, setPausedOverride] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [actionFailed, setActionFailed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { jobs, pagination, status } = useQueueJobs(
     queue.name,
     activeState,
     page,
     JOBS_PER_PAGE,
-    pollingInterval
+    pollingInterval,
+    revision
   );
 
+  const isPaused = pausedOverride ?? queue.isPaused;
   const pageCount = pagination?.pageCount ?? 0;
 
   useEffect(() => {
@@ -55,7 +166,59 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: Queue
     }
   }, [page, pageCount]);
 
-  const columns = useMemo<ColumnDef<AppJob>[]>(    () => [
+  const runAction = useCallback(
+    async (action: () => Promise<unknown> | void, after?: () => void) => {
+      setBusy(true);
+      setActionFailed(false);
+      try {
+        await action();
+        after?.();
+        setRevision((current) => current + 1);
+      } catch {
+        setActionFailed(true);
+      } finally {
+        setBusy(false);
+      }
+    },
+    []
+  );
+
+  const bulkActions = useMemo(
+    () =>
+      BULK_ACTIONS_PER_STATE[activeState]
+        .filter((spec) => spec.allowed?.(queue) ?? true)
+        .map((spec) => ({
+          label: spec.label,
+          run: () =>
+            runAction(async () => {
+              const message = spec.confirm?.(queue);
+              if (message && !window.confirm(message)) {
+                return;
+              }
+              await spec.run(queue);
+            }),
+        })),
+    [activeState, queue, runAction]
+  );
+
+  const togglePause = () => {
+    void runAction(
+      () => (isPaused ? resumeQueue(queue.name) : pauseQueue(queue.name)),
+      () => setPausedOverride(!isPaused)
+    );
+  };
+
+  const empty = () => {
+    void runAction(async () => {
+      if (!window.confirm(`Empty ${queue.name}?`)) {
+        return;
+      }
+      await emptyQueue(queue.name);
+    });
+  };
+
+  const columns = useMemo<ColumnDef<AppJob>[]>(
+    () => [
       {
         accessorKey: 'id',
         header: 'ID',
@@ -77,8 +240,36 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: Queue
         cell: (info) => formatProgress(info.getValue() as number | object),
       },
       { accessorKey: 'attempts', header: 'Attempts' },
+      ...(queue.readOnlyMode
+        ? []
+        : [
+            {
+              id: 'actions',
+              header: 'Actions',
+              cell: (info: { row: { original: AppJob } }) => (
+                <span className="job-cell__actions">
+                  {rowActionsFor(info.row.original, queue).map((action) => (
+                    <button
+                      key={action.label}
+                      type="button"
+                      className="action-btn"
+                      aria-label={`${action.label} job ${info.row.original.id}`}
+                      disabled={busy}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void runAction(action.run);
+                      }}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </span>
+              ),
+            } as ColumnDef<AppJob>,
+          ]),
     ],
-    []
+    [queue, busy, runAction]
   );
 
   const table = useReactTable({
@@ -107,7 +298,29 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: Queue
           ← Back
         </button>
         <h1 className="queue-jobs__title">{queue.name}</h1>
-        {queue.isPaused && <span className="queue-item__paused">paused</span>}
+        {isPaused && <span className="queue-item__paused">paused</span>}
+        {!queue.readOnlyMode && (
+          <div className="queue-jobs__actions" role="group" aria-label="Queue actions">
+            <button
+              type="button"
+              className="action-btn"
+              onClick={togglePause}
+              disabled={busy}
+              aria-label={isPaused ? 'Resume queue' : 'Pause queue'}
+            >
+              {isPaused ? 'Resume' : 'Pause'}
+            </button>
+            <button
+              type="button"
+              className="action-btn"
+              onClick={empty}
+              disabled={busy}
+              aria-label="Empty queue"
+            >
+              Empty
+            </button>
+          </div>
+        )}
       </header>
 
       <div className="queue-jobs__states" role="group" aria-label="Job states">
@@ -124,6 +337,27 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: Queue
           </button>
         ))}
       </div>
+
+      {!queue.readOnlyMode && bulkActions.length > 0 && (
+        <div className="queue-jobs__bulk" role="group" aria-label={`Bulk actions for ${activeState} jobs`}>
+          {bulkActions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              className="action-btn"
+              onClick={() => void runAction(action.run)}
+              disabled={busy}
+            >
+              {action.label}
+            </button>
+          ))}
+          {actionFailed && (
+            <span className="queues-status queues-status--error" role="alert">
+              Action failed
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="queue-jobs__table-wrap" data-testid="jobs-scroll" ref={scrollRef}>
         <table className="job-table">

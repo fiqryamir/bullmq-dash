@@ -9,11 +9,12 @@ export function useQueueJobs(
   status: JobStatus,
   page: number,
   jobsPerPage: number,
-  pollingInterval?: number
+  pollingInterval?: number,
+  revision?: number
 ) {
   const loader = useCallback(
     () => fetchQueueJobs(queueName, status, page, jobsPerPage),
-    [queueName, status, page, jobsPerPage]
+    [queueName, status, page, jobsPerPage, revision]
   );
   const { data, status: requestStatus } = usePolledRequest(loader, pollingInterval, true);
 

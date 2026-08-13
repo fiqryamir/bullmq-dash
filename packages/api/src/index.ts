@@ -52,6 +52,9 @@ export function createBullBoard({ queues, serverAdapter, options }: CreateBullBo
     .setUIConfig({
       boardTitle: 'bullmq-dash',
       ...options?.uiConfig,
+      // The board option wins; the uiConfig spelling is honored as a fallback
+      // so callers who only set `uiConfig.readOnly` are not silently writable.
+      readOnly: options?.readOnly ?? options?.uiConfig?.readOnly ?? false,
     })
     .setEntryRoute(appRoutes.entryPoint!)
     .setErrorHandler(errorHandler)

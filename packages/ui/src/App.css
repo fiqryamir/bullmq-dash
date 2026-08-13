@@ -169,6 +169,39 @@
   border-color: var(--dash-accent);
 }
 
+.queue-jobs__actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  color: var(--dash-text);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.action-btn:hover:not(:disabled) {
+  border-color: var(--dash-accent);
+}
+
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.queue-jobs__bulk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+}
+
 .queue-jobs__title {
   font-size: 18px;
   font-weight: 700;
@@ -282,6 +315,11 @@
   font-family: ui-monospace, Consolas, monospace;
   font-size: 12px;
   color: var(--dash-muted);
+}
+
+.job-cell__actions {
+  display: flex;
+  gap: 6px;
 }
 
 .queue-jobs__footer {

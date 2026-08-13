@@ -1,23 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { Queue, Worker } from 'bullmq';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { pollUntil } from '../testUtils/pollUntil';
 import { BullMQAdapter } from './bullMQ';
 
 const connection = {
   host: process.env.REDIS_HOST ?? 'localhost',
   port: Number(process.env.REDIS_PORT ?? 6379),
 };
-
-async function pollUntil(predicate: () => Promise<boolean>, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await predicate()) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error(`condition not met within ${timeoutMs}ms`);
-}
 
 describe('BullMQAdapter', () => {
   const queueName = `bullmq-dash-test-${randomUUID()}`;

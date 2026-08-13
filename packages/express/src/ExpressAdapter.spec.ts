@@ -3,10 +3,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BullMQAdapter, createBullBoard, type AppQueue } from '@bullmq-dash/api';
-import { Queue } from 'bullmq';
+import { Queue, Worker } from 'bullmq';
 import express, { type Express } from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { pollUntil } from '../../api/src/testUtils/pollUntil';
 import { ExpressAdapter } from './index';
 
 const connection = {
@@ -204,6 +205,177 @@ describe('ExpressAdapter', () => {
       const response = await request(mounted).get('/board/api/queues').expect(200);
       const queues = response.body.queues as AppQueue[];
       expect(queues).toHaveLength(1);
+    });
+  });
+
+  describe('mutation routes through the REST contract', () => {
+    const queueName = `bullmq-dash-express-actions-${randomUUID()}`;
+    let queue: Queue;
+    let app: Express;
+
+    beforeAll(async () => {
+      queue = new Queue(queueName, { connection });
+
+      const worker = new Worker(
+        queueName,
+        async (job) => {
+          if (job.name === 'fail-me') {
+            throw new Error('boom');
+          }
+          return 'result';
+        },
+        { connection }
+      );
+
+      const failedJob = await queue.add('fail-me', { index: 1 });
+      await pollUntil(async () => (await failedJob.isFailed()), 10_000);
+      await worker.close();
+
+      await queue.add('later', { index: 2 }, { delay: 60_000 });
+      await queue.add('wait', { index: 3 });
+
+      const serverAdapter = new ExpressAdapter();
+      createBullBoard({
+        queues: [new BullMQAdapter(queue)],
+        serverAdapter,
+      });
+
+      app = express();
+      app.use(serverAdapter.getRouter());
+    }, 30_000);
+
+    afterAll(async () => {
+      await queue.obliterate({ force: true });
+      await queue.close();
+    }, 30_000);
+
+    const jobIdOf = async (name: string): Promise<string> => {
+      const found = await queue.getJobs(['waiting', 'failed', 'delayed']);
+      const target = found.find((job) => job.name === name);
+      if (!target?.id) {
+        throw new Error(`no job named ${name} (have ${found.map((job) => job.name)})`);
+      }
+      return target.id;
+    };
+
+    it('retries a failed job from its endpoint', async () => {
+      const jobId = await jobIdOf('fail-me');
+      await request(app).put(`/api/queues/${queueName}/${jobId}/retry`).expect(204);
+      expect(await (await queue.getJob(jobId))?.getState()).toBe('waiting');
+    });
+
+    it('promotes a delayed job from its endpoint', async () => {
+      const jobId = await jobIdOf('later');
+      await request(app).put(`/api/queues/${queueName}/${jobId}/promote`).expect(204);
+      expect(await (await queue.getJob(jobId))?.getState()).toBe('waiting');
+    });
+
+    it('removes a job from its endpoint', async () => {
+      const jobId = await jobIdOf('wait');
+      await request(app).put(`/api/queues/${queueName}/${jobId}/remove`).expect(204);
+      expect(await queue.getJob(jobId)).toBeUndefined();
+    });
+
+    it('removes a job from its bull-board clean alias', async () => {
+      const job = await queue.add('wait', { index: 6 });
+      await request(app).put(`/api/queues/${queueName}/${job.id}/clean`).expect(204);
+      expect(await queue.getJob(job.id!)).toBeUndefined();
+    });
+
+    it('retries every failed job in bulk', async () => {
+      const worker = new Worker(queueName, async () => Promise.reject(new Error('boom')), {
+        connection,
+      });
+      await queue.add('fail-me', { index: 4 });
+      await pollUntil(async () => (await queue.getJobCountByTypes('failed')) > 0, 10_000);
+      await worker.close();
+
+      const response = await request(app)
+        .put(`/api/queues/${queueName}/retry/failed`)
+        .expect(200);
+      expect(response.body.retried).toBeGreaterThanOrEqual(1);
+      expect(await queue.getJobCountByTypes('failed')).toBe(0);
+    });
+
+    it('rejects a non-retriable bulk status', async () => {
+      await request(app).put(`/api/queues/${queueName}/retry/waiting`).expect(400);
+    });
+
+    it('pauses and resumes the queue', async () => {
+      await request(app).put(`/api/queues/${queueName}/pause`).expect(200);
+      expect(await queue.isPaused()).toBe(true);
+      await request(app).put(`/api/queues/${queueName}/resume`).expect(200);
+      expect(await queue.isPaused()).toBe(false);
+    });
+
+    it('empties the waiting jobs', async () => {
+      await queue.add('wait', { index: 5 });
+      await request(app).put(`/api/queues/${queueName}/empty`).expect(200);
+      expect(await queue.getJobCountByTypes('waiting')).toBe(0);
+    });
+
+    it('cleans the completed jobs older than the grace period', async () => {
+      const worker = new Worker(queueName, async () => 'result', { connection });
+      const done = await queue.add('done', { index: 6 });
+      await pollUntil(async () => (await done.isCompleted()), 10_000);
+      await worker.close();
+
+      await request(app)
+        .put(`/api/queues/${queueName}/clean/completed`)
+        .query({ grace: 0 })
+        .expect(200);
+      expect(await queue.getJobCountByTypes('completed')).toBe(0);
+    });
+  });
+
+  describe('readOnly board', () => {
+    const queueName = `bullmq-dash-express-readonly-${randomUUID()}`;
+    let queue: Queue;
+    let app: Express;
+
+    beforeAll(async () => {
+      queue = new Queue(queueName, { connection });
+      await queue.add('wait', { index: 1 });
+
+      const serverAdapter = new ExpressAdapter();
+      createBullBoard({
+        queues: [new BullMQAdapter(queue)],
+        serverAdapter,
+        options: { readOnly: true },
+      });
+
+      app = express();
+      app.use(serverAdapter.getRouter());
+    }, 30_000);
+
+    afterAll(async () => {
+      await queue.obliterate({ force: true });
+      await queue.close();
+    }, 30_000);
+
+    it('marks every queue read-only in the queues response', async () => {
+      const response = await request(app).get('/api/queues').expect(200);
+      const queues = response.body.queues as AppQueue[];
+      expect(queues[0]?.readOnlyMode).toBe(true);
+    });
+
+    it('blocks every mutation with a 403', async () => {
+      await request(app).put(`/api/queues/${queueName}/pause`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/resume`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/empty`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/retry/failed`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/promote`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/clean/completed`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/remove/failed`).expect(403);
+
+      const [job] = await queue.getJobs(['waiting']);
+      await request(app).put(`/api/queues/${queueName}/${job!.id}/retry`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/${job!.id}/promote`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/${job!.id}/clean`).expect(403);
+      await request(app).put(`/api/queues/${queueName}/${job!.id}/remove`).expect(403);
+
+      expect(await queue.isPaused()).toBe(false);
+      expect(await queue.getJobCountByTypes('waiting')).toBe(1);
     });
   });
 

@@ -113,6 +113,12 @@ describe('queuesHandler', () => {
     request.queues.set(queueNameA, new BullMQAdapter(queueA));
   });
 
+  it('marks every queue read-only while the board is read-only', async () => {
+    const { body } = await queuesHandler({ ...request, uiConfig: { readOnly: true } });
+    const { queues } = body as { queues: AppQueue[] };
+    expect(queues.every((entry) => entry.readOnlyMode)).toBe(true);
+  });
+
   it('reports whether workers consume the queue', async () => {
     const queues = await send();
     const queue = queues.find((entry) => entry.name === queueNameA);

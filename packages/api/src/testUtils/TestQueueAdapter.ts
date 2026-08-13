@@ -1,4 +1,5 @@
 import type {
+  JobCleanStatus,
   JobCounts,
   JobLogs,
   JobStatus,
@@ -57,6 +58,16 @@ export class TestQueueAdapter extends BaseAdapter {
   async getJobSchedulersCount(): Promise<number> {
     return 0;
   }
+
+  async pause(): Promise<void> {}
+
+  async resume(): Promise<void> {}
+
+  async empty(): Promise<void> {}
+
+  async promoteAll(): Promise<void> {}
+
+  async clean(_jobStatus: JobCleanStatus, _graceTimeMs: number): Promise<void> {}
 
   getStatuses(): Status[] {
     return ['latest', ...this.getJobStatuses()];
