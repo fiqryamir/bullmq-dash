@@ -11,6 +11,9 @@ function makeJob(overrides: Partial<AppJob>): AppJob {
     progress: 0,
     attempts: 0,
     timestamp: 1700000000000,
+    stacktrace: [],
+    opts: { attempts: 1 },
+    data: {},
     ...overrides,
   };
 }

@@ -25,10 +25,21 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+function renderQueueJobs(overrides: { onSelectJob?: (job: AppJob) => void } = {}) {
+  return render(
+    <QueueJobs
+      queue={makeQueue()}
+      pollingInterval={0}
+      onBack={() => {}}
+      onSelectJob={overrides.onSelectJob ?? (() => {})}
+    />
+  );
+}
+
 describe('QueueJobs', () => {
   it('offers the six state tabs with their counts', async () => {
     stubJobsApi([]);
-    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={() => {}} />);
+    renderQueueJobs();
 
     const states = screen.getByRole('group', { name: 'Job states' });
     for (const state of ['waiting', 'active', 'completed', 'failed', 'delayed', 'paused']) {
@@ -41,7 +52,7 @@ describe('QueueJobs', () => {
 
   it('shows the waiting count on the paused tab while the queue is paused', async () => {
     stubJobsApi([]);
-    render(<QueueJobs queue={makeQueue({ isPaused: true })} pollingInterval={0} onBack={() => {}} />);
+    render(<QueueJobs queue={makeQueue({ isPaused: true })} pollingInterval={0} onBack={() => {}} onSelectJob={() => {}} />);
 
     const pausedTab = screen.getByRole('button', { name: /paused/ });
     expect(within(pausedTab).getByText('5')).toBeInTheDocument();
@@ -51,7 +62,7 @@ describe('QueueJobs', () => {
     stubJobsApi([
       makeJob(0, { id: 'a1', name: 'welcome-email', state: 'waiting', progress: 42, attempts: 2 }),
     ]);
-    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={() => {}} />);
+    renderQueueJobs();
 
     const table = await screen.findByRole('table');
     const headers = within(table).getAllByRole('columnheader').map((cell) => cell.textContent);
@@ -64,10 +75,21 @@ describe('QueueJobs', () => {
     expect(within(table).getByText('2')).toBeInTheDocument();
   });
 
+  it('opens the detail of a job from its row', async () => {
+    const selected: AppJob = makeJob(0, { id: 'a1', name: 'welcome-email', state: 'failed' });
+    stubJobsApi([selected]);
+    const onSelectJob = vi.fn();
+    const user = userEvent.setup();
+    renderQueueJobs({ onSelectJob });
+
+    await user.click(await screen.findByText('welcome-email'));
+    expect(onSelectJob).toHaveBeenCalledWith(selected);
+  });
+
   it('switches states through the tabs and resets to the first page', async () => {
     const fetchMock = stubJobsApi([makeJob(0, { state: 'waiting' })]);
     const user = userEvent.setup();
-    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={() => {}} />);
+    renderQueueJobs();
 
     await user.click(screen.getByRole('button', { name: /failed/ }));
 
@@ -79,7 +101,7 @@ describe('QueueJobs', () => {
   it('pages through the states with next and previous', async () => {
     const fetchMock = stubJobsApi([makeJob(0)], 3);
     const user = userEvent.setup();
-    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={() => {}} />);
+    renderQueueJobs();
 
     await screen.findByRole('table');
     const prev = screen.getByRole('button', { name: 'Previous page' });
@@ -98,7 +120,7 @@ describe('QueueJobs', () => {
   it('keeps the rendered rows bounded on long pages', async () => {
     const jobs = Array.from({ length: 200 }, (_, index) => makeJob(index));
     stubJobsApi(jobs);
-    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={() => {}} />);
+    renderQueueJobs();
 
     const table = await screen.findByRole('table');
     await waitFor(() => expect(within(table).getByText('job-0')).toBeInTheDocument());
@@ -110,7 +132,7 @@ describe('QueueJobs', () => {
 
   it('shows an empty state and hides the pager when a state has no jobs', async () => {
     stubJobsApi([], 0);
-    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={() => {}} />);
+    renderQueueJobs();
 
     expect(await screen.findByText(/no jobs/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Next page' })).not.toBeInTheDocument();
@@ -119,7 +141,7 @@ describe('QueueJobs', () => {
   it('falls back to the last page when the queue shrinks under the current page', async () => {
     const fetchMock = stubJobsApi([makeJob(0)], 3);
     const user = userEvent.setup();
-    render(<QueueJobs queue={makeQueue()} pollingInterval={50} onBack={() => {}} />);
+    render(<QueueJobs queue={makeQueue()} pollingInterval={50} onBack={() => {}} onSelectJob={() => {}} />);
 
     await screen.findByRole('table');
     await user.click(screen.getByRole('button', { name: 'Next page' }));
@@ -135,7 +157,7 @@ describe('QueueJobs', () => {
     stubJobsApi([]);
     const onBack = vi.fn();
     const user = userEvent.setup();
-    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={onBack} />);
+    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={onBack} onSelectJob={() => {}} />);
 
     await user.click(screen.getByRole('button', { name: /back/i }));
     expect(onBack).toHaveBeenCalledTimes(1);

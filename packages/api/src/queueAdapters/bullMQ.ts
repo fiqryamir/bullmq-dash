@@ -55,6 +55,18 @@ export class BullMQAdapter extends BaseAdapter {
     return jobs.filter((job): job is Job => !!job);
   }
 
+  public async getJob(jobId: string): Promise<Job | null> {
+    return (await this.queue.getJob(jobId)) ?? null;
+  }
+
+  public async getJobLogs(
+    jobId: string,
+    start: number,
+    end: number
+  ): Promise<{ logs: string[]; count: number }> {
+    return this.queue.getJobLogs(jobId, start, end, false);
+  }
+
   private async resolveJobStatuses(jobStatuses: JobStatus[]): Promise<JobType[]> {
     if (this.hasNativePausedState || !jobStatuses.includes(STATUSES.paused)) {
       return jobStatuses as JobType[];

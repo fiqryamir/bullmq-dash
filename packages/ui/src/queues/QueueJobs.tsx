@@ -35,9 +35,10 @@ type QueueJobsProps = {
   queue: AppQueue;
   pollingInterval?: number;
   onBack: () => void;
+  onSelectJob: (job: AppJob) => void;
 };
 
-export function QueueJobs({ queue, pollingInterval, onBack }: QueueJobsProps) {
+export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: QueueJobsProps) {
   const [activeState, setActiveState] = useState<JobStatus>('waiting');
   const [page, setPage] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -147,6 +148,15 @@ export function QueueJobs({ queue, pollingInterval, onBack }: QueueJobsProps) {
               return (
                 <tr
                   key={row.id}
+                  className="job-table__row"
+                  tabIndex={0}
+                  onClick={() => onSelectJob(row.original)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onSelectJob(row.original);
+                    }
+                  }}
                   style={{
                     position: 'absolute',
                     top: 0,

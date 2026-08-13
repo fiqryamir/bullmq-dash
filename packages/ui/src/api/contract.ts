@@ -32,6 +32,14 @@ export interface AppJob {
   progress: number | object;
   attempts: number;
   timestamp: number;
+  processedOn?: number;
+  finishedOn?: number;
+  failedReason?: string;
+  stacktrace: string[];
+  delay?: number;
+  opts: object;
+  data: unknown;
+  returnValue?: unknown;
 }
 
 export interface JobsPagination {
@@ -41,6 +49,17 @@ export interface JobsPagination {
 
 export interface QueueJobsResponse {
   jobs: AppJob[];
+  pagination: JobsPagination;
+}
+
+export interface JobDetailResponse {
+  job: Omit<AppJob, 'state'>;
+  status: JobStatus | 'unknown';
+}
+
+export interface JobLogsResponse {
+  logs: string[];
+  count: number;
   pagination: JobsPagination;
 }
 
@@ -70,4 +89,30 @@ export async function fetchQueueJobs(
     throw new Error(`Jobs request failed with status ${response.status}`);
   }
   return (await response.json()) as QueueJobsResponse;
+}
+
+export async function fetchJob(queueName: string, jobId: string): Promise<JobDetailResponse> {
+  const response = await fetch(
+    `api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}`
+  );
+  if (!response.ok) {
+    throw new Error(`Job request failed with status ${response.status}`);
+  }
+  return (await response.json()) as JobDetailResponse;
+}
+
+export async function fetchJobLogs(
+  queueName: string,
+  jobId: string,
+  page: number,
+  logsPerPage: number
+): Promise<JobLogsResponse> {
+  const params = new URLSearchParams({ page: String(page), logsPerPage: String(logsPerPage) });
+  const response = await fetch(
+    `api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/logs?${params.toString()}`
+  );
+  if (!response.ok) {
+    throw new Error(`Logs request failed with status ${response.status}`);
+  }
+  return (await response.json()) as JobLogsResponse;
 }

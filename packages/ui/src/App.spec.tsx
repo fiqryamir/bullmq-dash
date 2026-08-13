@@ -127,4 +127,73 @@ describe('App shell', () => {
     await user.click(screen.getByRole('button', { name: /back/i }));
     expect(await screen.findByRole('searchbox')).toBeInTheDocument();
   });
+
+  it('opens the detail of a job from the jobs view and returns to it', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      const target = String(url);
+      if (target.includes('/logs')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            logs: ['log row'],
+            count: 1,
+            pagination: { pageCount: 1, range: { start: 0, end: 99 } },
+          }),
+        });
+      }
+      if (target.includes('/jobs')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            jobs: [
+              makeJob(0, {
+                id: 'f1',
+                name: 'welcome-email',
+                state: 'failed',
+                failedReason: 'kaboom',
+                stacktrace: ['Error: kaboom'],
+              }),
+            ],
+            pagination: { pageCount: 1, range: { start: 0, end: 99 } },
+          }),
+        });
+      }
+      if (target.includes('api/queues/emails/f1')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            job: makeJob(0, {
+              id: 'f1',
+              name: 'welcome-email',
+              failedReason: 'kaboom',
+              stacktrace: ['Error: kaboom'],
+              data: { to: 'a@example.com' },
+            }),
+            status: 'failed',
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ queues: [makeQueue({ name: 'emails' })] }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
+    await user.click(await screen.findByRole('button', { name: /emails/ }));
+    await user.click(await screen.findByText('welcome-email'));
+
+    expect(await screen.findByText('kaboom')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Logs' })).toBeInTheDocument();
+    expect(screen.getByText('#f1')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /back/i }));
+    expect(await screen.findByRole('group', { name: 'Job states' })).toBeInTheDocument();
+  });
 });

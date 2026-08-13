@@ -37,6 +37,18 @@ export class TestQueueAdapter extends BaseAdapter {
     return [];
   }
 
+  async getJob(_jobId: string): Promise<QueueJob | null> {
+    return null;
+  }
+
+  async getJobLogs(
+    _jobId: string,
+    _start: number,
+    _end: number
+  ): Promise<{ logs: string[]; count: number }> {
+    return { logs: [], count: 0 };
+  }
+
   async isPaused(): Promise<boolean> {
     return false;
   }

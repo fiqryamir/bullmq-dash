@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { readUiConfig, type UIConfig } from './config';
+import { JobDetail } from './queues/JobDetail';
 import { QueueJobs } from './queues/QueueJobs';
 import { QueuesList } from './queues/QueuesList';
 import { useQueues } from './queues/useQueues';
@@ -22,6 +23,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
   const { queues, status } = useQueues(pollingInterval);
   const [query, setQuery] = useState('');
   const [selectedQueueName, setSelectedQueueName] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const boardTitle = uiConfig.boardTitle ?? 'bullmq-dash';
 
   useEffect(() => {
@@ -43,11 +45,21 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
       </header>
       <main className={selectedQueue ? 'app__main app__main--queue' : 'app__main'}>
         {selectedQueue ? (
-          <QueueJobs
-            queue={selectedQueue}
-            pollingInterval={pollingInterval}
-            onBack={() => setSelectedQueueName(null)}
-          />
+          selectedJobId ? (
+            <JobDetail
+              queue={selectedQueue}
+              jobId={selectedJobId}
+              pollingInterval={pollingInterval}
+              onBack={() => setSelectedJobId(null)}
+            />
+          ) : (
+            <QueueJobs
+              queue={selectedQueue}
+              pollingInterval={pollingInterval}
+              onBack={() => setSelectedQueueName(null)}
+              onSelectJob={(job) => job.id && setSelectedJobId(job.id)}
+            />
+          )
         ) : (
           <>
             <input
