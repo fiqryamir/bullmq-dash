@@ -155,6 +155,28 @@ describe('ExpressAdapter', () => {
         expect(response.body.pagination).toEqual({ pageCount: 1, range: { start: 0, end: 9 } });
       });
 
+      it('pages the job logs through the REST contract', async () => {
+        const [delayed] = await queue.getJobs(['delayed']);
+        await queue.addJobLog(delayed!.id!, 'http log 1');
+        await queue.addJobLog(delayed!.id!, 'http log 2');
+        await queue.addJobLog(delayed!.id!, 'http log 3');
+
+        const first = await request(app)
+          .get(`/api/queues/${queueName}/${delayed!.id}/logs`)
+          .query({ page: 1, logsPerPage: 2 })
+          .expect(200);
+        expect(first.body.logs).toEqual(['http log 3', 'http log 2']);
+        expect(first.body.count).toBe(3);
+        expect(first.body.pagination).toEqual({ pageCount: 2, range: { start: 0, end: 1 } });
+
+        const second = await request(app)
+          .get(`/api/queues/${queueName}/${delayed!.id}/logs`)
+          .query({ page: 2, logsPerPage: 2 })
+          .expect(200);
+        expect(second.body.logs).toEqual(['http log 1']);
+        expect(second.body.pagination).toEqual({ pageCount: 2, range: { start: 2, end: 3 } });
+      });
+
       it('keeps the literal jobs list route ahead of the job detail route', async () => {
         const response = await request(app)
           .get(`/api/queues/${queueName}/jobs`)

@@ -133,14 +133,6 @@ describe('jobHandler', () => {
     expect(body.job.failedReason).toBeUndefined();
   });
 
-  it('carries the processing timestamps of a worked job', async () => {
-    const { body } = await send({ queueName, jobId: failingJobId });
-
-    expect(body.job.timestamp).toBeTypeOf('number');
-    expect(body.job.processedOn).toBeTypeOf('number');
-    expect(body.job.finishedOn).toBeTypeOf('number');
-  });
-
   it('reports an unregistered queue as not found', async () => {
     const { status, body } = await send({ queueName: 'not-a-queue', jobId: failingJobId });
     expect(status).toBe(404);

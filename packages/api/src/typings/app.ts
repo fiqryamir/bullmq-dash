@@ -75,9 +75,12 @@ export interface JobDetailResponse {
   status: JobStatus | 'unknown';
 }
 
-export interface JobLogsResponse {
+export interface JobLogs {
   logs: string[];
   count: number;
+}
+
+export interface JobLogsResponse extends JobLogs {
   pagination: Pagination;
 }
 

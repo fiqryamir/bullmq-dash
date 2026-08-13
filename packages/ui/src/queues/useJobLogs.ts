@@ -2,8 +2,6 @@ import { useCallback } from 'react';
 import { fetchJobLogs } from '../api/contract';
 import { usePolledRequest } from '../api/usePolledRequest';
 
-export type JobLogsStatus = 'loading' | 'ready' | 'error';
-
 export function useJobLogs(
   queueName: string,
   jobId: string,

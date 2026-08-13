@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AppQueue } from '../api/contract';
+import { formatProgress } from './formatProgress';
 import { useJobDetail } from './useJobDetail';
 import { useJobLogs } from './useJobLogs';
 
@@ -58,24 +59,12 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack }: JobDetailPr
           <dl className="job-detail__meta">
             <div>
               <dt>Progress</dt>
-              <dd>{typeof job.progress === 'number' ? `${job.progress}%` : json(job.progress)}</dd>
+              <dd>{formatProgress(job.progress)}</dd>
             </div>
             <div>
               <dt>Attempts</dt>
               <dd>{job.attempts}</dd>
             </div>
-            {job.processedOn !== undefined && (
-              <div>
-                <dt>Processed on</dt>
-                <dd>{new Date(job.processedOn).toISOString()}</dd>
-              </div>
-            )}
-            {job.finishedOn !== undefined && (
-              <div>
-                <dt>Finished on</dt>
-                <dd>{new Date(job.finishedOn).toISOString()}</dd>
-              </div>
-            )}
             <div>
               <dt>Added on</dt>
               <dd>{new Date(job.timestamp).toISOString()}</dd>
@@ -103,13 +92,6 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack }: JobDetailPr
             <section className="job-detail__section" aria-label="Stacktrace">
               <h2 className="job-detail__section-title">Stacktrace</h2>
               <pre className="job-detail__code">{job.stacktrace.join('\n')}</pre>
-            </section>
-          )}
-
-          {job.returnValue !== undefined && (
-            <section className="job-detail__section" aria-label="Return value">
-              <h2 className="job-detail__section-title">Return value</h2>
-              <pre className="job-detail__code">{json(job.returnValue)}</pre>
             </section>
           )}
 

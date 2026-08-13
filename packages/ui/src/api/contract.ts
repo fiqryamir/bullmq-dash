@@ -28,7 +28,7 @@ export type JobStatus = Exclude<Status, 'latest'>;
 export interface AppJob {
   id: string | undefined;
   name: string;
-  state: JobStatus;
+  state?: JobStatus;
   progress: number | object;
   attempts: number;
   timestamp: number;
@@ -53,7 +53,7 @@ export interface QueueJobsResponse {
 }
 
 export interface JobDetailResponse {
-  job: Omit<AppJob, 'state'>;
+  job: AppJob;
   status: JobStatus | 'unknown';
 }
 

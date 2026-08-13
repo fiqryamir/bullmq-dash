@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { AppJob, AppQueue, JobStatus } from '../api/contract';
+import { formatProgress } from './formatProgress';
 import { useQueueJobs } from './useQueueJobs';
 
 export const JOB_STATES: JobStatus[] = [
@@ -19,10 +20,6 @@ export const JOB_STATES: JobStatus[] = [
 ];
 
 const JOBS_PER_PAGE = 100;
-
-function formatProgress(progress: number | object): string {
-  return typeof progress === 'number' ? `${progress}%` : JSON.stringify(progress);
-}
 
 function stateCount(queue: AppQueue, state: JobStatus): number {
   if (state === 'paused' && queue.isPaused) {
@@ -69,7 +66,9 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: Queue
         accessorKey: 'state',
         header: 'State',
         cell: (info) => (
-          <span className={`chip chip--${String(info.getValue())}`}>{String(info.getValue())}</span>
+          <span className={`chip chip--${String(info.getValue() ?? '')}`}>
+            {String(info.getValue() ?? '')}
+          </span>
         ),
       },
       {

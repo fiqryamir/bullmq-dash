@@ -4,20 +4,17 @@ import type {
   JobDetailResponse,
   JobStatus,
 } from '../typings/app';
+import { paramValue, resolveQueue } from './helpers';
 import { formatJob } from './queues';
 
 export async function jobHandler(req: BullBoardRequest): Promise<ControllerHandlerReturnType> {
-  const rawQueueName = req.params.queueName;
-  const queueName = typeof rawQueueName === 'string' ? decodeURIComponent(rawQueueName) : '';
-  const queue = req.queues.get(queueName);
+  const queue = await resolveQueue(req);
 
-  if (!queue || !(await queue.isVisible(req))) {
+  if (!queue) {
     return { status: 404, body: { error: 'Queue not found' } };
   }
 
-  const rawJobId = req.params.jobId;
-  const jobId = typeof rawJobId === 'string' ? decodeURIComponent(rawJobId) : '';
-  const job = await queue.getJob(jobId);
+  const job = await queue.getJob(paramValue(req, 'jobId'));
 
   if (!job) {
     return { status: 404, body: { error: 'Job not found' } };

@@ -1,5 +1,6 @@
 import type {
   JobCounts,
+  JobLogs,
   JobStatus,
   QueueAdapterOptions,
   QueueJob,
@@ -41,11 +42,7 @@ export class TestQueueAdapter extends BaseAdapter {
     return null;
   }
 
-  async getJobLogs(
-    _jobId: string,
-    _start: number,
-    _end: number
-  ): Promise<{ logs: string[]; count: number }> {
+  async getJobLogs(_jobId: string, _start: number, _end: number): Promise<JobLogs> {
     return { logs: [], count: 0 };
   }
 

@@ -2,6 +2,7 @@ import type {
   BullBoardRequest,
   FormatterField,
   JobCounts,
+  JobLogs,
   JobStatus,
   QueueAdapterOptions,
   QueueJob,
@@ -84,11 +85,7 @@ export abstract class BaseAdapter {
    * A page of the job's log rows plus the total row count. `start` and `end`
    * are inclusive 0-based indices into the logs ordered newest-first.
    */
-  public abstract getJobLogs(
-    jobId: string,
-    start: number,
-    end: number
-  ): Promise<{ logs: string[]; count: number }>;
+  public abstract getJobLogs(jobId: string, start: number, end: number): Promise<JobLogs>;
 
   public abstract isPaused(): Promise<boolean>;
 

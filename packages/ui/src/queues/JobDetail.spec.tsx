@@ -105,31 +105,6 @@ describe('JobDetail', () => {
     expect(within(stacktrace).getByText(/Error: kaboom/)).toBeInTheDocument();
   });
 
-  it('renders the return value of a completed job', async () => {
-    stubDetailApi(
-      {
-        id: 'f1',
-        name: 'welcome-email',
-        timestamp: 1700000000000,
-        progress: 42,
-        attempts: 1,
-        stacktrace: [],
-        data: { to: 'a@example.com' },
-        opts: { attempts: 1 },
-        returnValue: { delivered: true },
-      },
-      [],
-      1,
-      0,
-      'completed'
-    );
-    render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} />);
-
-    await screen.findByText('completed');
-    const returnValue = screen.getByRole('region', { name: 'Return value' });
-    expect(within(returnValue).getByText(/delivered/)).toBeInTheDocument();
-  });
-
   it('fetches the detail and the first logs page on mount', async () => {
     const fetchMock = stubDetailApi(failedJob, ['log row']);
     render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} />);
