@@ -32,7 +32,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "pretest": "pnpm --filter @bullmq-dash/api run build",
+    "pretest": "pnpm --filter @bullmq-dash/ui run build && pnpm --filter @bullmq-dash/api run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage"
   },
@@ -44,6 +44,7 @@
     "express": "^4.16.0 || ^5.0.0"
   },
   "devDependencies": {
+    "@bullmq-dash/ui": "workspace:*",
     "@types/ejs": "^3.1.5",
     "@types/express": "^5.0.6",
     "@types/node": "^20.19.43",
