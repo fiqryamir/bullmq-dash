@@ -30,6 +30,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "pretest": "pnpm --filter @bullmq-dash/api run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage"
   },

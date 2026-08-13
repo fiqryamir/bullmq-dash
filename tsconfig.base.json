@@ -13,6 +13,9 @@
     "noEmit": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@bullmq-dash/api": ["./packages/api/src/index.ts"]
+    }
   }
 }
