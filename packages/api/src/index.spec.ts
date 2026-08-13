@@ -194,6 +194,29 @@ describe('createBullBoard', () => {
     expect(serverAdapter.uiConfig?.boardTitle).toBe('bullmq-dash');
   });
 
+  describe('readOnly', () => {
+    it('defaults the board to writable', () => {
+      const { serverAdapter } = createBoard();
+      expect(serverAdapter.uiConfig?.readOnly).toBe(false);
+    });
+
+    it('passes the readOnly option into the uiConfig', () => {
+      const serverAdapter = new TestServerAdapter();
+      createBullBoard({ queues: [], serverAdapter, options: { readOnly: true } });
+      expect(serverAdapter.uiConfig?.readOnly).toBe(true);
+    });
+
+    it('never lets the caller uiConfig readOnly override the board option', () => {
+      const serverAdapter = new TestServerAdapter();
+      createBullBoard({
+        queues: [],
+        serverAdapter,
+        options: { readOnly: false, uiConfig: { readOnly: true } },
+      });
+      expect(serverAdapter.uiConfig?.readOnly).toBe(false);
+    });
+  });
+
   describe('UI wiring', () => {
     it('drives the server adapter with the UI package views and static paths', () => {
       const { serverAdapter } = createBoard();
@@ -244,6 +267,25 @@ describe('createBullBoard', () => {
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/jobs' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId/logs' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId' }),
+      expect.objectContaining({
+        method: 'put',
+        route: '/api/queues/:queueName/retry/:queueStatus',
+      }),
+      expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/promote' }),
+      expect.objectContaining({
+        method: 'put',
+        route: '/api/queues/:queueName/clean/:queueStatus',
+      }),
+      expect.objectContaining({
+        method: 'put',
+        route: '/api/queues/:queueName/remove/:queueStatus',
+      }),
+      expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/pause' }),
+      expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/resume' }),
+      expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/empty' }),
+      expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/:jobId/retry' }),
+      expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/:jobId/promote' }),
+      expect.objectContaining({ method: 'put', route: '/api/queues/:queueName/:jobId/remove' }),
     ]);
   });
 

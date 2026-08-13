@@ -66,7 +66,7 @@ describe('QueueJobs', () => {
 
     const table = await screen.findByRole('table');
     const headers = within(table).getAllByRole('columnheader').map((cell) => cell.textContent);
-    expect(headers).toEqual(['ID', 'Name', 'State', 'Progress', 'Attempts']);
+    expect(headers).toEqual(['ID', 'Name', 'State', 'Progress', 'Attempts', 'Actions']);
 
     await waitFor(() => expect(within(table).getByText('a1')).toBeInTheDocument());
     expect(within(table).getByText('welcome-email')).toBeInTheDocument();
@@ -161,5 +161,254 @@ describe('QueueJobs', () => {
 
     await user.click(screen.getByRole('button', { name: /back/i }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('QueueJobs actions', () => {
+  const putUrls = (fetchMock: ReturnType<typeof vi.fn>): string[] =>
+    fetchMock.mock.calls
+      .filter(([, init]) => init?.method === 'PUT')
+      .map(([url]) => String(url));
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it('offers pause and empty in the header of a writable queue', async () => {
+    stubJobsApi([]);
+    renderQueueJobs();
+
+    const actions = screen.getByRole('group', { name: 'Queue actions' });
+    expect(within(actions).getByRole('button', { name: 'Pause queue' })).toBeInTheDocument();
+    expect(within(actions).getByRole('button', { name: 'Empty queue' })).toBeInTheDocument();
+  });
+
+  it('pauses and resumes the queue from the header', async () => {
+    const fetchMock = stubJobsApi([]);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await user.click(screen.getByRole('button', { name: 'Pause queue' }));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/pause', { method: 'PUT' })
+    );
+    expect(await screen.findByRole('button', { name: 'Resume queue' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Resume queue' }));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/resume', { method: 'PUT' })
+    );
+    expect(await screen.findByRole('button', { name: 'Pause queue' })).toBeInTheDocument();
+  });
+
+  it('empties the queue after confirmation', async () => {
+    const fetchMock = stubJobsApi([]);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await user.click(screen.getByRole('button', { name: 'Empty queue' }));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/empty', { method: 'PUT' })
+    );
+  });
+
+  it('skips destructive actions when the confirmation is declined', async () => {
+    const fetchMock = stubJobsApi([]);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await user.click(screen.getByRole('button', { name: 'Empty queue' }));
+    expect(fetchMock).not.toHaveBeenCalledWith('api/queues/emails/empty', expect.anything());
+  });
+
+  it('shows retry on failed rows, promote on delayed rows, remove on every row', async () => {
+    stubJobsApi([
+      makeJob(0, { id: 'a1', name: 'welcome-email', state: 'failed' }),
+      makeJob(1, { id: 'a2', name: 'later-email', state: 'delayed' }),
+      makeJob(2, { id: 'a3', name: 'wait-email', state: 'waiting' }),
+    ]);
+    renderQueueJobs();
+    const table = await screen.findByRole('table');
+    await waitFor(() => expect(within(table).getByText('welcome-email')).toBeInTheDocument());
+
+    expect(screen.getByRole('button', { name: 'Retry job a1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Promote job a2' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Promote job a1' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry job a3' })).not.toBeInTheDocument();
+    for (const id of ['a1', 'a2', 'a3']) {
+      expect(screen.getByRole('button', { name: `Remove job ${id}` })).toBeInTheDocument();
+    }
+  });
+
+  it('retries a failed job from its row without opening the detail', async () => {
+    const fetchMock = stubJobsApi([makeJob(0, { id: 'a1', name: 'welcome-email', state: 'failed' })]);
+    const onSelectJob = vi.fn();
+    const user = userEvent.setup();
+    renderQueueJobs({ onSelectJob });
+
+    await screen.findByRole('table');
+    await user.click(screen.getByRole('button', { name: 'Retry job a1' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/a1/retry', { method: 'PUT' })
+    );
+    expect(onSelectJob).not.toHaveBeenCalled();
+  });
+
+  it('promotes a delayed job from its row', async () => {
+    const fetchMock = stubJobsApi([makeJob(0, { id: 'a1', name: 'later-email', state: 'delayed' })]);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await screen.findByRole('table');
+    await user.click(screen.getByRole('button', { name: 'Promote job a1' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/a1/promote', { method: 'PUT' })
+    );
+  });
+
+  it('removes a job from its row', async () => {
+    const fetchMock = stubJobsApi([makeJob(0, { id: 'a1', name: 'wait-email', state: 'waiting' })]);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await screen.findByRole('table');
+    await user.click(screen.getByRole('button', { name: 'Remove job a1' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/a1/remove', { method: 'PUT' })
+    );
+  });
+
+  it('retries all failed jobs from the failed tab', async () => {
+    const fetchMock = stubJobsApi([]);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await user.click(screen.getByRole('button', { name: /failed/ }));
+    await user.click(screen.getByRole('button', { name: 'Retry all failed' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/retry/failed', { method: 'PUT' })
+    );
+  });
+
+  it('promotes all delayed jobs from the delayed tab', async () => {
+    const fetchMock = stubJobsApi([]);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await user.click(screen.getByRole('button', { name: /delayed/ }));
+    await user.click(screen.getByRole('button', { name: 'Promote all delayed' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/promote', { method: 'PUT' })
+    );
+  });
+
+  it('cleans the completed jobs from the completed tab after confirmation', async () => {
+    const fetchMock = stubJobsApi([]);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await user.click(screen.getByRole('button', { name: /completed/ }));
+    await user.click(screen.getByRole('button', { name: 'Clean completed' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/clean/completed?grace=5', {
+        method: 'PUT',
+      })
+    );
+  });
+
+  it('removes all jobs in the active state after confirmation', async () => {
+    const fetchMock = stubJobsApi([]);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await user.click(screen.getByRole('button', { name: /failed/ }));
+    await user.click(screen.getByRole('button', { name: 'Remove all failed' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/remove/failed', { method: 'PUT' })
+    );
+  });
+
+  it('refreshes the jobs list after an action', async () => {
+    const fetchMock = stubJobsApi([makeJob(0, { id: 'a1', state: 'failed' })]);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await screen.findByRole('table');
+    await user.click(screen.getByRole('button', { name: 'Retry job a1' }));
+    await waitFor(() =>
+      expect(putUrls(fetchMock)).toContain('api/queues/emails/a1/retry')
+    );
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        'api/queues/emails/jobs?status=waiting&page=1&jobsPerPage=100'
+      )
+    );
+  });
+
+  it('hides every action control while the queue is read-only', async () => {
+    stubJobsApi([makeJob(0, { id: 'a1', state: 'failed' })]);
+    render(<QueueJobs queue={makeQueue({ readOnlyMode: true })} pollingInterval={0} onBack={() => {}} onSelectJob={() => {}} />);
+
+    const table = await screen.findByRole('table');
+    await waitFor(() => expect(within(table).getByText('a1')).toBeInTheDocument());
+
+    expect(screen.queryByRole('group', { name: 'Queue actions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry job a1' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove job a1' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry all failed' })).not.toBeInTheDocument();
+    const headers = within(table).getAllByRole('columnheader').map((cell) => cell.textContent);
+    expect(headers).not.toContain('Actions');
+  });
+
+  it('hides the retry controls when the queue disallows retries', async () => {
+    stubJobsApi([makeJob(0, { id: 'a1', state: 'failed' })]);
+    const user = userEvent.setup();
+    render(
+      <QueueJobs
+        queue={makeQueue({ allowRetries: false })}
+        pollingInterval={0}
+        onBack={() => {}}
+        onSelectJob={() => {}}
+      />
+    );
+
+    const table = await screen.findByRole('table');
+    await waitFor(() => expect(within(table).getByText('a1')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /failed/ }));
+
+    expect(screen.queryByRole('button', { name: 'Retry job a1' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove job a1' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry all failed' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove all failed' })).toBeInTheDocument();
+  });
+
+  it('shows an error when an action fails', async () => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) =>
+      init?.method === 'PUT'
+        ? Promise.resolve({ ok: false, status: 403, json: async () => ({}) })
+        : Promise.resolve(jobsResponse([makeJob(0, { id: 'a1', state: 'failed' })]))
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderQueueJobs();
+
+    await screen.findByRole('table');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Retry job a1' })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Retry job a1' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Action failed');
   });
 });

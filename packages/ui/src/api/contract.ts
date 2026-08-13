@@ -17,6 +17,8 @@ export interface AppQueue {
   counts: QueueCounts;
   isPaused: boolean;
   readOnlyMode: boolean;
+  allowRetries?: boolean;
+  allowCompletedRetries?: boolean;
 }
 
 export interface QueuesResponse {
@@ -115,4 +117,76 @@ export async function fetchJobLogs(
     throw new Error(`Logs request failed with status ${response.status}`);
   }
   return (await response.json()) as JobLogsResponse;
+}
+
+type MutatingResponse = { retried?: number; skipped?: number; removed?: number };
+
+async function mutate(
+  path: string,
+  options?: RequestInit
+): Promise<MutatingResponse | undefined> {
+  const response = await fetch(path, { method: 'PUT', ...options });
+  if (!response.ok) {
+    throw new Error(`Mutation request failed with status ${response.status}`);
+  }
+  return response.status === 204 ? undefined : ((await response.json()) as MutatingResponse);
+}
+
+export function retryJob(queueName: string, jobId: string): Promise<void> {
+  return mutate(`api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/retry`).then(
+    () => undefined
+  );
+}
+
+export function promoteJob(queueName: string, jobId: string): Promise<void> {
+  return mutate(`api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/promote`).then(
+    () => undefined
+  );
+}
+
+export function removeJob(queueName: string, jobId: string): Promise<void> {
+  return mutate(`api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/remove`).then(
+    () => undefined
+  );
+}
+
+export async function retryJobs(
+  queueName: string,
+  status: JobStatus
+): Promise<{ retried: number; skipped: number }> {
+  const body = await mutate(`api/queues/${encodeURIComponent(queueName)}/retry/${status}`);
+  return { retried: body?.retried ?? 0, skipped: body?.skipped ?? 0 };
+}
+
+export function promoteJobs(queueName: string): Promise<void> {
+  return mutate(`api/queues/${encodeURIComponent(queueName)}/promote`).then(() => undefined);
+}
+
+export async function cleanJobs(
+  queueName: string,
+  status: JobStatus,
+  graceSeconds: number
+): Promise<void> {
+  const params = new URLSearchParams({ grace: String(graceSeconds) });
+  await mutate(`api/queues/${encodeURIComponent(queueName)}/clean/${status}?${params.toString()}`);
+}
+
+export async function removeJobs(
+  queueName: string,
+  status: JobStatus
+): Promise<{ removed: number }> {
+  const body = await mutate(`api/queues/${encodeURIComponent(queueName)}/remove/${status}`);
+  return { removed: body?.removed ?? 0 };
+}
+
+export function pauseQueue(queueName: string): Promise<void> {
+  return mutate(`api/queues/${encodeURIComponent(queueName)}/pause`).then(() => undefined);
+}
+
+export function resumeQueue(queueName: string): Promise<void> {
+  return mutate(`api/queues/${encodeURIComponent(queueName)}/resume`).then(() => undefined);
+}
+
+export function emptyQueue(queueName: string): Promise<void> {
+  return mutate(`api/queues/${encodeURIComponent(queueName)}/empty`).then(() => undefined);
 }

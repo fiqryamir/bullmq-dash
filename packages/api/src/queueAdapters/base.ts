@@ -1,6 +1,7 @@
 import type {
   BullBoardRequest,
   FormatterField,
+  JobCleanStatus,
   JobCounts,
   JobLogs,
   JobStatus,
@@ -96,6 +97,23 @@ export abstract class BaseAdapter {
   public abstract getStatuses(): Status[];
 
   public abstract getJobStatuses(): JobStatus[];
+
+  /** Pauses the queue; a paused queue keeps waiting jobs but stops workers consuming them. */
+  public abstract pause(): Promise<void>;
+
+  public abstract resume(): Promise<void>;
+
+  /** Removes every waiting and delayed job. */
+  public abstract empty(): Promise<void>;
+
+  /** Moves every delayed job to waiting. */
+  public abstract promoteAll(): Promise<void>;
+
+  /**
+   * Removes the jobs in a state older than `graceTimeMs`. The meaning of
+   * "older" is the backing library's — for BullMQ it is the job timestamp.
+   */
+  public abstract clean(jobStatus: JobCleanStatus, graceTimeMs: number): Promise<void>;
 
   /**
    * Connected workers for this queue, or `null` when the queue cannot answer.

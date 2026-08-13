@@ -18,6 +18,20 @@ export type Status =
 
 export type JobStatus = Exclude<Status, 'latest'>;
 
+/**
+ * The statuses `clean` accepts — BullMQ's clean types mapped onto the
+ * dashboard's status names. `paused` is a presentation-only state here (v6
+ * stores paused jobs as waiting) and `waiting-children` is not a clean type.
+ */
+export type JobCleanStatus =
+  | 'active'
+  | 'waiting'
+  | 'prioritized'
+  | 'completed'
+  | 'failed'
+  | 'delayed'
+  | 'paused';
+
 export type JobCounts = Record<Status, number>;
 
 export type QueueType = 'bull' | 'bullmq';
@@ -168,6 +182,11 @@ export interface IServerAdapter {
 export type BoardOptions = {
   uiBasePath?: string;
   uiConfig?: UIConfig;
+  /**
+   * Disables every mutation end to end — the REST contract answers each
+   * mutating route with a 403 and the UI hides the action controls.
+   */
+  readOnly?: boolean;
 };
 
 export type IMiscLink = {
@@ -188,6 +207,11 @@ export type DateFormats = {
 
 export type UIConfig = Partial<{
   boardTitle: string;
+  /**
+   * The board-level `readOnly` option on `createBullBoard`. Core-owned: the
+   * board's own value always wins over anything a caller puts in `uiConfig`.
+   */
+  readOnly: boolean;
   boardLogo: { path: string; width?: number | string; height?: number | string };
   miscLinks: IMiscLink[];
   hideDocsLink: boolean;

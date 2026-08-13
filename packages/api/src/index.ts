@@ -52,6 +52,7 @@ export function createBullBoard({ queues, serverAdapter, options }: CreateBullBo
     .setUIConfig({
       boardTitle: 'bullmq-dash',
       ...options?.uiConfig,
+      readOnly: options?.readOnly === true,
     })
     .setEntryRoute(appRoutes.entryPoint!)
     .setErrorHandler(errorHandler)

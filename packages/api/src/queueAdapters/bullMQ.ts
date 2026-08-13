@@ -1,6 +1,14 @@
 import { Queue, type Job, type JobType } from 'bullmq';
 import { STATUSES } from '../constants/statuses';
-import type { JobCounts, JobLogs, JobStatus, QueueAdapterOptions, QueueWorker, Status } from '../typings/app';
+import type {
+  JobCleanStatus,
+  JobCounts,
+  JobLogs,
+  JobStatus,
+  QueueAdapterOptions,
+  QueueWorker,
+  Status,
+} from '../typings/app';
 import { BaseAdapter } from './base';
 
 /** The `:w:<name>` suffix BullMQ appends to the connection name of a named worker. */
@@ -77,6 +85,26 @@ export class BullMQAdapter extends BaseAdapter {
 
   public isPaused(): Promise<boolean> {
     return this.queue.isPaused();
+  }
+
+  public pause(): Promise<void> {
+    return this.queue.pause();
+  }
+
+  public resume(): Promise<void> {
+    return this.queue.resume();
+  }
+
+  public empty(): Promise<void> {
+    return this.queue.drain();
+  }
+
+  public async promoteAll(): Promise<void> {
+    await this.queue.promoteJobs();
+  }
+
+  public async clean(jobStatus: JobCleanStatus, graceTimeMs: number): Promise<void> {
+    await this.queue.clean(graceTimeMs, Number.MAX_SAFE_INTEGER, jobStatus);
   }
 
   public getGlobalConcurrency(): Promise<number | null> {

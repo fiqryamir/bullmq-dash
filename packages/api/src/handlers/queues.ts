@@ -92,7 +92,8 @@ function parseQueueQuery(query: Record<string, unknown>): QueueQuery {
 async function getAppQueues(
   pairs: [string, BaseAdapter][],
   query: Record<string, unknown>,
-  showWorkers: boolean
+  showWorkers: boolean,
+  readOnly: boolean
 ): Promise<AppQueue[]> {
   const { activeQueue, jobsPerPage, status: statusQuery, page: currentPage } =
     parseQueueQuery(query);
@@ -125,7 +126,7 @@ async function getAppQueues(
         counts: counts as Record<Status, number>,
         jobs: jobs.filter(Boolean).map((job) => formatJob(job, queue)),
         pagination,
-        readOnlyMode: queue.readOnlyMode,
+        readOnlyMode: readOnly || queue.readOnlyMode,
         allowRetries: queue.allowRetries,
         allowCompletedRetries: queue.allowCompletedRetries,
         isPaused,
@@ -149,7 +150,14 @@ export async function queuesHandler(req: BullBoardRequest): Promise<ControllerHa
   }
 
   const queues =
-    pairs.length > 0 ? await getAppQueues(pairs, req.query, req.uiConfig?.showWorkers !== false) : [];
+    pairs.length > 0
+      ? await getAppQueues(
+          pairs,
+          req.query,
+          req.uiConfig?.showWorkers !== false,
+          req.uiConfig?.readOnly === true
+        )
+      : [];
 
   return {
     body: {
