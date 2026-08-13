@@ -4,6 +4,7 @@ import type { BaseAdapter } from './queueAdapters/base';
 import { TestQueueAdapter } from './testUtils/TestQueueAdapter';
 import type {
   AppControllerRoute,
+  AppViewRoute,
   BullBoardQueues,
   ControllerHandlerReturnType,
   IServerAdapter,
@@ -15,6 +16,9 @@ class TestServerAdapter implements IServerAdapter {
   public uiConfig: UIConfig | undefined;
   public apiRoutes: AppControllerRoute[] | undefined;
   public errorHandler: ((error: Error) => ControllerHandlerReturnType) | undefined;
+  public viewsPath: string | undefined;
+  public staticPath: { route: string; path: string } | undefined;
+  public entryRoute: AppViewRoute | undefined;
 
   setQueues(queues: BullBoardQueues): IServerAdapter {
     this.queues = queues;
@@ -26,15 +30,18 @@ class TestServerAdapter implements IServerAdapter {
     return this;
   }
 
-  setViewsPath(): IServerAdapter {
+  setViewsPath(viewPath: string): IServerAdapter {
+    this.viewsPath = viewPath;
     return this;
   }
 
-  setStaticPath(): IServerAdapter {
+  setStaticPath(route: string, path: string): IServerAdapter {
+    this.staticPath = { route, path };
     return this;
   }
 
-  setEntryRoute(): IServerAdapter {
+  setEntryRoute(route: AppViewRoute): IServerAdapter {
+    this.entryRoute = route;
     return this;
   }
 
@@ -181,10 +188,53 @@ describe('createBullBoard', () => {
     expect(serverAdapter.uiConfig?.boardTitle).toBe('Ops Board');
   });
 
-  it('defaults the board title to Bull Dashboard', () => {
+  it('defaults the board title to bullmq-dash', () => {
     const serverAdapter = new TestServerAdapter();
     createBullBoard({ queues: [], serverAdapter });
-    expect(serverAdapter.uiConfig?.boardTitle).toBe('Bull Dashboard');
+    expect(serverAdapter.uiConfig?.boardTitle).toBe('bullmq-dash');
+  });
+
+  describe('UI wiring', () => {
+    it('drives the server adapter with the UI package views and static paths', () => {
+      const { serverAdapter } = createBoard();
+      expect(serverAdapter.viewsPath).toMatch(/[\\/]dist$/);
+      expect(serverAdapter.staticPath).toMatchObject({ route: '/assets' });
+      expect(serverAdapter.staticPath?.path).toMatch(/[\\/]dist[\\/]assets$/);
+    });
+
+    it('registers the SPA entry route rendering the UI template', () => {
+      const { serverAdapter } = createBoard();
+      expect(serverAdapter.entryRoute).toMatchObject({ method: 'get', route: '/' });
+      const view = serverAdapter.entryRoute!.handler({
+        basePath: '',
+        uiConfig: { boardTitle: 'bullmq-dash' },
+      });
+      expect(view.name).toBe('index');
+      expect(view.params.basePath).toBe('/');
+      expect(view.params.uiConfig).toContain('bullmq-dash');
+    });
+
+    it('escapes html-unsafe characters in the serialized uiConfig', () => {
+      const { serverAdapter } = createBoard();
+      const view = serverAdapter.entryRoute!.handler({
+        basePath: '',
+        uiConfig: { boardTitle: '</script><script>alert(1)</script>' },
+      });
+      expect(view.params.uiConfig).not.toContain('<');
+      expect(view.params.uiConfig).toContain('\\u003c');
+    });
+
+    it('normalizes the base path with a trailing slash', () => {
+      const { serverAdapter } = createBoard();
+      const view = serverAdapter.entryRoute!.handler({ basePath: '/board', uiConfig: {} });
+      expect(view.params.basePath).toBe('/board/');
+    });
+
+    it('honors options.uiBasePath over the resolved UI package', () => {
+      const serverAdapter = new TestServerAdapter();
+      createBullBoard({ queues: [], serverAdapter, options: { uiBasePath: '/custom/ui' } });
+      expect(serverAdapter.viewsPath).toMatch(/custom[\\/]ui[\\/]dist$/);
+    });
   });
 
   it('registers the api routes on the server adapter', () => {
