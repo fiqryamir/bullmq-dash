@@ -125,7 +125,7 @@ export function QueueJobs({ queue, pollingInterval, onBack }: QueueJobsProps) {
         ))}
       </div>
 
-      <div className="queue-jobs__table-wrap" ref={scrollRef}>
+      <div className="queue-jobs__table-wrap" data-testid="jobs-scroll" ref={scrollRef}>
         <table className="job-table">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (

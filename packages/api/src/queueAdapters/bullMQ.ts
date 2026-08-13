@@ -18,7 +18,7 @@ export class BullMQAdapter extends BaseAdapter {
   }
 
   /** BullMQ v6 dropped the paused job state; a paused queue's jobs are stored as waiting. */
-  private get hasPausedState(): boolean {
+  private get hasNativePausedState(): boolean {
     return !this.isBullMqV6;
   }
 
@@ -56,7 +56,7 @@ export class BullMQAdapter extends BaseAdapter {
   }
 
   private async resolveJobStatuses(jobStatuses: JobStatus[]): Promise<JobType[]> {
-    if (this.hasPausedState || !jobStatuses.includes(STATUSES.paused)) {
+    if (this.hasNativePausedState || !jobStatuses.includes(STATUSES.paused)) {
       return jobStatuses as JobType[];
     }
 

@@ -10,6 +10,7 @@ import type {
   QueueJob,
   Status,
 } from '../typings/app';
+import { pageRange, stringValue } from './query';
 
 export const formatJob = (job: QueueJob, queue: BaseAdapter): AppJob => {
   const jobProps = job.toJSON();
@@ -50,12 +51,11 @@ function getPagination(
       ? (counts[firstStatus] ?? 0)
       : 0;
 
-  const start = isLatestView ? 0 : (currentPage - 1) * jobsPerPage;
   const pageCount = isLatestView ? 1 : Math.ceil(total / jobsPerPage);
 
   return {
     pageCount,
-    range: { start, end: start + jobsPerPage - 1 },
+    range: pageRange(isLatestView ? 1 : currentPage, jobsPerPage),
   };
 }
 
@@ -79,18 +79,13 @@ type QueueQuery = {
 };
 
 function parseQueueQuery(query: Record<string, unknown>): QueueQuery {
-  const stringValue = (key: string): string | undefined => {
-    const value = query[key];
-    return typeof value === 'string' ? value : undefined;
-  };
-
-  const activeQueue = stringValue('activeQueue');
+  const activeQueue = stringValue(query, 'activeQueue');
 
   return {
     activeQueue: activeQueue === undefined ? '' : decodeURIComponent(activeQueue),
-    jobsPerPage: Number(stringValue('jobsPerPage')) || 10,
-    status: stringValue('status'),
-    page: Number(stringValue('page')) || 1,
+    jobsPerPage: Number(stringValue(query, 'jobsPerPage')) || 10,
+    status: stringValue(query, 'status'),
+    page: Number(stringValue(query, 'page')) || 1,
   };
 }
 

@@ -2,30 +2,9 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
-import type { AppQueue } from './api/contract';
+import type { AppJob, AppQueue } from './api/contract';
+import { COUNTS, makeJob, makeQueue } from './testUtils/fixtures';
 import { THEME_STORAGE_KEY } from './theme/constants';
-
-const COUNTS = {
-  latest: 0,
-  active: 0,
-  waiting: 0,
-  'waiting-children': 0,
-  prioritized: 0,
-  completed: 0,
-  failed: 0,
-  delayed: 0,
-  paused: 0,
-};
-
-function makeQueue(overrides: Partial<AppQueue>): AppQueue {
-  return {
-    name: 'emails',
-    counts: { ...COUNTS },
-    isPaused: false,
-    readOnlyMode: false,
-    ...overrides,
-  };
-}
 
 function stubQueuesApi(...queues: AppQueue[]) {
   const fetchMock = vi.fn().mockResolvedValue({
@@ -37,10 +16,7 @@ function stubQueuesApi(...queues: AppQueue[]) {
   return fetchMock;
 }
 
-function stubDashboardApi(
-  queues: AppQueue[],
-  jobs: { id: string; name: string; state: string; progress: number | object; attempts: number; timestamp: number }[] = []
-) {
+function stubDashboardApi(queues: AppQueue[], jobs: AppJob[] = []) {
   return vi.fn((url: string) =>
     Promise.resolve({
       ok: true,
@@ -69,8 +45,14 @@ afterEach(() => {
 describe('App shell', () => {
   it('renders the queues list from the REST contract', async () => {
     stubQueuesApi(
-      makeQueue({ name: 'emails', counts: { ...COUNTS, waiting: 43, failed: 3 } }),
-      makeQueue({ name: 'billing', counts: { ...COUNTS, completed: 3820, delayed: 2 } })
+      makeQueue({
+        name: 'emails',
+        counts: { ...COUNTS, active: 0, waiting: 43, completed: 0, failed: 3, delayed: 0 },
+      }),
+      makeQueue({
+        name: 'billing',
+        counts: { ...COUNTS, active: 0, waiting: 0, completed: 3820, failed: 0, delayed: 2 },
+      })
     );
     render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
     expect(await screen.findByText('emails')).toBeInTheDocument();
@@ -130,7 +112,7 @@ describe('App shell', () => {
   it('opens the jobs view of a queue and returns back', async () => {
     const fetchMock = stubDashboardApi(
       [makeQueue({ name: 'emails', counts: { ...COUNTS, waiting: 43 } })],
-      [{ id: 'emails:77431', name: 'welcome-email', state: 'waiting', progress: 100, attempts: 1, timestamp: 1 }]
+      [makeJob(0, { id: 'emails:77431', name: 'welcome-email', progress: 100 })]
     );
     vi.stubGlobal('fetch', fetchMock);
     const user = userEvent.setup();

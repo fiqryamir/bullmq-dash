@@ -1,42 +1,9 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { AppJob, AppQueue } from '../api/contract';
+import type { AppJob } from '../api/contract';
+import { makeJob, makeQueue } from '../testUtils/fixtures';
 import { QueueJobs } from './QueueJobs';
-
-const COUNTS = {
-  latest: 0,
-  active: 1,
-  waiting: 5,
-  'waiting-children': 0,
-  prioritized: 0,
-  completed: 12,
-  failed: 3,
-  delayed: 2,
-  paused: 0,
-};
-
-function makeQueue(overrides: Partial<AppQueue> = {}): AppQueue {
-  return {
-    name: 'emails',
-    counts: { ...COUNTS },
-    isPaused: false,
-    readOnlyMode: false,
-    ...overrides,
-  };
-}
-
-function makeJob(index: number, overrides: Partial<AppJob> = {}): AppJob {
-  return {
-    id: `job-${index}`,
-    name: 'mail-job',
-    state: 'waiting',
-    progress: index * 10,
-    attempts: 1,
-    timestamp: 1700000000000 + index,
-    ...overrides,
-  };
-}
 
 function jobsResponse(jobs: AppJob[], pageCount = 1) {
   return {

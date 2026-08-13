@@ -8,13 +8,13 @@ import { afterEach } from 'vitest';
 Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
   configurable: true,
   get(this: HTMLElement) {
-    return this.classList.contains('queue-jobs__table-wrap') ? 400 : 0;
+    return this.getAttribute('data-testid') === 'jobs-scroll' ? 400 : 0;
   },
 });
 Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
   configurable: true,
   get(this: HTMLElement) {
-    return this.classList.contains('queue-jobs__table-wrap') ? 1000 : 0;
+    return this.getAttribute('data-testid') === 'jobs-scroll' ? 1000 : 0;
   },
 });
 
