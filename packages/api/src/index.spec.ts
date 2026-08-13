@@ -241,6 +241,7 @@ describe('createBullBoard', () => {
     const { serverAdapter } = createBoard();
     expect(serverAdapter.apiRoutes).toEqual([
       expect.objectContaining({ method: 'get', route: '/api/queues' }),
+      expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/jobs' }),
     ]);
   });
 

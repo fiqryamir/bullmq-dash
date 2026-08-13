@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { readUiConfig, type UIConfig } from './config';
+import { QueueJobs } from './queues/QueueJobs';
 import { QueuesList } from './queues/QueuesList';
 import { useQueues } from './queues/useQueues';
 import { ThemeProvider } from './theme/ThemeProvider';
@@ -20,6 +21,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
   const pollingInterval = uiConfig.pollingInterval?.forceInterval ?? DEFAULT_POLLING_INTERVAL;
   const { queues, status } = useQueues(pollingInterval);
   const [query, setQuery] = useState('');
+  const [selectedQueueName, setSelectedQueueName] = useState<string | null>(null);
   const boardTitle = uiConfig.boardTitle ?? 'bullmq-dash';
 
   useEffect(() => {
@@ -31,31 +33,43 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
     [queues, query]
   );
 
+  const selectedQueue = queues.find((queue) => queue.name === selectedQueueName);
+
   return (
     <div className="app">
       <header className="app__header">
         <span className="app__brand">{boardTitle}</span>
         <ThemeToggle />
       </header>
-      <main className="app__main">
-        <input
-          type="search"
-          className="command-bar"
-          placeholder="Search queues…"
-          aria-label="Search queues"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        {status === 'loading' && queues.length === 0 ? (
-          <p className="queues-status">Loading queues…</p>
-        ) : status === 'error' && queues.length === 0 ? (
-          <p className="queues-status queues-status--error">Failed to load queues</p>
-        ) : queues.length === 0 ? (
-          <p className="queues-status">No queues</p>
-        ) : visibleQueues.length === 0 ? (
-          <p className="queues-status">No queues match the search</p>
+      <main className={selectedQueue ? 'app__main app__main--queue' : 'app__main'}>
+        {selectedQueue ? (
+          <QueueJobs
+            queue={selectedQueue}
+            pollingInterval={pollingInterval}
+            onBack={() => setSelectedQueueName(null)}
+          />
         ) : (
-          <QueuesList queues={visibleQueues} />
+          <>
+            <input
+              type="search"
+              className="command-bar"
+              placeholder="Search queues…"
+              aria-label="Search queues"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            {status === 'loading' && queues.length === 0 ? (
+              <p className="queues-status">Loading queues…</p>
+            ) : status === 'error' && queues.length === 0 ? (
+              <p className="queues-status queues-status--error">Failed to load queues</p>
+            ) : queues.length === 0 ? (
+              <p className="queues-status">No queues</p>
+            ) : visibleQueues.length === 0 ? (
+              <p className="queues-status">No queues match the search</p>
+            ) : (
+              <QueuesList queues={visibleQueues} onSelect={(queue) => setSelectedQueueName(queue.name)} />
+            )}
+          </>
         )}
       </main>
     </div>

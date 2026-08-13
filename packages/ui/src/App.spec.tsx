@@ -37,6 +37,25 @@ function stubQueuesApi(...queues: AppQueue[]) {
   return fetchMock;
 }
 
+function stubDashboardApi(
+  queues: AppQueue[],
+  jobs: { id: string; name: string; state: string; progress: number | object; attempts: number; timestamp: number }[] = []
+) {
+  return vi.fn((url: string) =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: async () =>
+        String(url).startsWith('api/queues') && !String(url).includes('/jobs')
+          ? { queues }
+          : {
+              jobs,
+              pagination: { pageCount: 1, range: { start: 0, end: 99 } },
+            },
+    })
+  );
+}
+
 beforeEach(() => {
   document.documentElement.removeAttribute('data-theme');
   localStorage.clear();
@@ -106,5 +125,24 @@ describe('App shell', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
     render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
     expect(await screen.findByText(/failed to load queues/i)).toBeInTheDocument();
+  });
+
+  it('opens the jobs view of a queue and returns back', async () => {
+    const fetchMock = stubDashboardApi(
+      [makeQueue({ name: 'emails', counts: { ...COUNTS, waiting: 43 } })],
+      [{ id: 'emails:77431', name: 'welcome-email', state: 'waiting', progress: 100, attempts: 1, timestamp: 1 }]
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
+    await user.click(await screen.findByRole('button', { name: /emails/ }));
+
+    expect(await screen.findByText('welcome-email')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Job states' })).toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /back/i }));
+    expect(await screen.findByRole('searchbox')).toBeInTheDocument();
   });
 });

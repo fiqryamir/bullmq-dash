@@ -35,9 +35,36 @@ export class BullMQAdapter extends BaseAdapter {
     return (await this.queue.getJobCounts()) as unknown as JobCounts;
   }
 
+  public async getJobCountForStatus(status: JobStatus): Promise<number> {
+    if (status === STATUSES.paused && this.isBullMqV6) {
+      return (await this.queue.isPaused())
+        ? ((await this.queue.getJobCountByTypes('waiting')) ?? 0)
+        : 0;
+    }
+
+    return (await this.queue.getJobCountByTypes(status as JobType)) ?? 0;
+  }
+
   public async getJobs(jobStatuses: JobStatus[], start?: number, end?: number): Promise<Job[]> {
-    const jobs = (await this.queue.getJobs(jobStatuses as JobType[], start, end)) as (Job | undefined)[];
+    const statuses = await this.resolveJobStatuses(jobStatuses);
+    if (statuses.length === 0) {
+      return [];
+    }
+
+    const jobs = (await this.queue.getJobs(statuses, start, end)) as (Job | undefined)[];
     return jobs.filter((job): job is Job => !!job);
+  }
+
+  private async resolveJobStatuses(jobStatuses: JobStatus[]): Promise<JobType[]> {
+    if (this.hasPausedState || !jobStatuses.includes(STATUSES.paused)) {
+      return jobStatuses as JobType[];
+    }
+
+    if (!(await this.queue.isPaused())) {
+      return jobStatuses.filter((status) => status !== STATUSES.paused);
+    }
+
+    return [...new Set(jobStatuses.map((status) => (status === STATUSES.paused ? 'waiting' : status)))];
   }
 
   public isPaused(): Promise<boolean> {
@@ -70,7 +97,7 @@ export class BullMQAdapter extends BaseAdapter {
       STATUSES.completed,
       STATUSES.failed,
       STATUSES.delayed,
-      ...(this.hasPausedState ? [STATUSES.paused] : []),
+      STATUSES.paused,
     ];
   }
 }

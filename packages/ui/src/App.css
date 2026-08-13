@@ -68,6 +68,20 @@
   font-size: 13px;
 }
 
+.queue-item__open {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+
 .queue-item__name {
   flex: 1;
   font-weight: 600;
@@ -115,6 +129,176 @@
 
 .chip--failed {
   color: var(--dash-state-failed);
+}
+
+.chip--paused {
+  color: var(--dash-state-paused);
+}
+
+/* ---------- queue jobs view ---------- */
+
+.app__main--queue {
+  max-width: 1200px;
+}
+
+.queue-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 60vh;
+}
+
+.queue-jobs__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.queue-jobs__back {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  color: var(--dash-text);
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.queue-jobs__back:hover {
+  border-color: var(--dash-accent);
+}
+
+.queue-jobs__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.queue-jobs__states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.state-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  color: var(--dash-muted);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.state-tab:hover {
+  border-color: var(--dash-accent);
+}
+
+.state-tab--waiting {
+  color: var(--dash-state-waiting);
+}
+
+.state-tab--active {
+  color: var(--dash-state-active);
+}
+
+.state-tab--completed {
+  color: var(--dash-state-completed);
+}
+
+.state-tab--failed {
+  color: var(--dash-state-failed);
+}
+
+.state-tab--delayed {
+  color: var(--dash-state-delayed);
+}
+
+.state-tab--paused {
+  color: var(--dash-state-paused);
+}
+
+.state-tab--selected {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 14%, var(--dash-surface));
+}
+
+.queue-jobs__table-wrap {
+  flex: 1;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+}
+
+.job-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.job-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 10px 16px;
+  color: var(--dash-muted);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: var(--dash-surface);
+  border-bottom: 1px solid var(--dash-border);
+}
+
+.job-table tbody tr {
+  display: table-row;
+  border-bottom: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
+}
+
+.job-table tbody td {
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+
+.job-cell__id {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--dash-muted);
+}
+
+.queue-jobs__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.queue-jobs__pager {
+  display: flex;
+  gap: 8px;
+}
+
+.queue-jobs__pager button {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  color: var(--dash-text);
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.queue-jobs__pager button:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .queues-status {
