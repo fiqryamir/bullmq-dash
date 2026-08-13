@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import type { AppQueue } from './api/contract';
+import { THEME_STORAGE_KEY } from './theme/constants';
 
 const COUNTS = {
   latest: 0,
@@ -67,7 +68,7 @@ describe('App shell', () => {
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
     await user.click(screen.getByRole('switch', { name: 'Toggle theme' }));
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'));
-    expect(localStorage.getItem('bullmq-dash:theme')).toBe('light');
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
   });
 
   it('refreshes the queues list live on the polling interval', async () => {

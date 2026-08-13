@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-
-const THEME_STORAGE_KEY = 'bullmq-dash:theme';
+import { THEME_STORAGE_KEY } from './constants';
 
 export type Theme = 'dark' | 'light';
 

@@ -22,14 +22,23 @@ function resolveUIPackagePath(uiBasePath?: string): string {
   }
 
   const require = createRequire(typeof __filename === 'undefined' ? import.meta.url : __filename);
+  const packageJson = '@bullmq-dash/ui/package.json';
+
+  let resolved: string;
   try {
-    return dirname(require.resolve('@bullmq-dash/ui/package.json', { paths: [process.cwd()] }));
+    resolved = require.resolve(packageJson, { paths: [process.cwd()] });
   } catch {
-    throw new Error(
-      `Cannot find the '@bullmq-dash/ui' package — install it alongside '@bullmq-dash/api' ` +
-        `or pass options.uiBasePath pointing at a built UI bundle.`
-    );
+    try {
+      resolved = require.resolve(packageJson);
+    } catch {
+      throw new Error(
+        `Cannot find the '@bullmq-dash/ui' package — install it alongside '@bullmq-dash/api' ` +
+          `or pass options.uiBasePath pointing at a built UI bundle.`
+      );
+    }
   }
+
+  return dirname(resolved);
 }
 
 export function createBullBoard({ queues, serverAdapter, options }: CreateBullBoardArgs) {

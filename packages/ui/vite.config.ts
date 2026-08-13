@@ -2,8 +2,9 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
+import { THEME_STORAGE_KEY } from './src/theme/constants';
 
-const BOOT_SCRIPT = `try{var t=localStorage.getItem("bullmq-dash:theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){}`;
+const BOOT_SCRIPT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){}`;
 
 function entryTemplatePlugin(): Plugin {
   return {
