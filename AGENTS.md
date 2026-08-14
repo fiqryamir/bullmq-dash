@@ -15,3 +15,7 @@ The five canonical triage roles map one-to-one to their default label strings. S
 ### Domain docs
 
 Single-context: `CONTEXT.md` at the repo root plus `docs/adr/`. See `docs/agents/domain.md`.
+
+## UI design context
+
+Design guidance for all UI work lives in `.better-web-ui.md` at the repo root (canonical source). Read it before starting UI work; it supersedes any generic design assumptions. To pick which better-web-ui skill fits the work at hand, consult the `ask-ui` router skill first.

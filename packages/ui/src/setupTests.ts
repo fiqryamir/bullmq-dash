@@ -19,6 +19,20 @@ Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
   },
 });
 
+// jsdom has no ResizeObserver; the flow graph's pan/zoom surface uses one to
+// observe its container. A no-op keeps xyflow rendering without measuring.
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+
+Object.defineProperty(globalThis, 'ResizeObserver', {
+  configurable: true,
+  writable: true,
+  value: ResizeObserverStub,
+});
+
 afterEach(() => {
   cleanup();
 });

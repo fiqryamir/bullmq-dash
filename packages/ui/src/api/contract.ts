@@ -79,6 +79,40 @@ export interface SearchResponse {
   results: SearchResult[];
 }
 
+/**
+ * One job in a flow tree. `queueName` is the queue the job lives in — flows
+ * span queues, so it can differ from the queue the graph was loaded for.
+ */
+export interface FlowNode {
+  id: string;
+  name: string;
+  state: JobStatus | 'unknown';
+  progress: number | object;
+  queueName: string;
+  children: FlowNode[];
+}
+
+/**
+ * The per-job flow tree: the requested job's id, whether it is a flow node,
+ * and the whole tree from the flow root.
+ */
+export interface JobFlow {
+  nodeId: string;
+  isFlowNode: boolean;
+  flowRoot: FlowNode | null;
+}
+
+/**
+ * The queue-level flow graph: every root job in the queue's live states
+ * expanded into its child tree. `nodeCount` is the total nodes across the
+ * roots and `truncated` says the graph is not the whole pipeline.
+ */
+export interface QueueFlowResponse {
+  roots: FlowNode[];
+  nodeCount: number;
+  truncated: boolean;
+}
+
 export async function fetchQueues(): Promise<QueuesResponse> {
   const response = await fetch('api/queues');
   if (!response.ok) {
@@ -131,6 +165,24 @@ export async function fetchJobLogs(
     throw new Error(`Logs request failed with status ${response.status}`);
   }
   return (await response.json()) as JobLogsResponse;
+}
+
+export async function fetchQueueFlow(queueName: string): Promise<QueueFlowResponse> {
+  const response = await fetch(`api/queues/${encodeURIComponent(queueName)}/flow`);
+  if (!response.ok) {
+    throw new Error(`Flow request failed with status ${response.status}`);
+  }
+  return (await response.json()) as QueueFlowResponse;
+}
+
+export async function fetchJobFlow(queueName: string, jobId: string): Promise<JobFlow> {
+  const response = await fetch(
+    `api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/flow`
+  );
+  if (!response.ok) {
+    throw new Error(`Job flow request failed with status ${response.status}`);
+  }
+  return (await response.json()) as JobFlow;
 }
 
 /**

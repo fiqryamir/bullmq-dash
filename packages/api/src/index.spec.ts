@@ -277,7 +277,9 @@ describe('createBullBoard', () => {
       expect.objectContaining({ method: 'get', route: '/api/search' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/jobs' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/search' }),
+      expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/flow' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId/logs' }),
+      expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId/flow' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId' }),
       expect.objectContaining({
         method: 'put',

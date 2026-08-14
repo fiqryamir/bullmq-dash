@@ -46,6 +46,7 @@ type QueueJobsProps = {
   pollingInterval?: number;
   onBack: () => void;
   onSelectJob: (job: AppJob) => void;
+  onShowFlow: () => void;
 };
 
 type RowAction = { label: string; run: () => Promise<unknown> | void };
@@ -141,7 +142,7 @@ const BULK_ACTIONS_PER_STATE: Record<JobStatus, BulkActionSpec[]> = {
 
 const DEFAULT_CLEAN_GRACE_SECONDS = 5;
 
-export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: QueueJobsProps) {
+export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob, onShowFlow }: QueueJobsProps) {
   const [activeState, setActiveState] = useState<JobStatus>('waiting');
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
@@ -300,6 +301,14 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: Queue
         </button>
         <h1 className="queue-jobs__title">{queue.name}</h1>
         {isPaused && <span className="queue-item__paused">paused</span>}
+        <button
+          type="button"
+          className="action-btn queue-jobs__flow"
+          onClick={onShowFlow}
+          aria-label="Open flow view"
+        >
+          Flow
+        </button>
         {!queue.readOnlyMode && (
           <div className="queue-jobs__actions" role="group" aria-label="Queue actions">
             <button

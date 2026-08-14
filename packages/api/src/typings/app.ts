@@ -116,6 +116,44 @@ export interface JobLogs {
   count: number;
 }
 
+/**
+ * One job in a flow tree, shaped like bull-board's `FlowNode`. `queueName` is
+ * the raw BullMQ queue name the job lives in — flows span queues, so a node's
+ * queue can differ from the queue the graph was assembled for.
+ */
+export interface FlowNode {
+  id: string;
+  name: string;
+  state: JobStatus | 'unknown';
+  progress: QueueJob['progress'];
+  queueName: string;
+  children: FlowNode[];
+}
+
+/**
+ * The per-job flow tree response, mirroring bull-board's `JobFlow` shape: the
+ * requested job's id, whether it is a flow node (its tree root has children),
+ * and the whole tree from the flow root when one could be assembled.
+ */
+export interface JobFlow {
+  nodeId: string;
+  isFlowNode: boolean;
+  flowRoot: FlowNode | null;
+}
+
+/**
+ * The queue-level flow graph: every root job discovered in the queue's live
+ * states, each expanded into its child tree. `nodeCount` is the total number
+ * of nodes across the roots (bounded by the flow node cap) and `truncated`
+ * says the graph is not the whole pipeline — either more candidates exist
+ * beyond the discovery scan window or the node budget ran out.
+ */
+export interface QueueFlowResponse {
+  roots: FlowNode[];
+  nodeCount: number;
+  truncated: boolean;
+}
+
 export interface JobLogsResponse extends JobLogs {
   pagination: Pagination;
 }

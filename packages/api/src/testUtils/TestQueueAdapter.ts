@@ -5,6 +5,7 @@ import type {
   JobStatus,
   QueueAdapterOptions,
   QueueJob,
+  QueueType,
   Status,
 } from '../typings/app';
 import { BaseAdapter } from '../queueAdapters/base';
@@ -12,9 +13,10 @@ import { BaseAdapter } from '../queueAdapters/base';
 export class TestQueueAdapter extends BaseAdapter {
   constructor(
     public readonly name: string = 'test',
-    options: Partial<QueueAdapterOptions> = {}
+    options: Partial<QueueAdapterOptions> = {},
+    type: QueueType = 'bullmq'
   ) {
-    super('bullmq', options);
+    super(type, options);
   }
 
   getName(): string {

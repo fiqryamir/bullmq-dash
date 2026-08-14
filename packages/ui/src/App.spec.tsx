@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
@@ -195,6 +195,112 @@ describe('App shell', () => {
 
     await user.click(screen.getByRole('button', { name: /back/i }));
     expect(await screen.findByRole('group', { name: 'Job states' })).toBeInTheDocument();
+  });
+
+  it('opens the flow view of a queue and lands on a job from a graph node', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      const target = String(url);
+      if (target === 'api/queues/emails/flow') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            roots: [
+              {
+                id: 'r1',
+                name: 'root-job',
+                state: 'waiting-children',
+                progress: 0,
+                queueName: 'emails',
+                children: [
+                  {
+                    id: 'c1',
+                    name: 'child-job',
+                    state: 'waiting',
+                    progress: 0,
+                    queueName: 'emails',
+                    children: [],
+                  },
+                ],
+              },
+            ],
+            nodeCount: 2,
+            truncated: false,
+          }),
+        });
+      }
+      if (target.endsWith('/flow')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            nodeId: 'r1',
+            isFlowNode: true,
+            flowRoot: {
+              id: 'r1',
+              name: 'root-job',
+              state: 'waiting-children',
+              progress: 0,
+              queueName: 'emails',
+              children: [
+                {
+                  id: 'c1',
+                  name: 'child-job',
+                  state: 'waiting',
+                  progress: 0,
+                  queueName: 'emails',
+                  children: [],
+                },
+              ],
+            },
+          }),
+        });
+      }
+      if (target.includes('/logs')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ logs: [], count: 0, pagination: { pageCount: 0, range: { start: 0, end: 99 } } }),
+        });
+      }
+      if (target.includes('/jobs')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            jobs: [makeJob(0, { id: 'c1', name: 'child-job', state: 'waiting' })],
+            pagination: { pageCount: 1, range: { start: 0, end: 99 } },
+          }),
+        });
+      }
+      if (target.includes('api/queues/emails/c1')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            job: makeJob(0, { id: 'c1', name: 'child-job', state: 'waiting', data: { to: 'a@example.com' } }),
+            status: 'waiting',
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ queues: [makeQueue({ name: 'emails' })] }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
+    await user.click(await screen.findByRole('button', { name: /emails/ }));
+
+    await user.click(screen.getByRole('button', { name: 'Open flow view' }));
+    expect(await screen.findByText('root-job')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('child-job'));
+    expect(await screen.findByRole('region', { name: 'Job data' })).toBeInTheDocument();
+    expect(screen.getAllByText('#c1').length).toBeGreaterThan(0);
   });
 
   it('lands on a job from the command palette search', async () => {

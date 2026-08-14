@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { AppQueue } from '../api/contract';
+import type { AppQueue, FlowNode } from '../api/contract';
+import { FlowGraph } from './FlowGraph';
 import { formatProgress } from './formatProgress';
 import { useJobDetail } from './useJobDetail';
+import { useJobFlow } from './useJobFlow';
 import { useJobLogs } from './useJobLogs';
 
 const LOGS_PER_PAGE = 100;
@@ -15,10 +17,12 @@ type JobDetailProps = {
   jobId: string;
   pollingInterval?: number;
   onBack: () => void;
+  onSelectNode: (node: FlowNode) => void;
 };
 
-export function JobDetail({ queue, jobId, pollingInterval, onBack }: JobDetailProps) {
+export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode }: JobDetailProps) {
   const { detail, status } = useJobDetail(queue.name, jobId, pollingInterval);
+  const { flow, status: flowStatus } = useJobFlow(queue.name, jobId, pollingInterval);
   const [logsPage, setLogsPage] = useState(1);
   const { logs, pagination, status: logsStatus } = useJobLogs(
     queue.name,
@@ -94,6 +98,25 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack }: JobDetailPr
               <pre className="job-detail__code">{job.stacktrace.join('\n')}</pre>
             </section>
           )}
+
+          <section className="job-detail__section" aria-label="Flow">
+            <h2 className="job-detail__section-title">Flow</h2>
+            {flowStatus === 'loading' ? (
+              <p className="queues-status">Loading flow…</p>
+            ) : flowStatus === 'error' ? (
+              <p className="queues-status queues-status--error">Failed to load flow</p>
+            ) : !flow || !flow.isFlowNode || !flow.flowRoot ? (
+              <p className="queues-status">This job is not part of a flow.</p>
+            ) : (
+              <div className="flow-graph flow-graph--section" data-testid="job-flow-graph">
+                <FlowGraph
+                  roots={[flow.flowRoot]}
+                  sourceQueueName={queue.name}
+                  onSelectNode={onSelectNode}
+                />
+              </div>
+            )}
+          </section>
 
           <section className="job-detail__section" aria-label="Logs">
             <h2 className="job-detail__section-title">Logs</h2>
