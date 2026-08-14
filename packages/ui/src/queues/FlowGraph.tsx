@@ -1,4 +1,4 @@
-import dagre from '@dagrejs/dagre';
+import dagre from "@dagrejs/dagre";
 import {
   Background,
   Controls,
@@ -8,10 +8,10 @@ import {
   type Edge,
   type Node,
   type NodeProps,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import { useMemo } from 'react';
-import type { FlowNode } from '../api/contract';
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import { useMemo } from "react";
+import type { FlowNode } from "../api/contract";
 
 const NODE_WIDTH = 220;
 const NODE_HEIGHT = 72;
@@ -27,10 +27,12 @@ function FlowCard({ data }: NodeProps<Node<FlowCardData>>) {
 
   return (
     <div className={`flow-node flow-node--${flowNode.state}`}>
-      <span className="flow-node__name">{flowNode.name || '(unnamed)'}</span>
+      <span className="flow-node__name">{flowNode.name || "(unnamed)"}</span>
       <span className="flow-node__id">#{flowNode.id}</span>
       <span className={`chip chip--${flowNode.state}`}>{flowNode.state}</span>
-      {foreign && <span className="flow-node__queue">{flowNode.queueName}</span>}
+      {foreign && (
+        <span className="flow-node__queue">{flowNode.queueName}</span>
+      )}
       <Handle type="target" position={Position.Top} />
       <Handle type="source" position={Position.Bottom} />
     </div>
@@ -46,17 +48,20 @@ const nodeTypes = { flow: FlowCard };
  */
 function layoutGraph(
   roots: FlowNode[],
-  sourceQueueName: string
+  sourceQueueName: string,
 ): { nodes: Node<FlowCardData>[]; edges: Edge[] } {
   const graph = new dagre.graphlib.Graph();
-  graph.setGraph({ rankdir: 'TB', nodesep: 24, ranksep: 48 });
+  graph.setGraph({ rankdir: "TB", nodesep: 24, ranksep: 48 });
   graph.setDefaultEdgeLabel(() => ({}));
 
   const byKey = new Map<string, FlowCardData>();
 
   const walk = (node: FlowNode, parentKey?: string) => {
     const key = flowNodeKey(node);
-    byKey.set(key, { flowNode: node, foreign: node.queueName !== sourceQueueName });
+    byKey.set(key, {
+      flowNode: node,
+      foreign: node.queueName !== sourceQueueName,
+    });
     graph.setNode(key, { width: NODE_WIDTH, height: NODE_HEIGHT });
     if (parentKey) {
       graph.setEdge(parentKey, key);
@@ -76,8 +81,11 @@ function layoutGraph(
     const position = graph.node(key);
     return {
       id: key,
-      type: 'flow',
-      position: { x: position.x - NODE_WIDTH / 2, y: position.y - NODE_HEIGHT / 2 },
+      type: "flow",
+      position: {
+        x: position.x - NODE_WIDTH / 2,
+        y: position.y - NODE_HEIGHT / 2,
+      },
       data: byKey.get(key)!,
     } satisfies Node<FlowCardData>;
   });
@@ -86,7 +94,7 @@ function layoutGraph(
     id: `${edge.v}->${edge.w}`,
     source: edge.v,
     target: edge.w,
-    type: 'smoothstep',
+    type: "smoothstep",
   })) satisfies Edge[];
 
   return { nodes, edges };
@@ -99,27 +107,39 @@ type FlowGraphProps = {
   onSelectNode: (node: FlowNode) => void;
 };
 
-export function FlowGraph({ roots, sourceQueueName, onSelectNode }: FlowGraphProps) {
-  const { nodes, edges } = useMemo(() => layoutGraph(roots, sourceQueueName), [roots, sourceQueueName]);
+export function FlowGraph({
+  roots,
+  sourceQueueName,
+  onSelectNode,
+}: FlowGraphProps) {
+  const { nodes, edges } = useMemo(
+    () => layoutGraph(roots, sourceQueueName),
+    [roots, sourceQueueName],
+  );
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      onNodeClick={(_event, node) => onSelectNode((node.data as FlowCardData).flowNode)}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable
-      minZoom={0.2}
-      maxZoom={2.5}
-      fitView
-      fitViewOptions={{ padding: 0.2 }}
-      proOptions={{ hideAttribution: true }}
-      aria-label="Flow graph of jobs"
-    >
-      <Background />
-      <Controls />
-    </ReactFlow>
+    <div className="flow-graph">
+      <ReactFlow
+        className="flow-graph"
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        onNodeClick={(_event, node) =>
+          onSelectNode((node.data as FlowCardData).flowNode)
+        }
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable
+        minZoom={0.2}
+        maxZoom={2.5}
+        fitView
+        fitViewOptions={{ padding: 0.1, minZoom: 0.7 }}
+        proOptions={{ hideAttribution: true }}
+        aria-label="Flow graph of jobs"
+      >
+        <Background />
+        <Controls />
+      </ReactFlow>
+    </div>
   );
 }
