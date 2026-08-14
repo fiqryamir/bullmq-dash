@@ -675,11 +675,12 @@
   gap: 4px;
   width: 200px;
   padding: 8px 12px;
-  background: var(--dash-bg);
-  border: 1px solid var(--dash-border);
+  background: color-mix(in srgb, var(--dash-surface) 94%, var(--dash-text));
+  border: 1px solid color-mix(in srgb, var(--dash-border) 88%, var(--dash-text));
   border-left: 3px solid var(--dash-border);
   border-radius: 12px;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--dash-bg) 55%, transparent);
 }
 
 .flow-node--waiting {
