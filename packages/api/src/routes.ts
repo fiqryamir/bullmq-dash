@@ -1,5 +1,6 @@
 import type { AppRouteDefs } from './typings/app';
 import { entryPointHandler } from './handlers/entryPoint';
+import { jobFlowHandler, queueFlowHandler } from './handlers/flow';
 import { jobHandler } from './handlers/job';
 import { jobLogsHandler } from './handlers/jobLogs';
 import { queueJobsHandler } from './handlers/queueJobs';
@@ -21,11 +22,13 @@ export const appRoutes: AppRouteDefs = {
   api: [
     { method: 'get', route: '/api/queues', handler: queuesHandler },
     { method: 'get', route: '/api/search', handler: searchHandler },
-    // Registered before the `:jobId` routes so the literal `jobs` and
-    // `search` segments win over being read as a job id.
+    // Registered before the `:jobId` routes so the literal `jobs`, `search`
+    // and `flow` segments win over being read as a job id.
     { method: 'get', route: '/api/queues/:queueName/jobs', handler: queueJobsHandler },
     { method: 'get', route: '/api/queues/:queueName/search', handler: searchHandler },
+    { method: 'get', route: '/api/queues/:queueName/flow', handler: queueFlowHandler },
     { method: 'get', route: '/api/queues/:queueName/:jobId/logs', handler: jobLogsHandler },
+    { method: 'get', route: '/api/queues/:queueName/:jobId/flow', handler: jobFlowHandler },
     { method: 'get', route: '/api/queues/:queueName/:jobId', handler: jobHandler },
     {
       method: 'put',

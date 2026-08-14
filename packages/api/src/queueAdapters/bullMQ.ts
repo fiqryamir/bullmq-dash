@@ -1,4 +1,4 @@
-import { Queue, type Job, type JobType } from 'bullmq';
+import { FlowProducer, Queue, type Job, type JobType, type RedisClient } from 'bullmq';
 import { STATUSES } from '../constants/statuses';
 import type {
   JobCleanStatus,
@@ -13,6 +13,27 @@ import { BaseAdapter } from './base';
 
 /** The `:w:<name>` suffix BullMQ appends to the connection name of a named worker. */
 const WORKER_NAME_SEPARATOR = ':w:';
+
+/**
+ * v5 exposes the Redis connection on `Queue#client`; v6 moved it behind
+ * pluggable backends (Redis, Postgres, ...).
+ */
+type VersionedQueue = {
+  client?: Promise<RedisClient>;
+  getBackend?: () => { client?: Promise<RedisClient> } | undefined;
+};
+
+type FlowProducerWithBackend = new (
+  opts: Queue['opts'],
+  backendFactory: () => unknown
+) => FlowProducer;
+
+/**
+ * One producer per connection, however many adapters share it: each producer
+ * pins listeners on the client (or backend) and is never closed, so the entry
+ * must die with the connection.
+ */
+const flowProducerCache = new WeakMap<object, FlowProducer>();
 
 export class BullMQAdapter extends BaseAdapter {
   constructor(
@@ -118,6 +139,42 @@ export class BullMQAdapter extends BaseAdapter {
   public async getWorkers(): Promise<QueueWorker[] | null> {
     const clients = await this.queue.getWorkers();
     return this.normalizeWorkers(clients, WORKER_NAME_SEPARATOR);
+  }
+
+  public async getFlowProducer(): Promise<FlowProducer | null> {
+    const queue = this.queue as unknown as VersionedQueue;
+
+    // v6: reuse the queue's backend, so the producer reads flow trees from
+    // whatever datastore the queue lives in, Redis or not.
+    if (typeof queue.getBackend === 'function') {
+      const backend = queue.getBackend();
+      if (!backend) {
+        return null;
+      }
+
+      let producer = flowProducerCache.get(backend);
+      if (!producer) {
+        producer = new (FlowProducer as unknown as FlowProducerWithBackend)(
+          this.queue.opts,
+          () => backend
+        );
+        flowProducerCache.set(backend, producer);
+      }
+      return producer;
+    }
+
+    const client = await queue.client;
+    if (!client) {
+      return null;
+    }
+
+    let producer = flowProducerCache.get(client);
+    if (!producer) {
+      const prefix = this.queue.opts?.prefix;
+      producer = new FlowProducer({ connection: client, ...(prefix ? { prefix } : {}) });
+      flowProducerCache.set(client, producer);
+    }
+    return producer;
   }
 
   public getStatuses(): Status[] {

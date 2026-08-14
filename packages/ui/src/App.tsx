@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { readUiConfig, type UIConfig } from './config';
 import { CommandPalette } from './queues/CommandPalette';
 import { JobDetail } from './queues/JobDetail';
+import { QueueFlow } from './queues/QueueFlow';
 import { QueueJobs } from './queues/QueueJobs';
 import { QueuesList } from './queues/QueuesList';
+import type { FlowNode } from './api/contract';
 import { useQueues } from './queues/useQueues';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { ThemeToggle } from './theme/ThemeToggle';
@@ -25,6 +27,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
   const [query, setQuery] = useState('');
   const [selectedQueueName, setSelectedQueueName] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [flowOpen, setFlowOpen] = useState(false);
   const boardTitle = uiConfig.boardTitle ?? 'bullmq-dash';
 
   useEffect(() => {
@@ -38,6 +41,26 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
 
   const selectedQueue = queues.find((queue) => queue.name === selectedQueueName);
 
+  /**
+   * Matches a node's raw BullMQ queue name against the registered queues.
+   * Registered names carry the adapter's prefix, so the raw name either
+   * equals the registered name or is that name with something in front of
+   * it — the same simplification the flow endpoint performs server-side.
+   */
+  const registeredQueueFor = (node: FlowNode) =>
+    queues.find((queue) => queue.name === node.queueName) ??
+    queues.find((queue) => node.queueName.endsWith(`:${queue.name}`));
+
+  const selectFlowNode = (node: FlowNode) => {
+    const targetQueue = registeredQueueFor(node);
+    if (!targetQueue) {
+      return;
+    }
+    setSelectedQueueName(targetQueue.name);
+    setSelectedJobId(node.id);
+    setFlowOpen(false);
+  };
+
   return (
     <div className="app">
       <header className="app__header">
@@ -46,12 +69,20 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
       </header>
       <main className={selectedQueue ? 'app__main app__main--queue' : 'app__main'}>
         {selectedQueue ? (
-          selectedJobId ? (
+          flowOpen && !selectedJobId ? (
+            <QueueFlow
+              queue={selectedQueue}
+              pollingInterval={pollingInterval}
+              onBack={() => setFlowOpen(false)}
+              onSelectNode={selectFlowNode}
+            />
+          ) : selectedJobId ? (
             <JobDetail
               queue={selectedQueue}
               jobId={selectedJobId}
               pollingInterval={pollingInterval}
               onBack={() => setSelectedJobId(null)}
+              onSelectNode={selectFlowNode}
             />
           ) : (
             <QueueJobs
@@ -59,6 +90,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
               pollingInterval={pollingInterval}
               onBack={() => setSelectedQueueName(null)}
               onSelectJob={(job) => job.id && setSelectedJobId(job.id)}
+              onShowFlow={() => setFlowOpen(true)}
             />
           )
         ) : (

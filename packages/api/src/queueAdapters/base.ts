@@ -1,3 +1,4 @@
+import type { FlowProducer } from 'bullmq';
 import type {
   BullBoardRequest,
   FormatterField,
@@ -119,6 +120,16 @@ export abstract class BaseAdapter {
    * Connected workers for this queue, or `null` when the queue cannot answer.
    */
   public async getWorkers(): Promise<QueueWorker[] | null> {
+    return null;
+  }
+
+  /**
+   * A flow producer bound to the queue's datastore connection, or `null` when
+   * the backing library has no flow support. BullMQ adapters return a cached
+   * producer so flow trees are read from the same datastore the queue lives
+   * in; Bull adapters answer `null` and flow views stay empty.
+   */
+  public async getFlowProducer(): Promise<FlowProducer | null> {
     return null;
   }
 

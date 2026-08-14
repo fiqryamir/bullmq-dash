@@ -32,6 +32,7 @@ function renderQueueJobs(overrides: { onSelectJob?: (job: AppJob) => void } = {}
       pollingInterval={0}
       onBack={() => {}}
       onSelectJob={overrides.onSelectJob ?? (() => {})}
+      onShowFlow={() => {}}
     />
   );
 }
@@ -59,7 +60,7 @@ describe('QueueJobs', () => {
 
   it('shows the waiting count on the paused tab while the queue is paused', async () => {
     stubJobsApi([]);
-    render(<QueueJobs queue={makeQueue({ isPaused: true })} pollingInterval={0} onBack={() => {}} onSelectJob={() => {}} />);
+    render(<QueueJobs queue={makeQueue({ isPaused: true })} pollingInterval={0} onBack={() => {}} onSelectJob={() => {}} onShowFlow={() => {}} />);
 
     const pausedTab = stateTab('paused');
     expect(within(pausedTab).getByText('5')).toBeInTheDocument();
@@ -184,7 +185,7 @@ describe('QueueJobs', () => {
   it('falls back to the last page when the queue shrinks under the current page', async () => {
     const fetchMock = stubJobsApi([makeJob(0)], 3);
     const user = userEvent.setup();
-    render(<QueueJobs queue={makeQueue()} pollingInterval={50} onBack={() => {}} onSelectJob={() => {}} />);
+    render(<QueueJobs queue={makeQueue()} pollingInterval={50} onBack={() => {}} onSelectJob={() => {}} onShowFlow={() => {}} />);
 
     await screen.findByRole('table');
     await user.click(screen.getByRole('button', { name: 'Next page' }));
@@ -200,7 +201,7 @@ describe('QueueJobs', () => {
     stubJobsApi([]);
     const onBack = vi.fn();
     const user = userEvent.setup();
-    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={onBack} onSelectJob={() => {}} />);
+    render(<QueueJobs queue={makeQueue()} pollingInterval={0} onBack={onBack} onSelectJob={() => {}} onShowFlow={() => {}} />);
 
     await user.click(screen.getByRole('button', { name: /back/i }));
     expect(onBack).toHaveBeenCalledTimes(1);
@@ -431,7 +432,7 @@ describe('QueueJobs actions', () => {
 
   it('hides every action control while the queue is read-only', async () => {
     stubJobsApi([makeJob(0, { id: 'a1', state: 'failed' })]);
-    render(<QueueJobs queue={makeQueue({ readOnlyMode: true })} pollingInterval={0} onBack={() => {}} onSelectJob={() => {}} />);
+    render(<QueueJobs queue={makeQueue({ readOnlyMode: true })} pollingInterval={0} onBack={() => {}} onSelectJob={() => {}} onShowFlow={() => {}} />);
 
     const table = await screen.findByRole('table');
     await waitFor(() => expect(within(table).getByText('a1')).toBeInTheDocument());
@@ -452,7 +453,7 @@ describe('QueueJobs actions', () => {
         queue={makeQueue({ allowRetries: false })}
         pollingInterval={0}
         onBack={() => {}}
-        onSelectJob={() => {}}
+        onSelectJob={() => {}} onShowFlow={() => {}}
       />
     );
 

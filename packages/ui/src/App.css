@@ -222,6 +222,18 @@
   color: var(--dash-state-paused);
 }
 
+.chip--waiting-children {
+  color: var(--dash-state-delayed);
+}
+
+.chip--prioritized {
+  color: var(--dash-state-active);
+}
+
+.chip--unknown {
+  color: var(--dash-muted);
+}
+
 /* ---------- queue jobs view ---------- */
 
 .app__main--queue {
@@ -598,3 +610,146 @@
   transform: translateX(18px);
   background: var(--dash-accent);
 }
+
+/* ---------- flow view ---------- */
+
+.queue-jobs__flow {
+  margin-left: auto;
+}
+
+.queue-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 60vh;
+}
+
+.queue-flow__subtitle {
+  color: var(--dash-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.flow-notice {
+  margin: 0;
+}
+
+.flow-graph {
+  flex: 1;
+  height: 62vh;
+  min-height: 400px;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  overflow: hidden;
+  --xy-background-color: transparent;
+  --xy-background-color-dot: color-mix(in srgb, var(--dash-border) 80%, transparent);
+  --xy-edge-stroke: var(--dash-border);
+  --xy-edge-stroke-selected: var(--dash-accent);
+  --xy-controls-button-background-color: var(--dash-surface);
+  --xy-controls-button-background-color-hover: var(--dash-bg);
+  --xy-controls-button-color: var(--dash-muted);
+  --xy-minimap-background-color: var(--dash-bg);
+}
+
+.flow-graph--section {
+  height: 420px;
+}
+
+.flow-graph .react-flow__node {
+  cursor: pointer;
+}
+
+.flow-graph .react-flow__node:focus-visible {
+  outline: 2px solid var(--dash-accent);
+  outline-offset: 2px;
+}
+
+.flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 200px;
+  padding: 8px 12px;
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-left: 3px solid var(--dash-border);
+  border-radius: 12px;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.flow-node--waiting {
+  border-left-color: var(--dash-state-waiting);
+}
+
+.flow-node--active {
+  border-left-color: var(--dash-state-active);
+}
+
+.flow-node--delayed {
+  border-left-color: var(--dash-state-delayed);
+}
+
+.flow-node--completed {
+  border-left-color: var(--dash-state-completed);
+}
+
+.flow-node--failed {
+  border-left-color: var(--dash-state-failed);
+}
+
+.flow-node--waiting-children {
+  border-left-color: var(--dash-state-delayed);
+}
+
+.flow-node--prioritized {
+  border-left-color: var(--dash-state-active);
+}
+
+.flow-node__name {
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow-node__id {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  color: var(--dash-muted);
+}
+
+.flow-node__queue {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10px;
+  color: var(--dash-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow-graph .react-flow__edge-path {
+  stroke-width: 1.5;
+}
+
+.flow-graph .react-flow__controls {
+  box-shadow: 0 0 0 1px var(--dash-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.flow-graph .react-flow__controls-button {
+  border-bottom: 1px solid var(--dash-border);
+}
+
+.flow-graph .react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
