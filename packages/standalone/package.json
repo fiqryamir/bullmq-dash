@@ -35,7 +35,7 @@
   },
   "scripts": {
     "build": "tsup && tsup --config tsup.bin.config.ts",
-    "pretest": "pnpm --filter @bullmq-dash/ui run build && pnpm --filter @bullmq-dash/api run build && pnpm run build",
+    "pretest": "pnpm --filter @bullmq-dash/ui run build && pnpm --filter @bullmq-dash/api run build && pnpm --filter @bullmq-dash/express run build && pnpm run build",
     "pretest:e2e": "pnpm run pretest",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
