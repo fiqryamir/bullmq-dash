@@ -1,16 +1,12 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { clearKeys, connectRedis, seedQueues, uniquePrefix } from './testUtils/redis';
+import { waitForUrl } from './testUtils/waitForUrl';
 
-const PREFIX = `bin-${process.pid}-${Date.now()}`;
+const PREFIX = uniquePrefix('bin');
 const BIN_PATH = new URL('../dist/bin.js', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-
-const redisOptions = () => ({
-  host: process.env.REDIS_HOST ?? 'localhost',
-  port: Number(process.env.REDIS_PORT ?? 6379),
-});
 
 let client: Redis;
 let child: ChildProcess | undefined;
@@ -24,46 +20,16 @@ function spawnBin(extraArgs: string[] = []): ChildProcess {
   return spawned;
 }
 
-async function waitForUrl(candidate: ChildProcess): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let buffer = '';
-    const timeout = setTimeout(
-      () => reject(new Error(`bin did not report a listening url. Output:\n${buffer}`)),
-      15_000
-    );
-    candidate.stdout?.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString();
-      const match = buffer.match(/listening on (http:\/\/\S+)/);
-      if (match?.[1]) {
-        clearTimeout(timeout);
-        resolve(match[1]);
-      }
-    });
-    candidate.stderr?.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString();
-    });
-    candidate.once('exit', (code) => {
-      clearTimeout(timeout);
-      reject(new Error(`bin exited with code ${code} before listening. Output:\n${buffer}`));
-    });
-  });
-}
-
 beforeAll(async () => {
-  client = new Redis(redisOptions());
-  await client.ping();
-
-  const queue = new Queue('bin-emails', { connection: redisOptions(), prefix: PREFIX });
-  await queue.add('welcome', { to: 'a@example.com' });
-  await queue.close();
+  client = await connectRedis();
+  await seedQueues(PREFIX, [
+    { name: 'bin-emails', jobs: [{ name: 'welcome', data: { to: 'a@example.com' } }] },
+  ]);
 });
 
 afterAll(async () => {
   child?.kill('SIGTERM');
-  const keys = await client.keys(`${PREFIX}:*`);
-  if (keys.length > 0) {
-    await client.del(...keys);
-  }
+  await clearKeys(client, PREFIX);
   await client.quit();
 });
 

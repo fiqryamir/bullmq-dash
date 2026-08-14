@@ -6,6 +6,10 @@ const handle = await main(process.argv.slice(2), process.env).catch((error: unkn
   process.exit(1);
 });
 
+if (!handle) {
+  process.exit(0);
+}
+
 const shutdown = () => {
   handle.close().then(
     () => process.exit(0),

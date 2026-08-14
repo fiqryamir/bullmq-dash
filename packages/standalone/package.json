@@ -4,6 +4,7 @@
   "description": "Standalone bullmq-dash server - the bullmq-dash bin, zero-config dashboard on localhost:3000",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
   "engines": {
     "node": ">=20"
   },

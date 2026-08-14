@@ -1,25 +1,17 @@
 import Redis from 'ioredis';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { discoverQueueNames } from './discoverQueues';
+import { clearKeys, connectRedis, uniquePrefix } from './testUtils/redis';
 
-const PREFIX = `disc-${process.pid}-${Date.now()}`;
+const PREFIX = uniquePrefix('disc');
 let client: Redis;
 
 beforeAll(async () => {
-  client = new Redis({
-    host: process.env.REDIS_HOST ?? 'localhost',
-    port: Number(process.env.REDIS_PORT ?? 6379),
-  });
-  await client.ping();
+  client = await connectRedis();
 });
 
 afterEach(async () => {
-  const keys = await client.keys(`${PREFIX}:*`);
-  const unrelated = await client.keys('unrelated:*');
-  const all = [...keys, ...unrelated];
-  if (all.length > 0) {
-    await client.del(...all);
-  }
+  await clearKeys(client, PREFIX, 'unrelated');
 });
 
 afterAll(async () => {
@@ -59,16 +51,5 @@ describe('discoverQueueNames', () => {
 
     const names = await discoverQueueNames(client, PREFIX);
     expect(names).toEqual([...names].sort());
-  });
-
-  it('filters the discovered queues to the allow-list', async () => {
-    await client.set(`${PREFIX}:alpha:meta`, '{}');
-    await client.set(`${PREFIX}:beta:meta`, '{}');
-    await client.set(`${PREFIX}:gamma:meta`, '{}');
-
-    expect(await discoverQueueNames(client, PREFIX, ['beta', 'gamma', 'missing'])).toEqual([
-      'beta',
-      'gamma',
-    ]);
   });
 });

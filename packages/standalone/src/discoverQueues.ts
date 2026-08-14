@@ -6,14 +6,9 @@ const META_SUFFIX = ':meta';
  * Discovers the queue names a BullMQ prefix holds by scanning the
  * `<prefix>:*:meta` keys. BullMQ v6 has no queue-registry API, so the
  * meta keys are the ground truth for "every queue on this connection".
- * Results are sorted; an allow-list filters them (unknown names are
- * dropped — a queue that has no keys in Redis has nothing to show).
+ * Results are sorted.
  */
-export async function discoverQueueNames(
-  client: Redis,
-  prefix: string,
-  allowList?: string[]
-): Promise<string[]> {
+export async function discoverQueueNames(client: Redis, prefix: string): Promise<string[]> {
   const pattern = `${prefix}:*:meta`;
   const names = new Set<string>();
 
@@ -30,11 +25,5 @@ export async function discoverQueueNames(
     }
   }
 
-  const discovered = [...names].sort();
-  if (!allowList) {
-    return discovered;
-  }
-
-  const allowed = new Set(allowList);
-  return discovered.filter((name) => allowed.has(name));
+  return [...names].sort();
 }

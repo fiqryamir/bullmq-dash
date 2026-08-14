@@ -69,10 +69,20 @@ describe('resolveStandaloneConfig', () => {
     expect(config.port).toBe(4000);
   });
 
+  it('reads the server host and port from the BULLMQ_DASH_HOST/PORT env vars', () => {
+    const { config } = resolveStandaloneConfig({
+      argv: [],
+      env: { BULLMQ_DASH_HOST: '0.0.0.0', BULLMQ_DASH_PORT: '4000' },
+    });
+
+    expect(config.host).toBe('0.0.0.0');
+    expect(config.port).toBe(4000);
+  });
+
   it('env vars override the config file', () => {
     const { config } = resolveStandaloneConfig({
       argv: [],
-      env: { REDIS_HOST: 'env-host', PORT: '5000' },
+      env: { REDIS_HOST: 'env-host', BULLMQ_DASH_PORT: '5000' },
       readConfigFile: () => fileConfig({ port: 4000, redis: { host: 'file-host' } }),
     });
 
@@ -84,7 +94,7 @@ describe('resolveStandaloneConfig', () => {
   it('flags override env vars', () => {
     const { config } = resolveStandaloneConfig({
       argv: ['--redis-host', 'flag-host', '--port', '6000'],
-      env: { REDIS_HOST: 'env-host', PORT: '5000' },
+      env: { REDIS_HOST: 'env-host', BULLMQ_DASH_PORT: '5000' },
     });
 
     expect(config.redis.host).toBe('flag-host');
@@ -109,13 +119,25 @@ describe('resolveStandaloneConfig', () => {
     expect(config.queues).toEqual(['emails', 'reports']);
   });
 
-  it('treats an empty allow-list as unset', () => {
-    const { config } = resolveStandaloneConfig({
-      argv: ['--queues', ''],
+  it('treats an empty allow-list as showing nothing, from flag or env', () => {
+    const fromFlag = resolveStandaloneConfig({ argv: ['--queues', ''], env: EMPTY_ENV });
+    const fromEnv = resolveStandaloneConfig({
+      argv: [],
       env: { BULLMQ_DASH_QUEUES: '' },
     });
 
-    expect(config.queues).toBeUndefined();
+    expect(fromFlag.config.queues).toEqual([]);
+    expect(fromEnv.config.queues).toEqual([]);
+  });
+
+  it('keeps an empty allow-list from the config file as showing nothing', () => {
+    const { config } = resolveStandaloneConfig({
+      argv: ['--config', './dash.json'],
+      env: EMPTY_ENV,
+      readConfigFile: () => fileConfig({ queues: [] }),
+    });
+
+    expect(config.queues).toEqual([]);
   });
 
   it('ignores an empty redis password', () => {

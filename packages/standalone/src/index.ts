@@ -9,6 +9,6 @@ export {
 export { discoverQueueNames } from './discoverQueues';
 export {
   startStandaloneServer,
-  redisConnection,
+  redisConnectionOptions,
   type StandaloneServerHandle,
 } from './server';

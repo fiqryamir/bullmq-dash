@@ -13,7 +13,7 @@ export type StandaloneServerHandle = {
   close(): Promise<void>;
 };
 
-export function redisConnection(config: StandaloneConfig['redis']): QueueOptions['connection'] {
+export function redisConnectionOptions(config: StandaloneConfig['redis']): QueueOptions['connection'] {
   return {
     host: config.host,
     port: config.port,
@@ -24,14 +24,15 @@ export function redisConnection(config: StandaloneConfig['redis']): QueueOptions
 
 /**
  * Boots the standalone dashboard server: discovers the queues on the Redis
- * connection (filtered by the allow-list), registers each with the board,
- * and starts listening. Fails fast with the underlying Redis error when the
- * connection is unreachable.
+ * connection (an allow-list shows exactly the listed queues, even ones with
+ * no keys yet - a fresh queue must be visible), registers each with the
+ * board, and starts listening. Fails fast with the underlying Redis error
+ * when the connection is unreachable.
  */
 export async function startStandaloneServer(
   config: StandaloneConfig
 ): Promise<StandaloneServerHandle> {
-  const connection = redisConnection(config.redis);
+  const connection = redisConnectionOptions(config.redis);
 
   const discoveryClient = new Redis({
     ...connection,
@@ -40,7 +41,8 @@ export async function startStandaloneServer(
   });
   await discoveryClient.ping();
 
-  const names = await discoverQueueNames(discoveryClient, config.redis.prefix, config.queues);
+  const discovered = await discoverQueueNames(discoveryClient, config.redis.prefix);
+  const names = config.queues ? [...config.queues].sort() : discovered;
   const queues = names.map(
     (name) => new Queue(name, { connection, prefix: config.redis.prefix })
   );

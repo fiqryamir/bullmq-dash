@@ -31,7 +31,10 @@ export type StandaloneConfig = {
   host: string;
   port: number;
   redis: RedisConfig;
-  /** Optional allow-list of queue names; absent, every queue is shown. */
+  /**
+   * Allow-list of queue names to show. Present, it wins wholesale - even an
+   * empty list, which shows nothing; absent, every queue is shown.
+   */
   queues: string[] | undefined;
 };
 
@@ -80,12 +83,11 @@ function parseNumber(field: string, raw: string | undefined): number | undefined
   return value;
 }
 
-function parseAllowList(raw: string | undefined): string[] | undefined {
-  const list = (raw ?? '')
+function parseAllowList(raw: string): string[] {
+  return raw
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean);
-  return list.length > 0 ? list : undefined;
 }
 
 /**
@@ -131,31 +133,39 @@ export function resolveStandaloneConfig(args: {
     return undefined;
   };
 
-  const port = parseNumber('port', pick([flag.port, env.PORT, file.port])) ?? STANDALONE_DEFAULTS.port;
-  const redisPort =
-    parseNumber('redis port', pick([flag['redis-port'], env.REDIS_PORT, file.redis?.port])) ??
-    STANDALONE_DEFAULTS.redis.port;
-  const db =
-    parseNumber('redis db', pick([flag['redis-db'], env.REDIS_DB, file.redis?.db])) ??
-    STANDALONE_DEFAULTS.redis.db;
+  const raw = {
+    host: pick([flag.host, env.BULLMQ_DASH_HOST, file.host]),
+    port: pick([flag.port, env.BULLMQ_DASH_PORT, file.port]),
+    redisHost: pick([flag['redis-host'], env.REDIS_HOST, file.redis?.host]),
+    redisPort: pick([flag['redis-port'], env.REDIS_PORT, file.redis?.port]),
+    password: pick([flag['redis-password'], env.REDIS_PASSWORD, file.redis?.password]),
+    db: pick([flag['redis-db'], env.REDIS_DB, file.redis?.db]),
+    prefix: pick([flag['redis-prefix'], env.REDIS_PREFIX, file.redis?.prefix]),
+  };
 
-  const password = pick([flag['redis-password'], env.REDIS_PASSWORD, file.redis?.password]);
-  const queues = parseAllowList(pick([flag.queues, env.BULLMQ_DASH_QUEUES, file.queues?.join(',')]));
+  // An explicitly-present allow-list wins even when empty - an empty list
+  // shows nothing, never everything.
+  const queues =
+    flag.queues !== undefined
+      ? parseAllowList(flag.queues)
+      : env.BULLMQ_DASH_QUEUES !== undefined
+        ? parseAllowList(env.BULLMQ_DASH_QUEUES)
+        : file.queues !== undefined
+          ? file.queues
+          : undefined;
 
   return {
     help,
     version,
     config: {
-      host: pick([flag.host, env.HOST, file.host]) ?? STANDALONE_DEFAULTS.host,
-      port,
+      host: raw.host ?? STANDALONE_DEFAULTS.host,
+      port: parseNumber('port', raw.port) ?? STANDALONE_DEFAULTS.port,
       redis: {
-        host: pick([flag['redis-host'], env.REDIS_HOST, file.redis?.host]) ?? STANDALONE_DEFAULTS.redis.host,
-        port: redisPort,
-        password,
-        db,
-        prefix:
-          pick([flag['redis-prefix'], env.REDIS_PREFIX, file.redis?.prefix]) ??
-          STANDALONE_DEFAULTS.redis.prefix,
+        host: raw.redisHost ?? STANDALONE_DEFAULTS.redis.host,
+        port: parseNumber('redis port', raw.redisPort) ?? STANDALONE_DEFAULTS.redis.port,
+        password: raw.password,
+        db: parseNumber('redis db', raw.db) ?? STANDALONE_DEFAULTS.redis.db,
+        prefix: raw.prefix ?? STANDALONE_DEFAULTS.redis.prefix,
       },
       queues,
     },
