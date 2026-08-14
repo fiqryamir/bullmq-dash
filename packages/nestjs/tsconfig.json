@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src", "tsup.config.ts", "vitest.config.ts"],
+  "compilerOptions": {
+    "paths": {
+      "@bullmq-dash/api": ["../../packages/api/src/index.ts"],
+      "@bullmq-dash/express": ["../../packages/express/src/index.ts"],
+      "@bullmq-dash/fastify": ["../../packages/fastify/src/index.ts"]
+    },
+    "experimentalDecorators": true
+  }
+}
