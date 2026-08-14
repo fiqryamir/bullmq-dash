@@ -8,6 +8,8 @@ import type { BoardOptions, IServerAdapter } from './typings/app';
 
 export { BaseAdapter } from './queueAdapters/base';
 export { BullMQAdapter } from './queueAdapters/bullMQ';
+export { buildBullBoardRequest } from './serverAdapter/request';
+export { expandRouteDefs } from './serverAdapter/routes';
 export * from './typings/app';
 
 type CreateBullBoardArgs = {

@@ -1,12 +1,13 @@
-import type {
-  AppControllerRoute,
-  AppViewRoute,
-  BullBoardQueues,
-  BullBoardRequest,
-  ControllerHandlerReturnType,
-  HTTPMethod,
-  IServerAdapter,
-  UIConfig,
+import {
+  buildBullBoardRequest,
+  expandRouteDefs,
+  type AppControllerRoute,
+  type AppViewRoute,
+  type BullBoardQueues,
+  type BullBoardRequest,
+  type ControllerHandlerReturnType,
+  type IServerAdapter,
+  type UIConfig,
 } from '@bullmq-dash/api';
 import fastifyStatic from '@fastify/static';
 import pointOfView from '@fastify/view';
@@ -50,22 +51,11 @@ export class FastifyAdapter implements IServerAdapter {
   }
 
   public setApiRoutes(routes: AppControllerRoute[]): FastifyAdapter {
-    this.apiRoutes = routes.reduce((result, routeRaw) => {
-      const routes = Array.isArray(routeRaw.route) ? routeRaw.route : [routeRaw.route];
-      const methods = Array.isArray(routeRaw.method) ? routeRaw.method : [routeRaw.method];
-
-      routes.forEach((route) =>
-        methods.forEach((method: HTTPMethod) => {
-          result.push({
-            method: method.toUpperCase() as HTTPMethods,
-            route,
-            handler: routeRaw.handler,
-          });
-        })
-      );
-
-      return result;
-    }, [] as FastifyRouteDef[]);
+    this.apiRoutes = expandRouteDefs(routes).map(({ method, route, handler }) => ({
+      method: method.toUpperCase() as HTTPMethods,
+      route,
+      handler,
+    }));
     return this;
   }
 
@@ -88,23 +78,19 @@ export class FastifyAdapter implements IServerAdapter {
     return (fastify, opts, done) => {
       const { statics, viewPath, entryRoute, apiRoutes, bullBoardQueues, errorHandler } = this;
 
-      if (!statics) {
-        done(new Error(`Please call 'setStaticPath' before using 'registerPlugin'`));
-        return;
-      } else if (!entryRoute) {
-        done(new Error(`Please call 'setEntryRoute' before using 'registerPlugin'`));
-        return;
-      } else if (!viewPath) {
-        done(new Error(`Please call 'setViewsPath' before using 'registerPlugin'`));
-        return;
-      } else if (!apiRoutes) {
-        done(new Error(`Please call 'setApiRoutes' before using 'registerPlugin'`));
-        return;
-      } else if (!bullBoardQueues) {
-        done(new Error(`Please call 'setQueues' before using 'registerPlugin'`));
-        return;
-      } else if (!errorHandler) {
-        done(new Error(`Please call 'setErrorHandler' before using 'registerPlugin'`));
+      if (!statics || !entryRoute || !viewPath || !apiRoutes || !bullBoardQueues || !errorHandler) {
+        const missing = (
+          [
+            ['setStaticPath', statics],
+            ['setEntryRoute', entryRoute],
+            ['setViewsPath', viewPath],
+            ['setApiRoutes', apiRoutes],
+            ['setQueues', bullBoardQueues],
+            ['setErrorHandler', errorHandler],
+          ] as const
+        ).find(([, value]) => !value);
+
+        done(new Error(`Please call '${missing![0]}' before using 'registerPlugin'`));
         return;
       }
 
@@ -140,14 +126,16 @@ export class FastifyAdapter implements IServerAdapter {
           method: route.method,
           url: route.route,
           handler: async (request, reply) => {
-            const bullBoardRequest: BullBoardRequest = {
-              queues: bullBoardQueues,
-              uiConfig: this.uiConfig || {},
-              query: request.query as Record<string, unknown>,
-              params: request.params as Record<string, unknown>,
-              body: (request.body ?? {}) as Record<string, unknown>,
-              headers: request.headers as Record<string, string | undefined>,
-            };
+            const bullBoardRequest: BullBoardRequest = buildBullBoardRequest(
+              bullBoardQueues,
+              this.uiConfig,
+              {
+                query: request.query,
+                params: request.params,
+                body: request.body,
+                headers: request.headers,
+              }
+            );
             const response = await route.handler(bullBoardRequest);
 
             return reply.status(response.status || 200).send(response.body);
