@@ -134,14 +134,16 @@ export async function fetchJobLogs(
 }
 
 /**
- * Searches jobs by id or name across every queue. `statuses` narrows the
- * search to those states (empty = all states); `start` continues a deepened
- * search from an earlier response's scanned offset.
+ * Searches jobs by id or name. Without `queueName` the search spans every
+ * queue; with it, the search is scoped to that queue's endpoint. `statuses`
+ * narrows the search to those states (empty = all states); `start` continues
+ * a deepened search from an earlier response's scanned offset.
  */
 export async function fetchSearch(
   term: string,
   statuses: JobStatus[],
-  start: number
+  start: number,
+  queueName?: string
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ term });
   if (statuses.length > 0) {
@@ -150,7 +152,10 @@ export async function fetchSearch(
   if (start > 0) {
     params.set('start', String(start));
   }
-  const response = await fetch(`api/search?${params.toString()}`);
+  const path = queueName
+    ? `api/queues/${encodeURIComponent(queueName)}/search`
+    : 'api/search';
+  const response = await fetch(`${path}?${params.toString()}`);
   if (!response.ok) {
     throw new Error(`Search request failed with status ${response.status}`);
   }

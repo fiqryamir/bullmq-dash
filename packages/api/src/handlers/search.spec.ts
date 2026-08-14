@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Queue } from 'bullmq';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BullMQAdapter } from '../queueAdapters/bullMQ';
+import { seedQueueJobs } from '../testUtils/seedQueueJobs';
 import type {
   BullBoardQueues,
   BullBoardRequest,
@@ -13,6 +14,28 @@ import { searchHandler } from './search';
 const connection = {
   host: process.env.REDIS_HOST ?? 'localhost',
   port: Number(process.env.REDIS_PORT ?? 6379),
+};
+
+/** A handler request with the given queues, query and params. */
+function makeRequest(
+  queues: BullBoardQueues,
+  query: Record<string, unknown> = {},
+  params: Record<string, unknown> = {}
+): BullBoardRequest {
+  return { queues, uiConfig: {}, query, params, body: {}, headers: {} };
+}
+
+/** A search request whose handler response is parsed with its body typed. */
+const sendSearch = async (
+  queues: BullBoardQueues,
+  query: Record<string, unknown>,
+  params: Record<string, unknown> = {}
+): Promise<{ status?: number | undefined; body: SearchResponse & { error?: string } }> => {
+  const response = await searchHandler(makeRequest(queues, query, params));
+  return {
+    status: response.status,
+    body: response.body as unknown as SearchResponse & { error?: string },
+  };
 };
 
 const resultsOf = (body: SearchResponse): SearchResult[] => body.results;
@@ -43,14 +66,7 @@ describe('searchHandler', () => {
     queues.set(queueAName, new BullMQAdapter(queueA));
     queues.set(queueBName, new BullMQAdapter(queueB));
 
-    request = {
-      queues,
-      uiConfig: {},
-      query: {},
-      params: {},
-      body: {},
-      headers: {},
-    };
+    request = makeRequest(queues);
   }, 30_000);
 
   afterAll(async () => {
@@ -63,13 +79,7 @@ describe('searchHandler', () => {
   const send = async (
     query: Record<string, unknown> = {},
     params: Record<string, unknown> = {}
-  ): Promise<{ status?: number | undefined; body: SearchResponse & { error?: string } }> => {
-    const response = await searchHandler({ ...request, query, params });
-    return {
-      status: response.status,
-      body: response.body as unknown as SearchResponse & { error?: string },
-    };
-  };
+  ) => sendSearch(request.queues, query, params);
 
   it('matches jobs by a partial id across every queue', async () => {
     const { status, body } = await send({ term: 'mail-' });
@@ -173,19 +183,11 @@ describe('searchHandler', () => {
     const pausedRequest = async (query: Record<string, unknown>) => {
       const queues: BullBoardQueues = new Map();
       queues.set(pausedName, new BullMQAdapter(pausedQueue));
-      return searchHandler({
-        queues,
-        uiConfig: {},
-        query,
-        params: {},
-        body: {},
-        headers: {},
-      });
+      return sendSearch(queues, query);
     };
 
     it('scans its waiting jobs once, not once per collapsed state', async () => {
-      const response = await pausedRequest({ term: 'hold-' });
-      const body = response.body as unknown as SearchResponse;
+      const { body } = await pausedRequest({ term: 'hold-' });
 
       expect(sortedIdsOf(body)).toEqual(['hold-1', 'hold-2']);
       expect(resultsOf(body).map((result) => result.state)).toEqual(['waiting', 'waiting']);
@@ -193,8 +195,7 @@ describe('searchHandler', () => {
     });
 
     it('still labels matches as paused when that state is chosen explicitly', async () => {
-      const response = await pausedRequest({ term: 'hold-', status: 'paused' });
-      const body = response.body as unknown as SearchResponse;
+      const { body } = await pausedRequest({ term: 'hold-', status: 'paused' });
 
       expect(sortedIdsOf(body)).toEqual(['hold-1', 'hold-2']);
       expect(resultsOf(body).map((result) => result.state)).toEqual(['paused', 'paused']);
@@ -207,13 +208,7 @@ describe('searchHandler', () => {
 
     beforeAll(async () => {
       cappedQueue = new Queue(cappedName, { connection });
-      await cappedQueue.addBulk(
-        Array.from({ length: 505 }, (_, index) => ({
-          name: 'capped-job',
-          data: { index },
-          opts: { jobId: `capped-${index}` },
-        }))
-      );
+      await seedQueueJobs(cappedQueue, 'capped', 505);
     }, 60_000);
 
     afterAll(async () => {
@@ -221,24 +216,16 @@ describe('searchHandler', () => {
       await cappedQueue.close();
     }, 30_000);
 
-    const cappedRequest = (query: Record<string, unknown>) => {
+    const cappedRequest = async (query: Record<string, unknown>) => {
       const queues: BullBoardQueues = new Map();
       queues.set(cappedName, new BullMQAdapter(cappedQueue));
-      return searchHandler({
-        queues,
-        uiConfig: {},
-        query,
-        params: {},
-        body: {},
-        headers: {},
-      });
+      return sendSearch(queues, query);
     };
 
     it('returns the first 500 matches with a deepen continuation', async () => {
-      const response = await cappedRequest({ term: 'capped-' });
+      const { status, body } = await cappedRequest({ term: 'capped-' });
 
-      expect(response.status).toBeUndefined();
-      const body = response.body as unknown as SearchResponse;
+      expect(status).toBeUndefined();
       expect(body.count).toBe(500);
       expect(body.results).toHaveLength(500);
       expect(body.totalScanned).toBe(500);
@@ -246,13 +233,12 @@ describe('searchHandler', () => {
     });
 
     it('continues past the cap from the scanned offset', async () => {
-      const first = (await cappedRequest({ term: 'capped-' })).body as unknown as SearchResponse;
-      const continued = (await cappedRequest({ term: 'capped-', start: String(first.totalScanned) }))
-        .body as unknown as SearchResponse;
+      const first = await cappedRequest({ term: 'capped-' });
+      const continued = await cappedRequest({ term: 'capped-', start: String(first.body.totalScanned) });
 
-      expect(continued.count).toBe(5);
-      expect(continued.totalScanned).toBe(5);
-      expect(continued.deepen).toBe(false);
+      expect(continued.body.count).toBe(5);
+      expect(continued.body.totalScanned).toBe(5);
+      expect(continued.body.deepen).toBe(false);
     });
   });
 
@@ -262,13 +248,7 @@ describe('searchHandler', () => {
 
     beforeAll(async () => {
       scannedQueue = new Queue(scannedName, { connection });
-      await scannedQueue.addBulk(
-        Array.from({ length: 5001 }, (_, index) => ({
-          name: 'scan-job',
-          data: { index },
-          opts: { jobId: `scan-${index}` },
-        }))
-      );
+      await seedQueueJobs(scannedQueue, 'scan', 5001);
     }, 60_000);
 
     afterAll(async () => {
@@ -276,30 +256,25 @@ describe('searchHandler', () => {
       await scannedQueue.close();
     }, 60_000);
 
-    const scannedRequest = (query: Record<string, unknown>) => {
+    const scannedRequest = async (query: Record<string, unknown>) => {
       const queues: BullBoardQueues = new Map();
       queues.set(scannedName, new BullMQAdapter(scannedQueue));
-      return searchHandler({
-        queues,
-        uiConfig: {},
-        query,
-        params: {},
-        body: {},
-        headers: {},
-      });
+      return sendSearch(queues, query);
     };
 
     it('deepens past the scan window when nothing matches', async () => {
-      const first = (await scannedRequest({ term: 'zzz-nothing' })).body as unknown as SearchResponse;
-      expect(first.count).toBe(0);
-      expect(first.totalScanned).toBe(5000);
-      expect(first.deepen).toBe(true);
+      const first = await scannedRequest({ term: 'zzz-nothing' });
+      expect(first.body.count).toBe(0);
+      expect(first.body.totalScanned).toBe(5000);
+      expect(first.body.deepen).toBe(true);
 
-      const continued = (await scannedRequest({ term: 'zzz-nothing', start: String(first.totalScanned) }))
-        .body as unknown as SearchResponse;
-      expect(continued.count).toBe(0);
-      expect(continued.totalScanned).toBe(1);
-      expect(continued.deepen).toBe(false);
+      const continued = await scannedRequest({
+        term: 'zzz-nothing',
+        start: String(first.body.totalScanned),
+      });
+      expect(continued.body.count).toBe(0);
+      expect(continued.body.totalScanned).toBe(1);
+      expect(continued.body.deepen).toBe(false);
     });
   });
 });

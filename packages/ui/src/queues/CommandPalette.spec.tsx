@@ -145,6 +145,21 @@ describe('CommandPalette', () => {
     expect(screen.queryByRole('button', { name: 'Deepen search' })).not.toBeInTheDocument();
   });
 
+  it('scopes the search to a queue when queueName is given', async () => {
+    vi.useFakeTimers();
+    const fetchMock = stubSearchApi(searchResponse([mailResult('mail-1')]));
+
+    render(<CommandPalette onSelectJob={() => {}} queueName="emails" />);
+    expect(screen.getByRole('searchbox', { name: 'Search jobs' })).toHaveAttribute(
+      'placeholder',
+      'Search jobs in emails…'
+    );
+
+    await typeAndWait('mail');
+    expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/search?term=mail');
+    expect(within(screen.getByTestId('palette-scroll')).queryByText('emails')).not.toBeInTheDocument();
+  });
+
   it('reports an empty result set', async () => {
     vi.useFakeTimers();
     stubSearchApi(searchResponse([]));

@@ -8,17 +8,20 @@ const RESULT_ROW_HEIGHT = 40;
 
 type CommandPaletteProps = {
   onSelectJob: (result: SearchResult) => void;
+  /** Scopes the search to a single queue; absent, the search spans every queue. */
+  queueName?: string;
 };
 
 /**
- * The live job-search palette: a 300ms-debounced search across every queue,
- * state chips narrowing the search, a virtualized result list, and a deepen
- * button that continues past the server's result cap.
+ * The live job-search palette: a 300ms-debounced search (across every queue,
+ * or scoped to one when `queueName` is given), state chips narrowing the
+ * search, a virtualized result list, and a deepen button that continues past
+ * the server's result cap.
  */
-export function CommandPalette({ onSelectJob }: CommandPaletteProps) {
+export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) {
   const [term, setTerm] = useState('');
   const [states, setStates] = useState<JobStatus[]>([]);
-  const { results, status, deepen, deepenSearch } = useJobSearch(term, states);
+  const { results, status, deepen, deepenSearch } = useJobSearch(term, states, queueName);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const toggleState = (state: JobStatus) => {
@@ -39,7 +42,9 @@ export function CommandPalette({ onSelectJob }: CommandPaletteProps) {
       <input
         type="search"
         className="command-bar"
-        placeholder="Search jobs by id or name across queues…"
+        placeholder={
+          queueName ? `Search jobs in ${queueName}…` : 'Search jobs by id or name across queues…'
+        }
         aria-label="Search jobs"
         value={term}
         onChange={(event) => setTerm(event.target.value)}
@@ -89,7 +94,7 @@ export function CommandPalette({ onSelectJob }: CommandPaletteProps) {
                       <span className="command-palette__id">{result.job.id}</span>
                       <span className="command-palette__name">{result.job.name}</span>
                       <span className={`chip chip--${result.state}`}>{result.state}</span>
-                      <span className="command-palette__queue">{result.queue}</span>
+                      {!queueName && <span className="command-palette__queue">{result.queue}</span>}
                     </button>
                   </li>
                 );

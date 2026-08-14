@@ -8,6 +8,7 @@ import express, { type Express } from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { pollUntil } from '../../api/src/testUtils/pollUntil';
+import { seedQueueJobs } from '../../api/src/testUtils/seedQueueJobs';
 import { ExpressAdapter } from './index';
 
 const connection = {
@@ -345,13 +346,7 @@ describe('ExpressAdapter', () => {
       await queue.add('mail-job', { to: 'a@example.com' }, { jobId: 'mail-1' });
       await queue.add('later-mail', { to: 'later@example.com' }, { jobId: 'mail-later', delay: 60_000 });
       await secondQueue.add('welcome-job', { to: 'c@example.com' }, { jobId: 'bill-1' });
-      await cappedQueue.addBulk(
-        Array.from({ length: 505 }, (_, index) => ({
-          name: 'capped-job',
-          data: { index },
-          opts: { jobId: `capped-${index}` },
-        }))
-      );
+      await seedQueueJobs(cappedQueue, 'capped', 505);
 
       const serverAdapter = new ExpressAdapter();
       createBullBoard({

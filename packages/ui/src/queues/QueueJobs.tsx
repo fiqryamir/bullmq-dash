@@ -20,6 +20,7 @@ import {
   retryJobs,
 } from '../api/contract';
 import { formatProgress } from './formatProgress';
+import { CommandPalette } from './CommandPalette';
 import { useQueueJobs } from './useQueueJobs';
 
 export const JOB_STATES: JobStatus[] = [
@@ -322,6 +323,15 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob }: Queue
           </div>
         )}
       </header>
+
+      <CommandPalette
+        queueName={queue.name}
+        onSelectJob={(result) => {
+          if (result.job.id) {
+            onSelectJob(result.job);
+          }
+        }}
+      />
 
       <div className="queue-jobs__states" role="group" aria-label="Job states">
         {JOB_STATES.map((state) => (

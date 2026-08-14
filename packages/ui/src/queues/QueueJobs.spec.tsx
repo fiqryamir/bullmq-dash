@@ -36,6 +36,13 @@ function renderQueueJobs(overrides: { onSelectJob?: (job: AppJob) => void } = {}
   );
 }
 
+/** A state switcher tab — scoped so the palette's state chips don't collide. */
+function stateTab(name: string): HTMLElement {
+  return within(screen.getByRole('group', { name: 'Job states' })).getByRole('button', {
+    name: new RegExp(name),
+  });
+}
+
 describe('QueueJobs', () => {
   it('offers the six state tabs with their counts', async () => {
     stubJobsApi([]);
@@ -54,7 +61,7 @@ describe('QueueJobs', () => {
     stubJobsApi([]);
     render(<QueueJobs queue={makeQueue({ isPaused: true })} pollingInterval={0} onBack={() => {}} onSelectJob={() => {}} />);
 
-    const pausedTab = screen.getByRole('button', { name: /paused/ });
+    const pausedTab = stateTab('paused');
     expect(within(pausedTab).getByText('5')).toBeInTheDocument();
   });
 
@@ -75,6 +82,42 @@ describe('QueueJobs', () => {
     expect(within(table).getByText('2')).toBeInTheDocument();
   });
 
+  it('searches jobs within the queue through the scoped palette', async () => {
+    const fetchMock = vi.fn((url: string) =>
+      String(url).startsWith('api/queues/emails/search')
+        ? Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              term: 'a1',
+              count: 1,
+              totalScanned: 1,
+              deepen: false,
+              results: [
+                {
+                  queue: 'emails',
+                  job: makeJob(0, { id: 'a1', name: 'welcome-email' }),
+                  state: 'waiting',
+                },
+              ],
+            }),
+          })
+        : jobsResponse([makeJob(0, { state: 'waiting' })])
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const onSelectJob = vi.fn();
+    const user = userEvent.setup();
+    renderQueueJobs({ onSelectJob });
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search jobs' }), 'a1');
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('api/queues/emails/search?term=a1'))
+    );
+
+    await user.click(await screen.findByRole('button', { name: /welcome-email/ }));
+    expect(onSelectJob).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
+  });
+
   it('opens the detail of a job from its row', async () => {
     const selected: AppJob = makeJob(0, { id: 'a1', name: 'welcome-email', state: 'failed' });
     stubJobsApi([selected]);
@@ -91,7 +134,7 @@ describe('QueueJobs', () => {
     const user = userEvent.setup();
     renderQueueJobs();
 
-    await user.click(screen.getByRole('button', { name: /failed/ }));
+    await user.click(stateTab('failed'));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenLastCalledWith('api/queues/emails/jobs?status=failed&page=1&jobsPerPage=100')
@@ -290,7 +333,7 @@ describe('QueueJobs actions', () => {
     const user = userEvent.setup();
     renderQueueJobs();
 
-    await user.click(screen.getByRole('button', { name: /failed/ }));
+    await user.click(stateTab('failed'));
     await user.click(screen.getByRole('button', { name: 'Retry all failed' }));
 
     await waitFor(() =>
@@ -303,7 +346,7 @@ describe('QueueJobs actions', () => {
     const user = userEvent.setup();
     renderQueueJobs();
 
-    await user.click(screen.getByRole('button', { name: /delayed/ }));
+    await user.click(stateTab('delayed'));
     await user.click(screen.getByRole('button', { name: 'Promote all delayed' }));
 
     await waitFor(() =>
@@ -317,7 +360,7 @@ describe('QueueJobs actions', () => {
     const user = userEvent.setup();
     renderQueueJobs();
 
-    await user.click(screen.getByRole('button', { name: /completed/ }));
+    await user.click(stateTab('completed'));
     await user.click(screen.getByRole('button', { name: 'Clean completed' }));
 
     await waitFor(() =>
@@ -333,7 +376,7 @@ describe('QueueJobs actions', () => {
     const user = userEvent.setup();
     renderQueueJobs();
 
-    await user.click(screen.getByRole('button', { name: /failed/ }));
+    await user.click(stateTab('failed'));
     await user.click(screen.getByRole('button', { name: 'Clean failed' }));
 
     await waitFor(() =>
@@ -361,7 +404,7 @@ describe('QueueJobs actions', () => {
     const user = userEvent.setup();
     renderQueueJobs();
 
-    await user.click(screen.getByRole('button', { name: /failed/ }));
+    await user.click(stateTab('failed'));
     await user.click(screen.getByRole('button', { name: 'Remove all failed' }));
 
     await waitFor(() =>
@@ -415,7 +458,7 @@ describe('QueueJobs actions', () => {
 
     const table = await screen.findByRole('table');
     await waitFor(() => expect(within(table).getByText('a1')).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: /failed/ }));
+    await user.click(stateTab('failed'));
 
     expect(screen.queryByRole('button', { name: 'Retry job a1' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove job a1' })).toBeInTheDocument();

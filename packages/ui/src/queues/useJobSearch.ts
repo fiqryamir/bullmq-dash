@@ -7,11 +7,12 @@ export type JobSearchStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 /**
  * Live job search for the command palette: the term is debounced for 300ms
- * before the cross-queue search endpoint is hit, and the palette's state chip
- * selection narrows the request. When the response reports `deepen`, the
- * palette can fetch the next scan window and append its results.
+ * before the search endpoint is hit, and the palette's state chip selection
+ * narrows the request. Without `queueName` the search spans every queue; with
+ * it, the search is scoped to that queue. When the response reports `deepen`,
+ * the palette can fetch the next scan window and append its results.
  */
-export function useJobSearch(term: string, statuses: JobStatus[]) {
+export function useJobSearch(term: string, statuses: JobStatus[], queueName?: string) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [status, setStatus] = useState<JobSearchStatus>('idle');
   const [scanned, setScanned] = useState(0);
@@ -19,6 +20,7 @@ export function useJobSearch(term: string, statuses: JobStatus[]) {
 
   const trimmed = term.trim();
   const statusesKey = statuses.join(',');
+  const queueNameKey = queueName ?? '';
 
   // Bumped on every search change and every deepen call; a response whose
   // id no longer matches is stale (a newer term is being searched) and is
@@ -42,7 +44,7 @@ export function useJobSearch(term: string, statuses: JobStatus[]) {
     const timer = setTimeout(() => {
       void (async () => {
         try {
-          const response = await fetchSearch(trimmed, statuses, 0);
+          const response = await fetchSearch(trimmed, statuses, 0, queueName);
           if (!cancelled && requestId === requestIdRef.current) {
             setResults(response.results);
             setScanned(response.totalScanned);
@@ -61,7 +63,7 @@ export function useJobSearch(term: string, statuses: JobStatus[]) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [trimmed, statusesKey]);
+  }, [trimmed, statusesKey, queueNameKey]);
 
   const deepenSearch = useCallback(async () => {
     if (!trimmed) {
@@ -71,7 +73,7 @@ export function useJobSearch(term: string, statuses: JobStatus[]) {
     const requestId = ++requestIdRef.current;
     setStatus('loading');
     try {
-      const response = await fetchSearch(trimmed, statuses, scanned);
+      const response = await fetchSearch(trimmed, statuses, scanned, queueName);
       if (requestId !== requestIdRef.current) {
         return;
       }
@@ -84,7 +86,7 @@ export function useJobSearch(term: string, statuses: JobStatus[]) {
         setStatus('error');
       }
     }
-  }, [trimmed, statuses, scanned]);
+  }, [trimmed, statuses, scanned, queueNameKey]);
 
   return { results, status, deepen, deepenSearch };
 }

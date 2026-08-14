@@ -241,6 +241,19 @@ describe('useJobSearch', () => {
     expect(result.current.deepen).toBe(false);
   });
 
+  it('scopes the request to a queue when one is given', async () => {
+    vi.useFakeTimers();
+    const fetchMock = stubSearchApi();
+    const { result } = renderHook(() => useJobSearch('mail', [], 'emails'));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/search?term=mail');
+    expect(result.current.status).toBe('ready');
+  });
+
   it('reports a failed search', async () => {
     vi.useFakeTimers();
     vi.stubGlobal(

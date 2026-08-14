@@ -37,6 +37,16 @@ type QueueScan = {
   deepen: boolean;
 };
 
+/**
+ * The per-queue bounds one scan runs under: how many jobs it may still examine
+ * and how many matches it may still collect. Both are decremented from the
+ * request-level limits as earlier queues consume them.
+ */
+type ScanLimits = {
+  scanLimit: number;
+  resultLimit: number;
+};
+
 function matchesTerm(job: QueueJob, term: string): boolean {
   const lowered = term.toLowerCase();
   return (
@@ -57,8 +67,7 @@ async function scanQueue(
   statuses: JobStatus[],
   term: string,
   start: number,
-  scanLimit: number,
-  resultLimit: number
+  limits: ScanLimits
 ): Promise<QueueScan> {
   const results: SearchResult[] = [];
   let scanned = 0;
@@ -77,14 +86,14 @@ async function scanQueue(
           skipped += 1;
           continue;
         }
-        if (scanned >= scanLimit) {
+        if (scanned >= limits.scanLimit) {
           deepen = true;
           break;
         }
         scanned += 1;
         if (matchesTerm(job, term)) {
           results.push({ queue: queueName, job: formatJob(job, queue), state: status });
-          if (results.length >= resultLimit) {
+          if (results.length >= limits.resultLimit) {
             deepen = true;
             break;
           }
@@ -92,7 +101,11 @@ async function scanQueue(
       }
 
       chunkStart += SEARCH_CHUNK_SIZE;
-    } while (chunk.length === SEARCH_CHUNK_SIZE && scanned < scanLimit && results.length < resultLimit);
+    } while (
+      chunk.length === SEARCH_CHUNK_SIZE &&
+      scanned < limits.scanLimit &&
+      results.length < limits.resultLimit
+    );
   }
 
   return { results, scanned, skipped, deepen };
@@ -181,15 +194,10 @@ export async function searchHandler(req: BullBoardRequest): Promise<ControllerHa
         ? scopeStatuses.filter((scopeStatus) => scopeStatus !== STATUSES.paused)
         : scopeStatuses;
 
-    const scan = await scanQueue(
-      queue,
-      name,
-      collapsedStatuses,
-      term,
-      startRemaining,
-      SEARCH_SCAN_LIMIT - totalScanned,
-      SEARCH_RESULT_LIMIT - results.length
-    );
+    const scan = await scanQueue(queue, name, collapsedStatuses, term, startRemaining, {
+      scanLimit: SEARCH_SCAN_LIMIT - totalScanned,
+      resultLimit: SEARCH_RESULT_LIMIT - results.length,
+    });
 
     results.push(...scan.results);
     totalScanned += scan.scanned;
