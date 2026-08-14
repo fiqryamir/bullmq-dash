@@ -1,0 +1,60 @@
+{
+  "name": "@bullmq-dash/fastify",
+  "version": "1.0.0",
+  "description": "Fastify server adapter for the bullmq-dash dashboard",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fiqryamir/bullmq-dash.git",
+    "directory": "packages/fastify"
+  },
+  "scripts": {
+    "build": "tsup",
+    "pretest": "pnpm --filter @bullmq-dash/ui run build && pnpm --filter @bullmq-dash/api run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@bullmq-dash/api": "workspace:*",
+    "@fastify/static": "^10.1.2",
+    "@fastify/view": "^12.0.0",
+    "ejs": "^6.0.1"
+  },
+  "peerDependencies": {
+    "fastify": "^5.0.0"
+  },
+  "devDependencies": {
+    "@bullmq-dash/ui": "workspace:*",
+    "@types/ejs": "^3.1.5",
+    "@types/node": "^20.19.43",
+    "@vitest/coverage-v8": "^3.2.4",
+    "bullmq": "^6.1.0",
+    "fastify": "^5.12.0",
+    "ioredis": "^5.8.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

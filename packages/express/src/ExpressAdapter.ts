@@ -1,12 +1,13 @@
-import type {
-  AppControllerRoute,
-  AppViewRoute,
-  BullBoardQueues,
-  BullBoardRequest,
-  ControllerHandlerReturnType,
-  HTTPMethod,
-  IServerAdapter,
-  UIConfig,
+import {
+  buildBullBoardRequest,
+  expandRouteDefs,
+  type AppControllerRoute,
+  type AppViewRoute,
+  type BullBoardQueues,
+  type BullBoardRequest,
+  type ControllerHandlerReturnType,
+  type IServerAdapter,
+  type UIConfig,
 } from '@bullmq-dash/api';
 import ejs from 'ejs';
 import express, {
@@ -62,30 +63,28 @@ export class ExpressAdapter implements IServerAdapter {
     const router = Router();
     router.use(express.json());
 
-    routes.forEach((route) =>
-      (Array.isArray(route.method) ? route.method : [route.method]).forEach(
-        (method: HTTPMethod) => {
-          const handler = wrapAsync(async (req: Request, res: Response) => {
-            const bullBoardRequest: BullBoardRequest = {
-              queues: this.bullBoardQueues!,
-              uiConfig: this.uiConfig || {},
-              query: req.query as Record<string, unknown>,
-              params: req.params as Record<string, unknown>,
-              body: req.body as Record<string, unknown>,
-              headers: req.headers as Record<string, string | undefined>,
-            };
-            const response = await route.handler(bullBoardRequest);
+    expandRouteDefs(routes).forEach(({ method, route, handler }) => {
+      const wrappedHandler = wrapAsync(async (req: Request, res: Response) => {
+        const bullBoardRequest: BullBoardRequest = buildBullBoardRequest(
+          this.bullBoardQueues!,
+          this.uiConfig,
+          {
+            query: req.query,
+            params: req.params,
+            body: req.body,
+            headers: req.headers,
+          }
+        );
+        const response = await handler(bullBoardRequest);
 
-            res.status(response.status || 200).json(response.body);
-          });
+        res.status(response.status || 200).json(response.body);
+      });
 
-          (router[method] as (path: string | string[], handler: RequestHandler) => void)(
-            route.route,
-            handler
-          );
-        }
-      )
-    );
+      (router[method] as (path: string | string[], handler: RequestHandler) => void)(
+        route,
+        wrappedHandler
+      );
+    });
 
     router.use((err: Error, _req: Request, res: Response, next: NextFunction) => {
       if (!this.errorHandler) {
