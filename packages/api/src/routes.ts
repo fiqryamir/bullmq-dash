@@ -13,15 +13,18 @@ import {
   retryAllHandler,
 } from './handlers/queueActions';
 import { queuesHandler } from './handlers/queues';
+import { searchHandler } from './handlers/search';
 import { promoteJobHandler, removeJobHandler, retryJobHandler } from './handlers/jobActions';
 
 export const appRoutes: AppRouteDefs = {
   entryPoint: { method: 'get', route: '/', handler: entryPointHandler },
   api: [
     { method: 'get', route: '/api/queues', handler: queuesHandler },
-    // Registered before the `:jobId` routes so the literal `jobs` segment
-    // wins over being read as a job id.
+    { method: 'get', route: '/api/search', handler: searchHandler },
+    // Registered before the `:jobId` routes so the literal `jobs` and
+    // `search` segments win over being read as a job id.
     { method: 'get', route: '/api/queues/:queueName/jobs', handler: queueJobsHandler },
+    { method: 'get', route: '/api/queues/:queueName/search', handler: searchHandler },
     { method: 'get', route: '/api/queues/:queueName/:jobId/logs', handler: jobLogsHandler },
     { method: 'get', route: '/api/queues/:queueName/:jobId', handler: jobHandler },
     {

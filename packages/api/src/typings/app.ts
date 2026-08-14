@@ -78,6 +78,34 @@ export interface QueueJobsResponse {
   pagination: Pagination;
 }
 
+/**
+ * A single job found by the search endpoints. `queue` is the registered queue
+ * name the match was found in — present on both the cross-queue and the
+ * per-queue scope so the shape stays uniform.
+ */
+export interface SearchResult {
+  queue: string;
+  job: AppJob;
+  state: JobStatus;
+}
+
+export interface SearchResponse {
+  term: string;
+  count: number;
+  /**
+   * The number of jobs examined in this request. A caller deepens the search
+   * by passing the accumulated total as the next request's `start`.
+   */
+  totalScanned: number;
+  /**
+   * Whether the scan stopped before it could search everything — either the
+   * result cap or the per-request scan window was hit. When true, more matches
+   * may exist beyond the returned results.
+   */
+  deepen: boolean;
+  results: SearchResult[];
+}
+
 export interface JobDetailResponse {
   job: AppJob;
   status: JobStatus | 'unknown';

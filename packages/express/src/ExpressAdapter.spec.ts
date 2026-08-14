@@ -328,6 +328,123 @@ describe('ExpressAdapter', () => {
     });
   });
 
+  describe('search routes through the REST contract', () => {
+    const queueName = `bullmq-dash-express-search-${randomUUID()}`;
+    const secondQueueName = `bullmq-dash-express-search-2-${randomUUID()}`;
+    const cappedQueueName = `bullmq-dash-express-search-cap-${randomUUID()}`;
+    let queue: Queue;
+    let secondQueue: Queue;
+    let cappedQueue: Queue;
+    let app: Express;
+
+    beforeAll(async () => {
+      queue = new Queue(queueName, { connection });
+      secondQueue = new Queue(secondQueueName, { connection });
+      cappedQueue = new Queue(cappedQueueName, { connection });
+
+      await queue.add('mail-job', { to: 'a@example.com' }, { jobId: 'mail-1' });
+      await queue.add('later-mail', { to: 'later@example.com' }, { jobId: 'mail-later', delay: 60_000 });
+      await secondQueue.add('welcome-job', { to: 'c@example.com' }, { jobId: 'bill-1' });
+      await cappedQueue.addBulk(
+        Array.from({ length: 505 }, (_, index) => ({
+          name: 'capped-job',
+          data: { index },
+          opts: { jobId: `capped-${index}` },
+        }))
+      );
+
+      const serverAdapter = new ExpressAdapter();
+      createBullBoard({
+        queues: [
+          new BullMQAdapter(queue),
+          new BullMQAdapter(secondQueue),
+          new BullMQAdapter(cappedQueue),
+        ],
+        serverAdapter,
+      });
+
+      app = express();
+      app.use(serverAdapter.getRouter());
+    }, 60_000);
+
+    afterAll(async () => {
+      await queue.obliterate({ force: true });
+      await secondQueue.obliterate({ force: true });
+      await cappedQueue.obliterate({ force: true });
+      await queue.close();
+      await secondQueue.close();
+      await cappedQueue.close();
+    }, 60_000);
+
+    it('matches jobs by a partial id across every queue', async () => {
+      const response = await request(app).get('/api/search').query({ term: 'mail-' }).expect(200);
+
+      expect(response.body.term).toBe('mail-');
+      expect(response.body.count).toBe(2);
+      expect(response.body.deepen).toBe(false);
+      expect(response.body.results.map((result: { job: { id: string } }) => result.job.id).sort()).toEqual([
+        'mail-1',
+        'mail-later',
+      ]);
+      expect(response.body.results.map((result: { queue: string }) => result.queue)).toEqual([
+        queueName,
+        queueName,
+      ]);
+    });
+
+    it('matches job names case-insensitively', async () => {
+      const response = await request(app).get('/api/search').query({ term: 'WELCOME' }).expect(200);
+
+      expect(response.body.results).toHaveLength(1);
+      expect(response.body.results[0]).toMatchObject({
+        queue: secondQueueName,
+        job: { id: 'bill-1', name: 'welcome-job' },
+        state: 'waiting',
+      });
+    });
+
+    it('filters matches by the state chips', async () => {
+      const response = await request(app)
+        .get('/api/search')
+        .query({ term: 'mail', status: 'delayed' })
+        .expect(200);
+
+      expect(response.body.results.map((result: { job: { id: string } }) => result.job.id)).toEqual([
+        'mail-later',
+      ]);
+      expect(response.body.results[0].state).toBe('delayed');
+    });
+
+    it('scopes the search inside a queue and 404s unknown queues', async () => {
+      const scoped = await request(app)
+        .get(`/api/queues/${queueName}/search`)
+        .query({ term: 'bill' })
+        .expect(200);
+      expect(scoped.body.results).toEqual([]);
+
+      await request(app).get('/api/queues/not-a-queue/search').query({ term: 'mail' }).expect(404);
+    });
+
+    it('caps results at 500 with a deepen continuation', async () => {
+      const first = await request(app).get('/api/search').query({ term: 'capped-' }).expect(200);
+      expect(first.body.count).toBe(500);
+      expect(first.body.results).toHaveLength(500);
+      expect(first.body.deepen).toBe(true);
+
+      const continued = await request(app)
+        .get('/api/search')
+        .query({ term: 'capped-', start: first.body.totalScanned })
+        .expect(200);
+      expect(continued.body.count).toBe(5);
+      expect(continued.body.deepen).toBe(false);
+    });
+
+    it('rejects a missing term and an unknown state', async () => {
+      await request(app).get('/api/search').expect(400);
+      await request(app).get('/api/search').query({ term: 'mail', status: 'nonsense' }).expect(400);
+    });
+  });
+
   describe('readOnly board', () => {
     const queueName = `bullmq-dash-express-readonly-${randomUUID()}`;
     let queue: Queue;

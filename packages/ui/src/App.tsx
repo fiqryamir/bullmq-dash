@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { readUiConfig, type UIConfig } from './config';
+import { CommandPalette } from './queues/CommandPalette';
 import { JobDetail } from './queues/JobDetail';
 import { QueueJobs } from './queues/QueueJobs';
 import { QueuesList } from './queues/QueuesList';
@@ -69,6 +70,15 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
               aria-label="Search queues"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
+            />
+            <CommandPalette
+              onSelectJob={(result) => {
+                if (!result.job.id) {
+                  return;
+                }
+                setSelectedQueueName(result.queue);
+                setSelectedJobId(result.job.id);
+              }}
             />
             {status === 'loading' && queues.length === 0 ? (
               <p className="queues-status">Loading queues…</p>
