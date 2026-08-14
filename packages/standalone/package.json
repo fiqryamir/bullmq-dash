@@ -1,0 +1,61 @@
+{
+  "name": "@bullmq-dash/standalone",
+  "version": "1.0.0",
+  "description": "Standalone bullmq-dash server - the bullmq-dash bin, zero-config dashboard on localhost:3000",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "bullmq-dash": "./dist/bin.js"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fiqryamir/bullmq-dash.git",
+    "directory": "packages/standalone"
+  },
+  "scripts": {
+    "build": "tsup && tsup --config tsup.bin.config.ts",
+    "pretest": "pnpm --filter @bullmq-dash/ui run build && pnpm --filter @bullmq-dash/api run build && pnpm run build",
+    "pretest:e2e": "pnpm run pretest",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@bullmq-dash/api": "workspace:*",
+    "@bullmq-dash/express": "workspace:*",
+    "@bullmq-dash/ui": "workspace:*",
+    "bullmq": "^6.1.0",
+    "express": "^5.2.1",
+    "ioredis": "^5.8.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^20.19.43",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "supertest": "^7.2.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
