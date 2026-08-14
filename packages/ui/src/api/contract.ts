@@ -131,6 +131,74 @@ export interface QueueMetricsResponse {
   buckets: MetricsBucket[];
 }
 
+/**
+ * One repeatable job (job scheduler). `queueName` is filled by the endpoint
+ * so the list stays cross-queue; the schedule is either a cron `pattern` or
+ * an `every` millisecond interval.
+ */
+export interface AppJobScheduler {
+  id: string;
+  name: string;
+  pattern?: string;
+  every?: number;
+  tz?: string;
+  limit?: number;
+  startDate?: number;
+  endDate?: number;
+  next?: number;
+  nextRunJobId?: string;
+  lastRun?: number;
+  lastRunJobId?: string;
+  iterationCount?: number;
+  template?: Record<string, unknown>;
+  queueName?: string;
+}
+
+export interface JobSchedulersResponse {
+  schedulers: AppJobScheduler[];
+}
+
+export type JobSchedulerRepeatOptions = {
+  pattern?: string;
+  every?: number;
+  tz?: string;
+  limit?: number;
+  endDate?: number;
+};
+
+export interface QueueWorker {
+  id: string;
+  name: string | null;
+  addr: string;
+  age: number;
+}
+
+export interface QueueWorkersResponse {
+  workers: QueueWorker[] | null;
+}
+
+/**
+ * Redis/backend info the dashboard reports: version, memory and clients.
+ */
+export interface RedisStats {
+  backend: 'redis';
+  version: string;
+  mode?: string;
+  port?: number;
+  os?: string;
+  uptime?: number;
+  memory: {
+    total: number;
+    used: number;
+    fragmentationRatio: number;
+    peak: number;
+  };
+  clients: {
+    connected: number;
+    blocked: number;
+  };
+}
+
 export async function fetchQueues(): Promise<QueuesResponse> {
   const response = await fetch('api/queues');
   if (!response.ok) {
@@ -266,6 +334,14 @@ function noContentAction(path: string): Promise<void> {
   return mutate(path).then(() => undefined);
 }
 
+function jsonRequest(method: string, body: unknown): RequestInit {
+  return {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
+}
+
 export function retryJob(queueName: string, jobId: string): Promise<void> {
   return noContentAction(
     `api/queues/${encodeURIComponent(queueName)}/${encodeURIComponent(jobId)}/retry`
@@ -323,4 +399,75 @@ export function resumeQueue(queueName: string): Promise<void> {
 
 export function emptyQueue(queueName: string): Promise<void> {
   return noContentAction(`api/queues/${encodeURIComponent(queueName)}/empty`);
+}
+
+/**
+ * The schedulers of one queue (or every queue when `queueName` is omitted).
+ */
+export async function fetchJobSchedulers(queueName?: string): Promise<JobSchedulersResponse> {
+  const params = queueName ? `?${new URLSearchParams({ queueName }).toString()}` : '';
+  const response = await fetch(`api/job-schedulers${params}`);
+  if (!response.ok) {
+    throw new Error(`Schedulers request failed with status ${response.status}`);
+  }
+  return (await response.json()) as JobSchedulersResponse;
+}
+
+/**
+ * Registers a repeatable job. `repeat` holds exactly one of `pattern` or
+ * `every`; `jobTemplate` shapes the jobs the scheduler produces.
+ */
+export async function addJobScheduler(
+  queueName: string,
+  id: string,
+  repeat: JobSchedulerRepeatOptions,
+  jobTemplate?: { name?: string; data?: unknown }
+): Promise<AppJobScheduler> {
+  const body = await mutate(
+    `api/queues/${encodeURIComponent(queueName)}/job-schedulers`,
+    jsonRequest('POST', { id, repeat, jobTemplate })
+  );
+  return body?.scheduler as AppJobScheduler;
+}
+
+/**
+ * Rewrites the schedule of an existing scheduler.
+ */
+export function updateJobScheduler(
+  queueName: string,
+  schedulerId: string,
+  repeat: JobSchedulerRepeatOptions
+): Promise<void> {
+  return mutate(
+    `api/queues/${encodeURIComponent(queueName)}/job-schedulers/${encodeURIComponent(schedulerId)}`,
+    jsonRequest('PATCH', repeat)
+  ).then(() => undefined);
+}
+
+export function removeJobScheduler(queueName: string, schedulerId: string): Promise<void> {
+  return noContentAction(
+    `api/queues/${encodeURIComponent(queueName)}/job-schedulers/${encodeURIComponent(schedulerId)}/remove`
+  );
+}
+
+/**
+ * The connected workers of a queue; `null` means the queue could not answer.
+ */
+export async function fetchQueueWorkers(queueName: string): Promise<QueueWorkersResponse> {
+  const response = await fetch(`api/queues/${encodeURIComponent(queueName)}/workers`);
+  if (!response.ok) {
+    throw new Error(`Workers request failed with status ${response.status}`);
+  }
+  return (await response.json()) as QueueWorkersResponse;
+}
+
+/**
+ * The Redis stats of the backing store — memory, version and clients.
+ */
+export async function fetchRedisStats(): Promise<RedisStats | undefined> {
+  const response = await fetch('api/redis/stats');
+  if (!response.ok) {
+    throw new Error(`Redis stats request failed with status ${response.status}`);
+  }
+  return (await response.json()) as RedisStats | undefined;
 }

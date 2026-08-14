@@ -5,8 +5,12 @@ import { JobDetail } from './queues/JobDetail';
 import { QueueFlow } from './queues/QueueFlow';
 import { QueueJobs } from './queues/QueueJobs';
 import { QueueMetrics } from './queues/QueueMetrics';
+import { QueueRedis } from './queues/QueueRedis';
+import { QueueSchedulers } from './queues/QueueSchedulers';
+import { QueueWorkers } from './queues/QueueWorkers';
 import { QueuesList } from './queues/QueuesList';
 import type { FlowNode } from './api/contract';
+import type { QueueViewName } from './queues/QueueNav';
 import { useQueues } from './queues/useQueues';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { ThemeToggle } from './theme/ThemeToggle';
@@ -28,8 +32,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
   const [query, setQuery] = useState('');
   const [selectedQueueName, setSelectedQueueName] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [flowOpen, setFlowOpen] = useState(false);
-  const [metricsOpen, setMetricsOpen] = useState(false);
+  const [view, setView] = useState<QueueViewName>('jobs');
   const boardTitle = uiConfig.boardTitle ?? 'bullmq-dash';
 
   useEffect(() => {
@@ -60,10 +63,16 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
     }
     setSelectedQueueName(targetQueue.name);
     setSelectedJobId(node.id);
-    setFlowOpen(false);
+    setView('jobs');
   };
 
   const showMetrics = uiConfig.showMetrics !== false;
+
+  const openQueue = (queueName: string) => {
+    setSelectedQueueName(queueName);
+    setSelectedJobId(null);
+    setView('jobs');
+  };
 
   return (
     <div className="app">
@@ -73,16 +82,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
       </header>
       <main className={selectedQueue ? 'app__main app__main--queue' : 'app__main'}>
         {selectedQueue ? (
-          flowOpen && !selectedJobId ? (
-            <QueueFlow
-              queue={selectedQueue}
-              pollingInterval={pollingInterval}
-              onBack={() => setFlowOpen(false)}
-              onSelectNode={selectFlowNode}
-            />
-          ) : metricsOpen ? (
-            <QueueMetrics queue={selectedQueue} onBack={() => setMetricsOpen(false)} />
-          ) : selectedJobId ? (
+          selectedJobId ? (
             <JobDetail
               queue={selectedQueue}
               jobId={selectedJobId}
@@ -90,15 +90,51 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
               onBack={() => setSelectedJobId(null)}
               onSelectNode={selectFlowNode}
             />
+          ) : view === 'flow' ? (
+            <QueueFlow
+              queue={selectedQueue}
+              pollingInterval={pollingInterval}
+              onBack={() => setView('jobs')}
+              onSelectView={setView}
+              showMetrics={showMetrics}
+              onSelectNode={selectFlowNode}
+            />
+          ) : view === 'metrics' ? (
+            <QueueMetrics
+              queue={selectedQueue}
+              onBack={() => setView('jobs')}
+              onSelectView={setView}
+              showMetrics={showMetrics}
+            />
+          ) : view === 'schedulers' ? (
+            <QueueSchedulers
+              queue={selectedQueue}
+              onBack={() => setView('jobs')}
+              onSelectView={setView}
+              showMetrics={showMetrics}
+            />
+          ) : view === 'workers' ? (
+            <QueueWorkers
+              queue={selectedQueue}
+              onBack={() => setView('jobs')}
+              onSelectView={setView}
+              showMetrics={showMetrics}
+            />
+          ) : view === 'redis' ? (
+            <QueueRedis
+              queue={selectedQueue}
+              onBack={() => setView('jobs')}
+              onSelectView={setView}
+              showMetrics={showMetrics}
+            />
           ) : (
             <QueueJobs
               queue={selectedQueue}
               pollingInterval={pollingInterval}
               onBack={() => setSelectedQueueName(null)}
-              onSelectJob={(job) => job.id && setSelectedJobId(job.id)}
-              onShowFlow={() => setFlowOpen(true)}
-              onShowMetrics={() => setMetricsOpen(true)}
+              onSelectView={setView}
               showMetrics={showMetrics}
+              onSelectJob={(job) => job.id && setSelectedJobId(job.id)}
             />
           )
         ) : (
@@ -116,7 +152,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
                 if (!result.job.id) {
                   return;
                 }
-                setSelectedQueueName(result.queue);
+                openQueue(result.queue);
                 setSelectedJobId(result.job.id);
               }}
             />
@@ -129,7 +165,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
             ) : visibleQueues.length === 0 ? (
               <p className="queues-status">No queues match the search</p>
             ) : (
-              <QueuesList queues={visibleQueues} onSelect={(queue) => setSelectedQueueName(queue.name)} />
+              <QueuesList queues={visibleQueues} onSelect={(queue) => openQueue(queue.name)} />
             )}
           </>
         )}

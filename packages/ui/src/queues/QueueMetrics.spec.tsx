@@ -39,7 +39,7 @@ afterEach(() => {
 function renderQueueMetrics(onBack = () => {}) {
   return render(
     <ThemeProvider>
-      <QueueMetrics queue={makeQueue()} onBack={onBack} />
+      <QueueMetrics queue={makeQueue()} onBack={onBack} onSelectView={() => {}} showMetrics />
     </ThemeProvider>
   );
 }

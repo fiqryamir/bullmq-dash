@@ -49,6 +49,8 @@ function renderQueueFlow(overrides: { onSelectNode?: (node: FlowNode) => void } 
       queue={makeQueue()}
       pollingInterval={0}
       onBack={() => {}}
+      onSelectView={() => {}}
+      showMetrics
       onSelectNode={overrides.onSelectNode ?? (() => {})}
     />
   );

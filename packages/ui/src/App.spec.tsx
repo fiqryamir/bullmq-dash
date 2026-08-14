@@ -349,6 +349,90 @@ describe('App shell', () => {
     expect(screen.getByRole('button', { name: 'Open flow view' })).toBeInTheDocument();
   });
 
+  it('opens the schedulers view through the tab strip', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      const target = String(url);
+      if (target.startsWith('api/job-schedulers')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            schedulers: [
+              {
+                id: 'nightly',
+                name: 'nightly-digest',
+                every: 86_400_000,
+                iterationCount: 3,
+                queueName: 'emails',
+              },
+            ],
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ queues: [makeQueue({ name: 'emails' })] }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
+    await user.click(await screen.findByRole('button', { name: /emails/ }));
+
+    await user.click(screen.getByRole('button', { name: 'Open schedulers view' }));
+    expect(await screen.findByText('nightly-digest')).toBeInTheDocument();
+    expect(screen.getByText('every 1 days')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open jobs view' }));
+    expect(await screen.findByRole('group', { name: 'Job states' })).toBeInTheDocument();
+  });
+
+  it('opens the workers and Redis views through the tab strip', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      const target = String(url);
+      if (target.endsWith('/workers')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            workers: [{ id: '1', name: 'mailer', addr: '127.0.0.1:55432', age: 95 }],
+          }),
+        });
+      }
+      if (target === 'api/redis/stats') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            backend: 'redis',
+            version: '7.2.5',
+            memory: { total: 1073741824, used: 268435456, fragmentationRatio: 1.05, peak: 536870912 },
+            clients: { connected: 4, blocked: 0 },
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ queues: [makeQueue({ name: 'emails' })] }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
+    await user.click(await screen.findByRole('button', { name: /emails/ }));
+
+    await user.click(screen.getByRole('button', { name: 'Open workers view' }));
+    expect(await screen.findByText('mailer')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open redis view' }));
+    expect(await screen.findByText('7.2.5')).toBeInTheDocument();
+    expect(screen.getByText('256.0 MB')).toBeInTheDocument();
+  });
+
   it('lands on a job from the command palette search', async () => {
     const fetchMock = vi.fn((url: string) => {
       const target = String(url);
