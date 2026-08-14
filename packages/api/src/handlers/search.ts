@@ -1,4 +1,4 @@
-import { isJobStatus } from '../constants/statuses';
+import { isJobStatus, STATUSES } from '../constants/statuses';
 import type { BaseAdapter } from '../queueAdapters/base';
 import type {
   BullBoardRequest,
@@ -171,10 +171,20 @@ export async function searchHandler(req: BullBoardRequest): Promise<ControllerHa
       continue;
     }
 
+    // On BullMQ v6 a paused queue's `paused` view is its waiting jobs; when
+    // both are in scope the same jobs would be scanned twice, so the collapse
+    // the jobs list performs per-state is applied to the scan set instead.
+    const collapsedStatuses =
+      scopeStatuses.includes(STATUSES.paused) &&
+      scopeStatuses.includes(STATUSES.waiting) &&
+      (await queue.isPaused())
+        ? scopeStatuses.filter((scopeStatus) => scopeStatus !== STATUSES.paused)
+        : scopeStatuses;
+
     const scan = await scanQueue(
       queue,
       name,
-      scopeStatuses,
+      collapsedStatuses,
       term,
       startRemaining,
       SEARCH_SCAN_LIMIT - totalScanned,

@@ -173,6 +173,74 @@ describe('useJobSearch', () => {
     expect(result.current.deepen).toBe(false);
   });
 
+  it('drops a stale deepen response when the term changes mid-flight', async () => {
+    vi.useFakeTimers();
+    let resolveDeepen: (value: unknown) => void;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          term: 'mail',
+          count: 1,
+          totalScanned: 2,
+          deepen: true,
+          results: [{ queue: 'emails', job: makeJob(0, { id: 'mail-1' }), state: 'waiting' }],
+        }),
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveDeepen = resolve;
+          })
+      )
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          term: 'mail-2',
+          count: 1,
+          totalScanned: 1,
+          deepen: false,
+          results: [{ queue: 'emails', job: makeJob(1, { id: 'mail-2' }), state: 'waiting' }],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result, rerender } = renderHook(({ term }) => useJobSearch(term, []), {
+      initialProps: { term: 'mail' },
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(result.current.results.map((entry) => entry.job.id)).toEqual(['mail-1']);
+
+    const deepenPromise = result.current.deepenSearch();
+    rerender({ term: 'mail-2' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    resolveDeepen!({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        term: 'mail',
+        count: 1,
+        totalScanned: 2,
+        deepen: false,
+        results: [{ queue: 'emails', job: makeJob(2, { id: 'mail-3' }), state: 'waiting' }],
+      }),
+    });
+    await act(async () => {
+      await deepenPromise;
+    });
+
+    expect(result.current.results.map((entry) => entry.job.id)).toEqual(['mail-2']);
+    expect(result.current.deepen).toBe(false);
+  });
+
   it('reports a failed search', async () => {
     vi.useFakeTimers();
     vi.stubGlobal(

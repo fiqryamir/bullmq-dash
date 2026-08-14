@@ -154,6 +154,53 @@ describe('searchHandler', () => {
     expect(status).toBe(400);
   });
 
+  describe('a paused queue on BullMQ v6', () => {
+    const pausedName = `bullmq-dash-test-search-paused-${randomUUID()}`;
+    let pausedQueue: Queue;
+
+    beforeAll(async () => {
+      pausedQueue = new Queue(pausedName, { connection });
+      await pausedQueue.add('hold-job', {}, { jobId: 'hold-1' });
+      await pausedQueue.add('hold-job', {}, { jobId: 'hold-2' });
+      await pausedQueue.pause();
+    }, 30_000);
+
+    afterAll(async () => {
+      await pausedQueue.obliterate({ force: true });
+      await pausedQueue.close();
+    }, 30_000);
+
+    const pausedRequest = async (query: Record<string, unknown>) => {
+      const queues: BullBoardQueues = new Map();
+      queues.set(pausedName, new BullMQAdapter(pausedQueue));
+      return searchHandler({
+        queues,
+        uiConfig: {},
+        query,
+        params: {},
+        body: {},
+        headers: {},
+      });
+    };
+
+    it('scans its waiting jobs once, not once per collapsed state', async () => {
+      const response = await pausedRequest({ term: 'hold-' });
+      const body = response.body as unknown as SearchResponse;
+
+      expect(sortedIdsOf(body)).toEqual(['hold-1', 'hold-2']);
+      expect(resultsOf(body).map((result) => result.state)).toEqual(['waiting', 'waiting']);
+      expect(body.totalScanned).toBe(2);
+    });
+
+    it('still labels matches as paused when that state is chosen explicitly', async () => {
+      const response = await pausedRequest({ term: 'hold-', status: 'paused' });
+      const body = response.body as unknown as SearchResponse;
+
+      expect(sortedIdsOf(body)).toEqual(['hold-1', 'hold-2']);
+      expect(resultsOf(body).map((result) => result.state)).toEqual(['paused', 'paused']);
+    });
+  });
+
   describe('result cap and deepen continuation', () => {
     const cappedName = `bullmq-dash-test-search-cap-${randomUUID()}`;
     let cappedQueue: Queue;
