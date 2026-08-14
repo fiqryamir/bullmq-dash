@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { FlowProducer } from 'bullmq';
+import { FlowProducer, Queue, Worker } from 'bullmq';
 import { expect, test } from '@playwright/test';
 import { redisOptions, seedQueues, uniquePrefix } from '../src/testUtils/redis';
 import { waitForUrl } from '../src/testUtils/waitForUrl';
@@ -20,6 +20,7 @@ test.beforeAll(async () => {
       ],
     },
     { name: 'smoke-reports', jobs: [{ name: 'daily-report', data: { date: '2026-08-14' } }] },
+    { name: 'smoke-metrics' },
   ]);
 
   const producer = new FlowProducer({ connection: redisOptions(), prefix: PREFIX });
@@ -108,4 +109,43 @@ test('searches a job across queues and opens its detail', async ({ page }) => {
   await result.click();
 
   await expect(page.locator('.job-detail__job-name')).toHaveText('receipt-email');
+});
+
+test('captures traffic and renders the metrics view', async ({ page }) => {
+  // Jobs added after the server boots, delayed so the dashboard's capture
+  // subscription is live before the work runs: the endpoint then serves the
+  // event-derived buckets deterministically.
+  const queue = new Queue('smoke-metrics', { connection: redisOptions(), prefix: PREFIX });
+  const worker = new Worker(
+    'smoke-metrics',
+    async () => {},
+    { connection: redisOptions(), prefix: PREFIX }
+  );
+  try {
+    await queue.add('metric-job', { i: 1 }, { delay: 1_500 });
+    await queue.add('metric-job', { i: 2 }, { delay: 1_500 });
+
+    await expect
+      .poll(
+        async () => {
+          const response = await fetch(`${serverUrl}/api/queues/smoke-metrics/metrics`);
+          const body = (await response.json()) as {
+            buckets: Array<{ completed: number; durationAvgMs: number | null }>;
+          };
+          return body.buckets.reduce((sum, bucket) => sum + bucket.completed, 0);
+        },
+        { timeout: 15_000 }
+      )
+      .toBeGreaterThanOrEqual(2);
+  } finally {
+    await worker.close();
+    await queue.close();
+  }
+
+  await page.goto(serverUrl);
+  await page.getByRole('button', { name: /smoke-metrics/ }).click();
+  await page.getByRole('button', { name: 'Open metrics view' }).click();
+
+  await expect(page.locator('.metrics-summary')).toContainText(/2 completed/);
+  await expect(page.locator('.metrics-chart')).toHaveCount(3);
 });

@@ -15,6 +15,7 @@ import {
 } from './handlers/queueActions';
 import { queuesHandler } from './handlers/queues';
 import { searchHandler } from './handlers/search';
+import { metricsHandler } from './handlers/metrics';
 import { promoteJobHandler, removeJobHandler, retryJobHandler } from './handlers/jobActions';
 
 export const appRoutes: AppRouteDefs = {
@@ -22,11 +23,12 @@ export const appRoutes: AppRouteDefs = {
   api: [
     { method: 'get', route: '/api/queues', handler: queuesHandler },
     { method: 'get', route: '/api/search', handler: searchHandler },
-    // Registered before the `:jobId` routes so the literal `jobs`, `search`
-    // and `flow` segments win over being read as a job id.
+    // Registered before the `:jobId` routes so the literal `jobs`, `search`,
+    // `flow` and `metrics` segments win over being read as a job id.
     { method: 'get', route: '/api/queues/:queueName/jobs', handler: queueJobsHandler },
     { method: 'get', route: '/api/queues/:queueName/search', handler: searchHandler },
     { method: 'get', route: '/api/queues/:queueName/flow', handler: queueFlowHandler },
+    { method: 'get', route: '/api/queues/:queueName/metrics', handler: metricsHandler },
     { method: 'get', route: '/api/queues/:queueName/:jobId/logs', handler: jobLogsHandler },
     { method: 'get', route: '/api/queues/:queueName/:jobId/flow', handler: jobFlowHandler },
     { method: 'get', route: '/api/queues/:queueName/:jobId', handler: jobHandler },

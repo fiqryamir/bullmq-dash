@@ -113,6 +113,24 @@ export interface QueueFlowResponse {
   truncated: boolean;
 }
 
+/**
+ * One minute of a queue's historical metrics. `ts` is the minute start;
+ * counts merge the dashboard's event capture with BullMQ's native counters;
+ * the averages are null until the minute holds samples of that kind.
+ */
+export interface MetricsBucket {
+  ts: number;
+  completed: number;
+  failed: number;
+  durationAvgMs: number | null;
+  waitAvgMs: number | null;
+}
+
+export interface QueueMetricsResponse {
+  queue: string;
+  buckets: MetricsBucket[];
+}
+
 export async function fetchQueues(): Promise<QueuesResponse> {
   const response = await fetch('api/queues');
   if (!response.ok) {
@@ -183,6 +201,25 @@ export async function fetchJobFlow(queueName: string, jobId: string): Promise<Jo
     throw new Error(`Job flow request failed with status ${response.status}`);
   }
   return (await response.json()) as JobFlow;
+}
+
+/**
+ * The queue's historical metrics between `from` and `to` (ms timestamps),
+ * as contiguous minute buckets.
+ */
+export async function fetchQueueMetrics(
+  queueName: string,
+  from: number,
+  to: number
+): Promise<QueueMetricsResponse> {
+  const params = new URLSearchParams({ from: String(from), to: String(to) });
+  const response = await fetch(
+    `api/queues/${encodeURIComponent(queueName)}/metrics?${params.toString()}`
+  );
+  if (!response.ok) {
+    throw new Error(`Metrics request failed with status ${response.status}`);
+  }
+  return (await response.json()) as QueueMetricsResponse;
 }
 
 /**

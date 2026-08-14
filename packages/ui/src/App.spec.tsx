@@ -303,6 +303,52 @@ describe('App shell', () => {
     expect(screen.getAllByText('#c1').length).toBeGreaterThan(0);
   });
 
+  it('opens the metrics view of a queue', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      const target = String(url);
+      if (target.startsWith('api/queues/emails/metrics')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            queue: 'emails',
+            buckets: [
+              { ts: 1700000000000, completed: 2, failed: 1, durationAvgMs: 120, waitAvgMs: 40 },
+            ],
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ queues: [makeQueue({ name: 'emails' })] }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
+    await user.click(await screen.findByRole('button', { name: /emails/ }));
+
+    await user.click(screen.getByRole('button', { name: 'Open metrics view' }));
+    expect(await screen.findByText(/2 completed, 1 failed in the last 24h/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Counts' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /back/i }));
+    expect(await screen.findByRole('group', { name: 'Job states' })).toBeInTheDocument();
+  });
+
+  it('hides the metrics view when the board config disables it', async () => {
+    stubQueuesApi(makeQueue({ name: 'emails' }));
+    const user = userEvent.setup();
+
+    render(<App uiConfig={{ pollingInterval: { forceInterval: 0 }, showMetrics: false }} />);
+    await user.click(await screen.findByRole('button', { name: /emails/ }));
+
+    expect(screen.queryByRole('button', { name: 'Open metrics view' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open flow view' })).toBeInTheDocument();
+  });
+
   it('lands on a job from the command palette search', async () => {
     const fetchMock = vi.fn((url: string) => {
       const target = String(url);

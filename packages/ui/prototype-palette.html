@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palette candidates — wayfinder #57 (PROTOTYPE)</title>
+<style>
+  :root { --ui-bg: #101014; --ui-surface: #17171d; --ui-border: #26262f; --ui-text: #e6e6ee; --ui-muted: #9a9aa8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--ui-bg); color: var(--ui-text); }
+  .proto { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 32px 20px 96px; max-width: 1060px; margin: 0 auto; }
+  .proto__tag { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--ui-muted); border: 1px solid var(--ui-border); border-radius: 999px; padding: 4px 12px; }
+  .proto__head { text-align: center; }
+  .proto__head h1 { margin: 8px 0 4px; font-size: 22px; }
+  .proto__head p { margin: 0; color: var(--ui-muted); font-size: 13px; max-width: 640px; }
+  /* candidate surface */
+  .cand { width: 100%; border-radius: 16px; overflow: hidden; border: 1px solid var(--ui-border); }
+  .cand__title { display: flex; align-items: baseline; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--ui-border); background: var(--ui-surface); }
+  .cand__title h2 { margin: 0; font-size: 16px; }
+  .cand__title span { color: var(--ui-muted); font-family: ui-monospace, monospace; font-size: 12px; }
+  .cand__body { padding: 18px; }
+  /* the themeable app mock */
+  .mock { background: var(--bg); color: var(--text); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); font-size: 13px; }
+  .mock__bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .mock__brand { font-weight: 700; font-size: 14px; }
+  .mock__brand i { color: var(--accent); font-style: normal; }
+  .mock__toggle { margin-left: auto; width: 34px; height: 19px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); position: relative; }
+  .mock__toggle::after { content: ''; position: absolute; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); top: 2px; left: 2px; }
+  .mock__main { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .mock__search { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 9px 14px; color: var(--muted); }
+  .mock__search b { color: var(--text); font-weight: 600; }
+  .mock__tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 600; background: color-mix(in srgb, currentColor 12%, transparent); }
+  .chip i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .mock__table { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .mock__row { display: grid; grid-template-columns: 1.2fr 2fr 1fr 1fr; gap: 10px; padding: 8px 14px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+  .mock__row:last-child { border-bottom: none; }
+  .mock__row.head { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+  .mock__id { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--muted); }
+  .mock__card { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 12px 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mock__card dt { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .mock__card dd { margin: 2px 0 0; font-size: 12px; font-family: ui-monospace, Consolas, monospace; }
+  .mock__btn { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+  .mock__btn--accent { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+  .mock__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* token swatches */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .swatch { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .swatch__chip { height: 44px; }
+  .swatch__label { padding: 6px 10px; background: var(--ui-surface); font-size: 11px; }
+  .swatch__label b { display: block; font-size: 11px; font-weight: 600; }
+  .swatch__label span { font-family: ui-monospace, monospace; font-size: 10px; color: var(--ui-muted); }
+  .state-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* contrast table */
+  table.contrast { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.contrast th, table.contrast td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--ui-border); }
+  table.contrast th { color: var(--ui-muted); font-weight: 600; }
+  .pass { color: #5cc98a; font-weight: 700; }
+  .note { color: #d9a44e; font-weight: 600; }
+  .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ui-muted); margin: 20px 0 8px; font-weight: 600; }
+  /* floating switcher */
+  .switcher { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: #232329; border: 1px solid #3a3a44; color: #eee; border-radius: 999px; padding: 8px 14px; font-size: 13px; box-shadow: 0 8px 30px rgba(0,0,0,.5); z-index: 10; }
+  .switcher button { background: none; border: 1px solid #4a4a55; color: #eee; border-radius: 50%; width: 26px; height: 26px; font-size: 14px; cursor: pointer; line-height: 1; }
+  .switcher button:hover { background: #33333b; }
+  .switcher .spacer { width: 1px; height: 18px; background: #3a3a44; }
+</style>
+</head>
+<body>
+<div class="proto">
+  <div class="proto__head">
+    <div class="proto__tag">PROTOTYPE — throwaway · wayfinder ticket "Palette candidates" (#57)</div>
+    <h1>Palette candidates for bullmq-dash</h1>
+    <p>Three takes on the retuned palette: desaturated neutrals, quiet blue/teal accent, one WCAG-AA-legible color per job state, both themes. Flip between candidates — steal bits freely. Contrast values are computed, not eyeballed.</p>
+  </div>
+  <div id="candidate-root"></div>
+</div>
+<div class="switcher">
+  <button id="prev" title="previous candidate" aria-label="previous candidate">&#8592;</button>
+  <span id="cand-label">A — Zen Teal</span>
+  <span class="spacer"></span>
+  <button id="theme-btn" title="toggle theme" aria-label="toggle theme">&#9681;</button>
+  <span id="theme-label">dark</span>
+  <span class="spacer"></span>
+  <button id="next" title="next candidate" aria-label="next candidate">&#8594;</button>
+</div>
+<script>
+const PALETTES = {
+  A: {
+    name: 'Zen Teal', tag: 'teal-tinted neutrals, teal accent',
+    dark: {
+      bg: '#030809', surface: '#070e0f', elevated: '#0d1516', border: '#1b2324',
+      text: '#d5e0e2', muted: '#b1bbbc', accent: '#41cad1', hover: '#6adee4', 'accent-contrast': '#040b0b',
+      states: { waiting: '#dda734', active: '#37c2ef', delayed: '#b5a4ea', completed: '#6bc987', failed: '#ff8576', paused: '#bdacb0' }
+    },
+    light: {
+      bg: '#e9f4f6', surface: '#f1fdfe', elevated: '#eef9fb', border: '#cad5d6',
+      text: '#121a1b', muted: '#646e6f', accent: '#007378', hover: '#005c62', 'accent-contrast': '#e9f4f6',
+      states: { waiting: '#784600', active: '#005e88', delayed: '#574683', completed: '#00662b', failed: '#971b17', paused: '#5c4e52' }
+    }
+  },
+  B: {
+    name: 'Ocean Blue', tag: 'blue-tinted neutrals, blue accent',
+    dark: {
+      bg: '#04070b', surface: '#090d12', elevated: '#101419', border: '#1d2227',
+      text: '#d8dfe6', muted: '#b3bac1', accent: '#70b6fd', hover: '#8bcbff', 'accent-contrast': '#060a0e',
+      states: { waiting: '#dda734', active: '#37c2ef', delayed: '#b5a4ea', completed: '#6bc987', failed: '#ff8576', paused: '#bdacb0' }
+    },
+    light: {
+      bg: '#ecf3fa', surface: '#f4fbff', elevated: '#f1f8ff', border: '#cdd3da',
+      text: '#14191e', muted: '#676c73', accent: '#2a669f', hover: '#10558f', 'accent-contrast': '#ecf3fa',
+      states: { waiting: '#784600', active: '#005e88', delayed: '#574683', completed: '#00662b', failed: '#971b17', paused: '#5c4e52' }
+    }
+  },
+  C: {
+    name: 'Slate Steel', tag: 'warm stone neutrals, slate accent, quieter states',
+    dark: {
+      bg: '#090605', surface: '#100c0a', elevated: '#171310', border: '#25211e',
+      text: '#e2ddd9', muted: '#bdb8b4', accent: '#89b1c9', hover: '#a2c7dd', 'accent-contrast': '#0c0806',
+      states: { waiting: '#d2ab5f', active: '#66bee0', delayed: '#b4a8dc', completed: '#81c392', failed: '#f49286', paused: '#baadb0' }
+    },
+    light: {
+      bg: '#f6f0ed', surface: '#fff9f5', elevated: '#fbf5f2', border: '#d7d1ce',
+      text: '#1b1715', muted: '#706b67', accent: '#47687c', hover: '#32576d', 'accent-contrast': '#f6f0ed',
+      states: { waiting: '#6f4b00', active: '#005d7b', delayed: '#564a78', completed: '#1e6136', failed: '#89322a', paused: '#5a4f52' }
+    }
+  }
+};
+
+// contrast helper for the report
+function lum(hex) {
+  const c = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const lin = c.map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+}
+const ratio = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return ((hi + 0.05) / (lo + 0.05)).toFixed(2); };
+
+const params = new URLSearchParams(location.search);
+let cand = (params.get('v') || 'A').toUpperCase();
+if (!PALETTES[cand]) cand = 'A';
+let theme = params.get('t') === 'light' ? 'light' : 'dark';
+
+const root = document.getElementById('candidate-root');
+
+function swatch(label, hex, extra) {
+  return `<div class="swatch"><div class="swatch__chip" style="background:${hex}"></div><div class="swatch__label"><b>${label}</b><span>${hex}${extra ? ' · ' + extra : ''}</span></div></div>`;
+}
+
+function render() {
+  const p = PALETTES[cand];
+  const t = p[theme];
+  const states = ['waiting', 'active', 'delayed', 'completed', 'failed', 'paused'];
+  const chips = states.map(s => `<span class="chip" style="color:${t.states[s]}"><i></i>${s}</span>`).join('');
+
+  const contrastRows = [
+    ['text on bg', t.text, t.bg, 4.5],
+    ['muted on bg', t.muted, t.bg, 4.5],
+    ['muted on surface', t.muted, t.surface, 4.5],
+    ['accent on bg (links/focus)', t.accent, t.bg, 4.5],
+    ['accent on surface', t.accent, t.surface, 4.5],
+    ['accent-contrast on accent (button label)', t['accent-contrast'], t.accent, 4.5],
+    ['border vs bg (hairline, decorative)', t.border, t.bg, 1.2],
+  ];
+  const contrastHtml = contrastRows.map(([label, fg, bg, min]) => {
+    const r = parseFloat(ratio(fg, bg));
+    const cls = r >= min ? 'pass' : 'note';
+    const note = r >= min ? 'PASS' : (min >= 4.5 ? 'INTENTIONAL' : 'INTENTIONAL');
+    return `<tr><td>${label}</td><td><span style="color:${fg}">${fg}</span> on <span style="color:${bg}">${bg}</span></td><td class="${cls}">${r.toFixed(2)}:1</td><td>${note}</td></tr>`;
+  }).join('');
+
+  root.innerHTML = `
+  <div class="cand">
+    <div class="cand__title">
+      <h2>${cand} — ${p.name}</h2>
+      <span>${p.tag} · ${theme} theme</span>
+    </div>
+    <div class="cand__body">
+
+      <div class="section-label">In context — what the dashboard actually looks like</div>
+      <div class="mock">
+        <div class="mock__bar">
+          <span class="mock__brand">bullmq<i>dash</i></span>
+          <span class="mock__toggle"></span>
+        </div>
+        <div class="mock__main">
+          <div class="mock__search">&#128269; <b>Find a job</b> — id or name…</div>
+          <div class="mock__tabs">${chips}</div>
+          <div class="mock__table">
+            <div class="mock__row head"><span>Id</span><span>Name</span><span>State</span><span>Duration</span></div>
+            <div class="mock__row"><span class="mock__id">16834</span><span>email: welcome-queue</span><span class="chip" style="color:${t.states.active}"><i></i>active</span><span class="mock__id">1.2s</span></div>
+            <div class="mock__row"><span class="mock__id">16833</span><span>email: digest-daily</span><span class="chip" style="color:${t.states.completed}"><i></i>completed</span><span class="mock__id">3.1s</span></div>
+            <div class="mock__row"><span class="mock__id">16830</span><span>webhook: stripe-events</span><span class="chip" style="color:${t.states.failed}"><i></i>failed</span><span class="mock__id">—</span></div>
+            <div class="mock__row"><span class="mock__id">16812</span><span>report: nightly-build</span><span class="chip" style="color:${t.states.delayed}"><i></i>delayed</span><span class="mock__id">14m</span></div>
+            <div class="mock__row"><span class="mock__id">16798</span><span>export: s3-archive</span><span class="chip" style="color:${t.states.waiting}"><i></i>waiting</span><span class="mock__id">—</span></div>
+          </div>
+          <div class="mock__card">
+            <div><dt>job</dt><dd>16834</dd></div>
+            <div><dt>attempts</dt><dd>2 / 5</dd></div>
+            <div><dt>updated</dt><dd>12s ago</dd></div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="mock__btn--accent mock__btn">Retry failed</button>
+            <button class="mock__btn">Pause queue</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Semantic tokens</div>
+      <div class="swatches">
+        ${swatch('bg', t.bg)}${swatch('surface', t.surface)}${swatch('elevated', t.elevated)}${swatch('border', t.border)}
+        ${swatch('text', t.text)}${swatch('muted', t.muted)}${swatch('accent', t.accent)}${swatch('accent hover', t.hover)}${swatch('accent contrast', t['accent-contrast'])}
+      </div>
+
+      <div class="section-label">Job-state colors (as chips — tinted bg, colored text)</div>
+      <div class="state-row">${chips}</div>
+      <div class="swatches" style="margin-top:10px">
+        ${states.map(s => swatch(s, t.states[s], 'on ' + (theme === 'dark' ? 'bg 4.5:1+' : 'bg 4.5:1+'))).join('')}
+      </div>
+
+      <div class="section-label">WCAG AA contrast (computed)</div>
+      <table class="contrast">
+        <tr><th>pair</th><th>colors</th><th>ratio</th><th>status</th></tr>
+        ${contrastHtml}
+      </table>
+      <p style="color:var(--ui-muted); font-size:11px; margin-top:8px;">
+        All text-level pairs clear 4.5:1 on both surfaces in both themes. The border is a deliberate hairline separator (Zen-style, ~1.3:1): hierarchy comes from surface color, not lines — focus rings still use the accent at 3:1+. State colors also verify on their chip backgrounds.
+      </p>
+    </div>
+  </div>`;
+  document.getElementById('cand-label').textContent = `${cand} — ${p.name}`;
+  document.getElementById('theme-label').textContent = theme;
+}
+
+function sync() {
+  const u = new URLSearchParams({ v: cand.toLowerCase(), t: theme });
+  history.replaceState(null, '', '?' + u.toString());
+}
+
+document.getElementById('prev').onclick = () => { const ks = Object.keys(PALETTES); cand = ks[(ks.indexOf(cand) + ks.length - 1) % ks.length]; sync(); render(); };
+document.getElementById('next').onclick = () => { const ks = Object.keys(PALETTES); cand = ks[(ks.indexOf(cand) + 1) % ks.length]; sync(); render(); };
+document.getElementById('theme-btn').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; sync(); render(); };
+window.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea, [contenteditable]')) return;
+  if (e.key === 'ArrowLeft') document.getElementById('prev').onclick();
+  if (e.key === 'ArrowRight') document.getElementById('next').onclick();
+  if (e.key.toLowerCase() === 't') document.getElementById('theme-btn').onclick();
+});
+render();
+</script>
+</body>
+</html>

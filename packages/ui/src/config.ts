@@ -3,6 +3,8 @@ export type UIConfig = {
   pollingInterval?: {
     forceInterval?: number;
   };
+  /** Set to false to hide the per-queue metrics view. */
+  showMetrics?: boolean;
 };
 
 const DEFAULT_CONFIG: UIConfig = {

@@ -31,3 +31,23 @@ _Avoid_: Find jobs, job query
 **Flow view**:
 The per-queue graph of job flows — root jobs expanded into their child trees, state-colored; clicking a node opens the job's detail.
 _Avoid_: Flow diagram, pipeline map
+
+**Design token**:
+A named, reusable value in the design system — color, spacing, type size, radius, elevation — exposed as a CSS custom property (`--dash-*`) in `tokens.css`.
+_Avoid_: Style variable, theme variable
+
+**Primitive token**:
+The theme-independent layer of the design system — full ramps (warm stone neutrals, accent) and scale steps that both themes draw from.
+_Avoid_: Raw token, base token
+
+**Semantic token**:
+The theme-dependent layer of the design system — named by use, not value (`--dash-surface`, `--dash-text-muted`), pointing at primitives; dark and light each define their own.
+_Avoid_: Component token, role token
+
+**Recipe**:
+A styled CSS class (`.dash-*`) composing tokens over an unstyled Base UI primitive — button, chip, tab, table, panel, code, dialog, input.
+_Avoid_: Styled component
+
+**State color**:
+The per-job-state semantic colors — waiting, active, delayed, completed, failed, paused — carried by chips and tabs; the only palette elements that compete with the accent.
+_Avoid_: Status color, job color
