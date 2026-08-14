@@ -48,6 +48,93 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-accent) 13%, transparent);
 }
 
+/* ---------- command palette ---------- */
+
+.command-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.command-palette__states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.command-palette__results {
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+}
+
+.command-palette__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.command-palette__row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.command-palette__result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
+  color: var(--dash-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.command-palette__result:hover,
+.command-palette__result:focus-visible {
+  background: color-mix(in srgb, var(--dash-accent) 8%, transparent);
+  outline: none;
+}
+
+.command-palette__id {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--dash-muted);
+}
+
+.command-palette__name {
+  flex: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-palette__queue {
+  color: var(--dash-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.command-palette__deepen {
+  align-self: flex-start;
+}
+
 .queue-list {
   list-style: none;
   display: flex;

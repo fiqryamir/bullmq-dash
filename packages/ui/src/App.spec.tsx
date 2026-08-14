@@ -98,7 +98,7 @@ describe('App shell', () => {
     const user = userEvent.setup();
     render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
     await screen.findByText('emails');
-    await user.type(screen.getByRole('searchbox'), 'bill');
+    await user.type(screen.getByRole('searchbox', { name: 'Search queues' }), 'bill');
     expect(screen.getByText('billing')).toBeInTheDocument();
     expect(screen.queryByText('emails')).not.toBeInTheDocument();
   });
@@ -122,10 +122,10 @@ describe('App shell', () => {
 
     expect(await screen.findByText('welcome-email')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Job states' })).toBeInTheDocument();
-    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('searchbox', { name: 'Search queues' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /back/i }));
-    expect(await screen.findByRole('searchbox')).toBeInTheDocument();
+    expect(await screen.findByRole('searchbox', { name: 'Search queues' })).toBeInTheDocument();
   });
 
   it('opens the detail of a job from the jobs view and returns to it', async () => {
@@ -195,5 +195,72 @@ describe('App shell', () => {
 
     await user.click(screen.getByRole('button', { name: /back/i }));
     expect(await screen.findByRole('group', { name: 'Job states' })).toBeInTheDocument();
+  });
+
+  it('lands on a job from the command palette search', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      const target = String(url);
+      if (target.startsWith('api/search')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            term: '77431',
+            count: 1,
+            totalScanned: 3,
+            deepen: false,
+            results: [
+              {
+                queue: 'emails',
+                job: makeJob(0, { id: 'emails:77431', name: 'welcome-email' }),
+                state: 'completed',
+              },
+            ],
+          }),
+        });
+      }
+      if (target.includes('/logs')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            logs: ['log row'],
+            count: 1,
+            pagination: { pageCount: 1, range: { start: 0, end: 99 } },
+          }),
+        });
+      }
+      if (target.includes('api/queues/emails/emails%3A77431')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            job: makeJob(0, {
+              id: 'emails:77431',
+              name: 'welcome-email',
+              data: { to: 'a@example.com' },
+            }),
+            status: 'completed',
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ queues: [makeQueue({ name: 'emails' })] }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
+    await screen.findByText('emails');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search jobs' }), '77431');
+    await user.click(await screen.findByRole('button', { name: /welcome-email/ }));
+
+    expect(await screen.findByText('#emails:77431')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Logs' })).toBeInTheDocument();
+    expect(screen.queryByRole('searchbox', { name: 'Search jobs' })).not.toBeInTheDocument();
   });
 });

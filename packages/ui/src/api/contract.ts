@@ -65,6 +65,20 @@ export interface JobLogsResponse {
   pagination: JobsPagination;
 }
 
+export interface SearchResult {
+  queue: string;
+  job: AppJob;
+  state: JobStatus;
+}
+
+export interface SearchResponse {
+  term: string;
+  count: number;
+  totalScanned: number;
+  deepen: boolean;
+  results: SearchResult[];
+}
+
 export async function fetchQueues(): Promise<QueuesResponse> {
   const response = await fetch('api/queues');
   if (!response.ok) {
@@ -117,6 +131,35 @@ export async function fetchJobLogs(
     throw new Error(`Logs request failed with status ${response.status}`);
   }
   return (await response.json()) as JobLogsResponse;
+}
+
+/**
+ * Searches jobs by id or name. Without `queueName` the search spans every
+ * queue; with it, the search is scoped to that queue's endpoint. `statuses`
+ * narrows the search to those states (empty = all states); `start` continues
+ * a deepened search from an earlier response's scanned offset.
+ */
+export async function fetchSearch(
+  term: string,
+  statuses: JobStatus[],
+  start: number,
+  queueName?: string
+): Promise<SearchResponse> {
+  const params = new URLSearchParams({ term });
+  if (statuses.length > 0) {
+    params.set('status', statuses.join(','));
+  }
+  if (start > 0) {
+    params.set('start', String(start));
+  }
+  const path = queueName
+    ? `api/queues/${encodeURIComponent(queueName)}/search`
+    : 'api/search';
+  const response = await fetch(`${path}?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Search request failed with status ${response.status}`);
+  }
+  return (await response.json()) as SearchResponse;
 }
 
 async function mutate(
