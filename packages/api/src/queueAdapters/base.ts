@@ -1,4 +1,6 @@
 import type { FlowProducer } from 'bullmq';
+import type { MetricsSource } from '../metrics/capture';
+import type { NativeMetrics } from '../metrics/native';
 import type {
   BullBoardRequest,
   FormatterField,
@@ -115,6 +117,28 @@ export abstract class BaseAdapter {
    * "older" is the backing library's — for BullMQ it is the job timestamp.
    */
   public abstract clean(jobStatus: JobCleanStatus, graceTimeMs: number): Promise<void>;
+
+  /**
+   * BullMQ's native per-minute counters for one finish type, empty for
+   * backing libraries without them. Workers only record these when
+   * configured with `metrics`, which the merge in the metrics endpoint turns
+   * into a downtime fallback for the event-derived counts.
+   */
+  public async getMetrics(
+    _type: 'completed' | 'failed',
+    _start = 0,
+    _end = -1
+  ): Promise<NativeMetrics> {
+    return { meta: { count: 0, prevTS: 0, prevCount: 0 }, data: [], count: 0 };
+  }
+
+  /**
+   * The Redis connection and raw queue name the dashboard's metrics capture
+   * listens on, or `null` when the backing library cannot provide one.
+   */
+  public async getMetricsSource(): Promise<MetricsSource | null> {
+    return null;
+  }
 
   /**
    * Connected workers for this queue, or `null` when the queue cannot answer.

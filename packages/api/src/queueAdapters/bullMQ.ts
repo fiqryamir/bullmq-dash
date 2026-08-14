@@ -1,5 +1,7 @@
 import { FlowProducer, Queue, type Job, type JobType, type RedisClient } from 'bullmq';
 import { STATUSES } from '../constants/statuses';
+import type { MetricsSource } from '../metrics/capture';
+import type { NativeMetrics } from '../metrics/native';
 import type {
   JobCleanStatus,
   JobCounts,
@@ -175,6 +177,40 @@ export class BullMQAdapter extends BaseAdapter {
       flowProducerCache.set(client, producer);
     }
     return producer;
+  }
+
+  public async getMetrics(
+    type: 'completed' | 'failed',
+    start = 0,
+    end = -1
+  ): Promise<NativeMetrics> {
+    return (await this.queue.getMetrics(type, start, end)) as NativeMetrics;
+  }
+
+  public async getMetricsSource(): Promise<MetricsSource | null> {
+    const queue = this.queue as unknown as VersionedQueue;
+
+    let clientPromise: Promise<RedisClient> | undefined;
+    // v6 moved the connection behind pluggable backends; only Redis-backed
+    // queues offer one that event capture can read.
+    if (typeof queue.getBackend === 'function') {
+      clientPromise = queue.getBackend()?.client;
+    } else {
+      clientPromise = queue.client;
+    }
+
+    if (!clientPromise) {
+      return null;
+    }
+    try {
+      return {
+        queueName: this.queue.name,
+        client: await clientPromise,
+        ...(this.queue.opts?.prefix !== undefined ? { prefix: this.queue.opts.prefix } : {}),
+      };
+    } catch {
+      return null;
+    }
   }
 
   public getStatuses(): Status[] {

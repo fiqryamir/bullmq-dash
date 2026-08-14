@@ -47,6 +47,8 @@ type QueueJobsProps = {
   onBack: () => void;
   onSelectJob: (job: AppJob) => void;
   onShowFlow: () => void;
+  onShowMetrics: () => void;
+  showMetrics?: boolean;
 };
 
 type RowAction = { label: string; run: () => Promise<unknown> | void };
@@ -142,7 +144,15 @@ const BULK_ACTIONS_PER_STATE: Record<JobStatus, BulkActionSpec[]> = {
 
 const DEFAULT_CLEAN_GRACE_SECONDS = 5;
 
-export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob, onShowFlow }: QueueJobsProps) {
+export function QueueJobs({
+  queue,
+  pollingInterval,
+  onBack,
+  onSelectJob,
+  onShowFlow,
+  onShowMetrics,
+  showMetrics = true,
+}: QueueJobsProps) {
   const [activeState, setActiveState] = useState<JobStatus>('waiting');
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
@@ -303,12 +313,22 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob, onShowF
         {isPaused && <span className="queue-item__paused">paused</span>}
         <button
           type="button"
-          className="action-btn queue-jobs__flow"
+          className="action-btn queue-jobs__view-action"
           onClick={onShowFlow}
           aria-label="Open flow view"
         >
           Flow
         </button>
+        {showMetrics && (
+          <button
+            type="button"
+            className="action-btn queue-jobs__view-action"
+            onClick={onShowMetrics}
+            aria-label="Open metrics view"
+          >
+            Metrics
+          </button>
+        )}
         {!queue.readOnlyMode && (
           <div className="queue-jobs__actions" role="group" aria-label="Queue actions">
             <button
@@ -464,3 +484,4 @@ export function QueueJobs({ queue, pollingInterval, onBack, onSelectJob, onShowF
     </section>
   );
 }
+

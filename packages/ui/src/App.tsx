@@ -4,6 +4,7 @@ import { CommandPalette } from './queues/CommandPalette';
 import { JobDetail } from './queues/JobDetail';
 import { QueueFlow } from './queues/QueueFlow';
 import { QueueJobs } from './queues/QueueJobs';
+import { QueueMetrics } from './queues/QueueMetrics';
 import { QueuesList } from './queues/QueuesList';
 import type { FlowNode } from './api/contract';
 import { useQueues } from './queues/useQueues';
@@ -28,6 +29,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
   const [selectedQueueName, setSelectedQueueName] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [flowOpen, setFlowOpen] = useState(false);
+  const [metricsOpen, setMetricsOpen] = useState(false);
   const boardTitle = uiConfig.boardTitle ?? 'bullmq-dash';
 
   useEffect(() => {
@@ -61,6 +63,8 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
     setFlowOpen(false);
   };
 
+  const showMetrics = uiConfig.showMetrics !== false;
+
   return (
     <div className="app">
       <header className="app__header">
@@ -76,6 +80,8 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
               onBack={() => setFlowOpen(false)}
               onSelectNode={selectFlowNode}
             />
+          ) : metricsOpen ? (
+            <QueueMetrics queue={selectedQueue} onBack={() => setMetricsOpen(false)} />
           ) : selectedJobId ? (
             <JobDetail
               queue={selectedQueue}
@@ -91,6 +97,8 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
               onBack={() => setSelectedQueueName(null)}
               onSelectJob={(job) => job.id && setSelectedJobId(job.id)}
               onShowFlow={() => setFlowOpen(true)}
+              onShowMetrics={() => setMetricsOpen(true)}
+              showMetrics={showMetrics}
             />
           )
         ) : (

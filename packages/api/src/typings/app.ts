@@ -158,6 +158,24 @@ export interface JobLogsResponse extends JobLogs {
   pagination: Pagination;
 }
 
+/**
+ * One minute of a queue's historical metrics. `ts` is the minute start;
+ * counts are the merged event-derived and native counters; the averages are
+ * null until the minute holds samples of that kind.
+ */
+export interface MetricsBucket {
+  ts: number;
+  completed: number;
+  failed: number;
+  durationAvgMs: number | null;
+  waitAvgMs: number | null;
+}
+
+export interface QueueMetricsResponse {
+  queue: string;
+  buckets: MetricsBucket[];
+}
+
 export interface Pagination {
   pageCount: number;
   range: {
@@ -247,6 +265,16 @@ export type BoardOptions = {
    * mutating route with a 403 and the UI hides the action controls.
    */
   readOnly?: boolean;
+  /**
+   * Historical metrics configuration. Capture is always on for every watched
+   * queue; these options only shape the store's keyspace and bucket lifetime.
+   */
+  metrics?: {
+    /** Bucket lifetime in seconds; buckets expire after it. Defaults to 7 days. */
+    retentionSeconds?: number;
+    /** Keyspace prefix for the store's keys. Defaults to `bullmq-dash:metrics`. */
+    prefix?: string;
+  };
 };
 
 export type IMiscLink = {

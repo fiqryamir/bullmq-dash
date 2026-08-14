@@ -70,9 +70,15 @@ const registeredQueues = (serverAdapter: TestServerAdapter): BullBoardQueues => 
 };
 
 describe('createBullBoard', () => {
-  it('returns the four board methods', () => {
+  it('returns the four board methods plus the metrics teardown', () => {
     const { board } = createBoard();
-    expect(Object.keys(board).sort()).toEqual(['addQueue', 'removeQueue', 'replaceQueues', 'setQueues']);
+    expect(Object.keys(board).sort()).toEqual([
+      'addQueue',
+      'closeMetrics',
+      'removeQueue',
+      'replaceQueues',
+      'setQueues',
+    ]);
     for (const method of Object.values(board)) {
       expect(typeof method).toBe('function');
     }
@@ -278,6 +284,7 @@ describe('createBullBoard', () => {
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/jobs' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/search' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/flow' }),
+      expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/metrics' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId/logs' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId/flow' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId' }),

@@ -21,6 +21,7 @@ describe('ExpressAdapter', () => {
     const queueName = `bullmq-dash-express-${randomUUID()}`;
     let queue: Queue;
     let app: Express;
+    let board: ReturnType<typeof createBullBoard>;
 
     beforeAll(async () => {
       queue = new Queue(queueName, { connection });
@@ -29,7 +30,7 @@ describe('ExpressAdapter', () => {
       await queue.add('reminder', { to: 'later@example.com' }, { delay: 60_000 });
 
       const serverAdapter = new ExpressAdapter();
-      createBullBoard({
+      board = createBullBoard({
         queues: [new BullMQAdapter(queue)],
         serverAdapter,
       });
@@ -39,9 +40,23 @@ describe('ExpressAdapter', () => {
     }, 30_000);
 
     afterAll(async () => {
+      await board.closeMetrics();
       await queue.obliterate({ force: true });
       await queue.close();
     }, 30_000);
+
+    it('serves per-minute metrics buckets from GET /api/queues/:queueName/metrics', async () => {
+      const now = Date.now();
+      const response = await request(app)
+        .get(`/api/queues/${queueName}/metrics`)
+        .query({ from: String(now - 60_000), to: String(now) })
+        .expect(200);
+      expect(response.body.queue).toBe(queueName);
+      expect(response.body.buckets).toHaveLength(2);
+      for (const bucket of response.body.buckets as Array<{ ts: number }>) {
+        expect(bucket.ts).toEqual(expect.any(Number));
+      }
+    });
 
     it('serves every registered queue with its counts from GET /api/queues', async () => {
       const response = await request(app).get('/api/queues').expect(200);
@@ -438,6 +453,63 @@ describe('ExpressAdapter', () => {
       await request(app).get('/api/search').expect(400);
       await request(app).get('/api/search').query({ term: 'mail', status: 'nonsense' }).expect(400);
     });
+  });
+
+  describe('metrics capture through the REST contract', () => {
+    const queueName = `bullmq-dash-express-metrics-${randomUUID()}`;
+    let queue: Queue;
+    let worker: Worker;
+    let app: Express;
+    let board: ReturnType<typeof createBullBoard>;
+
+    beforeAll(async () => {
+      queue = new Queue(queueName, { connection });
+      worker = new Worker(queueName, async () => {}, { connection });
+      await worker.waitUntilReady();
+
+      const serverAdapter = new ExpressAdapter();
+      board = createBullBoard({
+        queues: [new BullMQAdapter(queue)],
+        serverAdapter,
+      });
+
+      app = express();
+      app.use(serverAdapter.getRouter());
+
+      // Delayed so the capture's event subscription is live before the work
+      // runs: the endpoint then serves event-derived buckets deterministically.
+      await queue.add('metric-job', { i: 1 }, { delay: 1_500 });
+      await queue.add('metric-job', { i: 2 }, { delay: 1_500 });
+    }, 30_000);
+
+    afterAll(async () => {
+      await board.closeMetrics();
+      await worker.close();
+      await queue.obliterate({ force: true });
+      await queue.close();
+    }, 30_000);
+
+    it('serves event-derived completed counts with averages', async () => {
+      const completedTotal = async () => {
+        const response = await request(app).get(`/api/queues/${queueName}/metrics`).expect(200);
+        const buckets = response.body.buckets as Array<{
+          completed: number;
+          durationAvgMs: number | null;
+          waitAvgMs: number | null;
+        }>;
+        return {
+          completed: buckets.reduce((sum, bucket) => sum + bucket.completed, 0),
+          averages: buckets.filter(
+            (bucket) => bucket.completed > 0 && bucket.durationAvgMs !== null && bucket.waitAvgMs !== null
+          ),
+        };
+      };
+
+      await pollUntil(async () => (await completedTotal()).completed >= 2, 15_000);
+
+      const { averages } = await completedTotal();
+      expect(averages.length).toBeGreaterThanOrEqual(1);
+    }, 20_000);
   });
 
   describe('readOnly board', () => {
