@@ -15,7 +15,8 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],
     "paths": {
-      "@bullmq-dash/api": ["./packages/api/src/index.ts"]
+      "@bullmq-dash/api": ["./packages/api/src/index.ts"],
+      "@bullmq-dash/express": ["./packages/express/src/index.ts"]
     }
   }
 }
