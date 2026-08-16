@@ -2,6 +2,10 @@ import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+// The CLI's flag/env surface is the source of truth this guide must stay
+// in sync with. Imported from the module that defines it rather than the
+// package entry, because the entry pulls in the server stack, which needs
+// built `dist` output that does not exist when CI runs tests.
 import { CLI_ENV_VARS, CLI_OPTIONS } from '../../packages/standalone/src/config';
 
 const WEBSITE_DIR = fileURLToPath(new URL('..', import.meta.url));

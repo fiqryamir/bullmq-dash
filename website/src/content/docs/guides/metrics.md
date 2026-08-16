@@ -32,10 +32,12 @@ and increments auto-expiring buckets in a **dashboard-owned Redis keyspace**:
 - Bucket lifetime: **7 days** by default, after which buckets expire
 
 Because it is event-derived, duration and wait time only capture while the
-dashboard is listening. Counts, however, stay complete even while the
-dashboard is down: the capture seeds from BullMQ's native per-minute metrics
-(`queue.getMetrics`) for the gap, so a restarted dashboard backfills the
-counter history it missed.
+dashboard is listening. Counts are more resilient: for queues whose workers
+run with BullMQ's native metrics enabled (`metrics: { maxDataPoints }` on
+v6 workers), the capture backfills the counter history it missed from
+`queue.getMetrics` after a restart. Without that worker configuration the
+native counters are empty, so counts capture only while the dashboard
+listens, exactly like the latency data.
 
 ## Configuration
 

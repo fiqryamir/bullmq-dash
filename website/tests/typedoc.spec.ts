@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, readFile, readdir } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { walkFiles } from '../scripts/walk-files.mjs';
 
 const WEBSITE_DIR = fileURLToPath(new URL('..', import.meta.url));
 const API_DIR = path.join(WEBSITE_DIR, '..', 'packages', 'api', 'src');
@@ -30,20 +31,6 @@ async function collectExportNames(): Promise<string[]> {
   return [...names];
 }
 
-async function walkFiles(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const files: string[] = [];
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await walkFiles(full)));
-    } else if (entry.isFile()) {
-      files.push(full);
-    }
-  }
-  return files;
-}
-
 describe('TypeDoc API reference', () => {
   it('generates a page for every public export of the core', async () => {
     const out = await mkdtemp(path.join(tmpdir(), 'bullmq-dash-typedoc-'));
@@ -60,7 +47,6 @@ describe('TypeDoc API reference', () => {
         { cause: error }
       );
     }
-
     const files = (await walkFiles(out)).filter((file) => file.endsWith('.md'));
     expect(files.length).toBeGreaterThan(0);
 

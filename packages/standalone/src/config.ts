@@ -83,6 +83,16 @@ export const CLI_ENV_VARS = {
 
 type CLIFlag = keyof typeof CLI_ENV_VARS;
 
+/**
+ * Every flag except these two has an env var shadow. Declared as a
+ * compile-time check: adding a flag to `CLI_OPTIONS` without a matching
+ * `CLI_ENV_VARS` entry (or vice versa) fails the build here.
+ */
+export const FLAGS_WITHOUT_ENV_VAR = ['help', 'version'] as const satisfies readonly Exclude<
+  keyof typeof CLI_OPTIONS,
+  keyof typeof CLI_ENV_VARS
+>[];
+
 export type ResolvedStandaloneConfig = {
   config: StandaloneConfig;
   help: boolean;

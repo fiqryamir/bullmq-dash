@@ -3,25 +3,12 @@
 // from each page's breadcrumb line (the page's own name), or from the
 // project name for the index page, and prepends it.
 
-import { readFile, readdir, rename, writeFile } from 'node:fs/promises';
+import { readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { walkFiles } from './walk-files.mjs';
 
 const WEBSITE_DIR = path.join(import.meta.dirname, '..');
 const REFERENCE_DIR = path.join(WEBSITE_DIR, 'src', 'content', 'docs', 'reference');
-
-async function walkFiles(dir) {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const files = [];
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await walkFiles(full)));
-    } else if (entry.isFile()) {
-      files.push(full);
-    }
-  }
-  return files;
-}
 
 const projectName = JSON.parse(await readFile(path.join(WEBSITE_DIR, 'typedoc.json'), 'utf8')).name;
 
