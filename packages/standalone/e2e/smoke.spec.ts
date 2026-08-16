@@ -104,7 +104,7 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
 test('renders a readable flow graph', async ({ page }) => {
   await page.goto(serverUrl);
   await page.getByRole('button', { name: /smoke-emails/ }).click();
-  await page.getByRole('button', { name: 'Open flow view' }).click();
+  await page.getByRole('button', { name: 'Open Flow view' }).click();
 
   await expect(page.locator('.flow-node', { hasText: 'checkout' })).toBeVisible();
   const transform = await page.locator('.react-flow__viewport').getAttribute('style');
@@ -158,7 +158,7 @@ test('captures traffic and renders the metrics view', async ({ page }) => {
 
   await page.goto(serverUrl);
   await page.getByRole('button', { name: /smoke-metrics/ }).click();
-  await page.getByRole('button', { name: 'Open metrics view' }).click();
+  await page.getByRole('button', { name: 'Open Metrics view' }).click();
 
   await expect(page.locator('.metrics-summary')).toContainText(/2 completed/);
   await expect(page.locator('.metrics-chart')).toHaveCount(3);
@@ -167,11 +167,11 @@ test('captures traffic and renders the metrics view', async ({ page }) => {
 test('manages schedulers from the schedulers view', async ({ page }) => {
   await page.goto(serverUrl);
   await page.getByRole('button', { name: /smoke-schedulers/ }).click();
-  await page.getByRole('button', { name: 'Open schedulers view' }).click();
+  await page.getByRole('button', { name: 'Open Schedulers view' }).click();
 
   const table = page.locator('.queue-schedulers__table-wrap');
   await expect(table).toContainText('nightly-digest');
-  await expect(table).toContainText('every 1 days');
+  await expect(table).toContainText('every 1d');
 
   await page.getByRole('button', { name: 'Add scheduler' }).click();
   const form = page.getByRole('form', { name: 'Scheduler form' });
@@ -182,7 +182,7 @@ test('manages schedulers from the schedulers view', async ({ page }) => {
   await form.getByRole('button', { name: 'Add' }).click();
 
   await expect(table).toContainText('hourly-sync');
-  await expect(table).toContainText('every 1 hours');
+  await expect(table).toContainText('every 1h');
 
   page.once('dialog', (dialog) => void dialog.accept());
   await table.getByRole('button', { name: 'Remove scheduler hourly-sync' }).click();
@@ -193,10 +193,10 @@ test('renders the workers and Redis tabs', async ({ page }) => {
   await page.goto(serverUrl);
   await page.getByRole('button', { name: /smoke-schedulers/ }).click();
 
-  await page.getByRole('button', { name: 'Open workers view' }).click();
+  await page.getByRole('button', { name: 'Open Workers view' }).click();
   await expect(page.locator('.queue-workers')).toContainText('No workers connected');
 
-  await page.getByRole('button', { name: 'Open redis view' }).click();
+  await page.getByRole('button', { name: 'Open Redis view' }).click();
   const stats = page.locator('.redis-stats');
   await expect(stats).toContainText('Version');
   await expect(stats).toContainText('Memory used');
