@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { AppQueue } from '../api/contract';
 
 export type QueueViewName = 'jobs' | 'schedulers' | 'workers' | 'redis' | 'flow' | 'metrics';
@@ -9,13 +10,13 @@ type QueueNavProps = {
   showMetrics: boolean;
 };
 
-const VIEWS: Array<{ name: QueueViewName; label: string }> = [
-  { name: 'jobs', label: 'Jobs' },
-  { name: 'schedulers', label: 'Schedulers' },
-  { name: 'workers', label: 'Workers' },
-  { name: 'redis', label: 'Redis' },
-  { name: 'flow', label: 'Flow' },
-  { name: 'metrics', label: 'Metrics' },
+const VIEWS: Array<{ name: QueueViewName; labelKey: string }> = [
+  { name: 'jobs', labelKey: 'NAV.JOBS' },
+  { name: 'schedulers', labelKey: 'NAV.SCHEDULERS' },
+  { name: 'workers', labelKey: 'NAV.WORKERS' },
+  { name: 'redis', labelKey: 'NAV.REDIS' },
+  { name: 'flow', labelKey: 'NAV.FLOW' },
+  { name: 'metrics', labelKey: 'NAV.METRICS' },
 ];
 
 /**
@@ -24,20 +25,21 @@ const VIEWS: Array<{ name: QueueViewName; label: string }> = [
  * hides the metrics tab when the board config disables it.
  */
 export function QueueNav({ queue, active, onSelect, showMetrics }: QueueNavProps) {
+  const { t } = useTranslation();
   const views = showMetrics ? VIEWS : VIEWS.filter((view) => view.name !== 'metrics');
 
   return (
-    <div className="queue-nav" role="group" aria-label={`Views of ${queue.name}`}>
+    <div className="queue-nav" role="group" aria-label={t('NAV.VIEWS_OF', { queue: queue.name })}>
       {views.map((view) => (
         <button
           key={view.name}
           type="button"
           className={`queue-nav__tab${active === view.name ? ' queue-nav__tab--selected' : ''}`}
           aria-pressed={active === view.name}
-          aria-label={`Open ${view.label.toLowerCase()} view`}
+          aria-label={t('NAV.OPEN_VIEW', { view: t(view.labelKey) })}
           onClick={() => onSelect(view.name)}
         >
-          {view.label}
+          {t(view.labelKey)}
         </button>
       ))}
     </div>

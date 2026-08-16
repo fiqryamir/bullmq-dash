@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import type { AppQueue } from '../api/contract';
 import { useTheme } from '../theme/ThemeProvider';
 import { aggregateBuckets } from './metricsDownsample';
@@ -72,6 +73,7 @@ type QueueMetricsProps = {
 const RANGES: MetricsRange[] = ['24h', '7d'];
 
 export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: QueueMetricsProps) {
+  const { t } = useTranslation();
   const [range, setRange] = useState<MetricsRange>('24h');
   const { buckets, status, refresh } = useQueueMetrics(queue.name, range);
   const tokens = useTokenColors();
@@ -112,6 +114,7 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
   }, [chartData]);
 
   const hasActivity = summary.hasActivity;
+  const rangeLabel = range === '24h' ? t('METRICS.RANGE_24H') : t('METRICS.RANGE_7D');
 
   const tooltipStyle = {
     background: tokens.surface,
@@ -122,19 +125,19 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
   };
 
   return (
-    <section className="queue-metrics" aria-label={`Metrics of ${queue.name}`}>
+    <section className="queue-metrics" aria-label={t('METRICS.VIEW_ARIA', { queue: queue.name })}>
       <header className="queue-jobs__header">
         <button type="button" className="queue-jobs__back" onClick={onBack}>
-          ← Back
+          {t('COMMON.BACK')}
         </button>
         <h1 className="queue-jobs__title">{queue.name}</h1>
-        <span className="queue-flow__subtitle">Metrics</span>
+        <span className="queue-flow__subtitle">{t('NAV.METRICS')}</span>
       </header>
 
       <QueueNav queue={queue} active="metrics" onSelect={onSelectView} showMetrics={showMetrics} />
 
       <div className="queue-metrics__controls">
-        <div className="metrics-range" role="group" aria-label="Metrics range">
+        <div className="metrics-range" role="group" aria-label={t('METRICS.RANGE_ARIA')}>
           {RANGES.map((option) => (
             <button
               key={option}
@@ -143,39 +146,45 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
               aria-pressed={option === range}
               onClick={() => setRange(option)}
             >
-              {option === '24h' ? '24 hours' : '7 days'}
+              {option === '24h' ? t('METRICS.RANGE_24H') : t('METRICS.RANGE_7D')}
             </button>
           ))}
         </div>
-        <button type="button" className="action-btn" onClick={refresh} aria-label="Refresh metrics">
-          Refresh
+        <button
+          type="button"
+          className="action-btn"
+          onClick={refresh}
+          aria-label={t('METRICS.REFRESH_ARIA')}
+        >
+          {t('COMMON.REFRESH')}
         </button>
       </div>
 
       {status === 'loading' ? (
-        <p className="queues-status">Loading metrics…</p>
+        <p className="queues-status">{t('METRICS.LOADING')}</p>
       ) : status === 'error' ? (
         <p className="queues-status queues-status--error" role="alert">
-          Failed to load metrics
+          {t('METRICS.LOAD_FAILED')}
         </p>
       ) : (
         <>
           {!hasActivity ? (
-            <p className="queues-status">No completed or failed jobs in this window</p>
+            <p className="queues-status">{t('METRICS.NO_ACTIVITY')}</p>
           ) : (
             <p className="metrics-summary" id="metrics-summary">
-              {summary.completed} completed, {summary.failed} failed in the last{' '}
-              {range === '24h' ? '24h' : '7d'}
+              {t('METRICS.SUMMARY', { completed: summary.completed, failed: summary.failed, range: rangeLabel })}
               {summary.avgDuration !== null && (
                 <>
                   {' · '}
-                  {formatMs(Math.round(summary.avgDuration))} average duration
+                  {t('METRICS.AVG_DURATION', {
+                    duration: formatMs(Math.round(summary.avgDuration)),
+                  })}
                 </>
               )}
               {summary.avgWait !== null && (
                 <>
                   {' · '}
-                  {formatMs(Math.round(summary.avgWait))} average wait
+                  {t('METRICS.AVG_WAIT', { wait: formatMs(Math.round(summary.avgWait)) })}
                 </>
               )}
             </p>
@@ -183,11 +192,11 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
 
           <div className="metrics-charts">
             <div className="metrics-chart">
-              <h2 className="metrics-chart__title">Counts</h2>
+              <h2 className="metrics-chart__title">{t('METRICS.COUNTS')}</h2>
               <div
                 className="metrics-chart__canvas"
                 role="img"
-                aria-label="Counts of completed and failed jobs over time"
+                aria-label={t('METRICS.COUNTS_ARIA')}
               >
                 <LineChart width={720} height={200} data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={tokens.grid} />
@@ -207,7 +216,7 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
                   <Line
                     type="monotone"
                     dataKey="completed"
-                    name="Completed"
+                    name={t('METRICS.COMPLETED')}
                     stroke={tokens.completed}
                     strokeWidth={2}
                     dot={false}
@@ -216,7 +225,7 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
                   <Line
                     type="monotone"
                     dataKey="failed"
-                    name="Failed"
+                    name={t('METRICS.FAILED')}
                     stroke={tokens.failed}
                     strokeWidth={2}
                     dot={false}
@@ -227,11 +236,11 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
             </div>
 
             <div className="metrics-chart">
-              <h2 className="metrics-chart__title">Duration</h2>
+              <h2 className="metrics-chart__title">{t('METRICS.DURATION')}</h2>
               <div
                 className="metrics-chart__canvas"
                 role="img"
-                aria-label="Average job duration over time"
+                aria-label={t('METRICS.DURATION_ARIA')}
               >
                 <LineChart width={720} height={200} data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={tokens.grid} />
@@ -246,12 +255,12 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
                   <Tooltip
                     contentStyle={tooltipStyle}
                     labelFormatter={(ts) => formatTick(Number(ts), range)}
-                    formatter={(value) => [formatMs(Number(value)), 'Duration']}
+                    formatter={(value) => [formatMs(Number(value)), t('METRICS.DURATION')]}
                   />
                   <Line
                     type="monotone"
                     dataKey="durationAvgMs"
-                    name="Duration"
+                    name={t('METRICS.DURATION')}
                     stroke={tokens.duration}
                     strokeWidth={2}
                     dot={false}
@@ -262,11 +271,11 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
             </div>
 
             <div className="metrics-chart">
-              <h2 className="metrics-chart__title">Wait time</h2>
+              <h2 className="metrics-chart__title">{t('METRICS.WAIT_TIME')}</h2>
               <div
                 className="metrics-chart__canvas"
                 role="img"
-                aria-label="Average wait time over time"
+                aria-label={t('METRICS.WAIT_ARIA')}
               >
                 <LineChart width={720} height={200} data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={tokens.grid} />
@@ -281,12 +290,12 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
                   <Tooltip
                     contentStyle={tooltipStyle}
                     labelFormatter={(ts) => formatTick(Number(ts), range)}
-                    formatter={(value) => [formatMs(Number(value)), 'Wait']}
+                    formatter={(value) => [formatMs(Number(value)), t('METRICS.WAIT')]}
                   />
                   <Line
                     type="monotone"
                     dataKey="waitAvgMs"
-                    name="Wait"
+                    name={t('METRICS.WAIT')}
                     stroke={tokens.wait}
                     strokeWidth={2}
                     dot={false}
@@ -297,17 +306,17 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
             </div>
           </div>
 
-          <details className="metrics-table" role="group" aria-label="Metrics data table">
-            <summary>Data table</summary>
+          <details className="metrics-table" role="group" aria-label={t('METRICS.TABLE_ARIA')}>
+            <summary>{t('METRICS.DATA_TABLE')}</summary>
             <table>
-              <caption className="visually-hidden">Per-minute metrics for {queue.name}</caption>
+              <caption className="visually-hidden">{t('METRICS.CAPTION', { queue: queue.name })}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Time</th>
-                  <th scope="col">Completed</th>
-                  <th scope="col">Failed</th>
-                  <th scope="col">Duration</th>
-                  <th scope="col">Wait</th>
+                  <th scope="col">{t('COMMON.TIME')}</th>
+                  <th scope="col">{t('METRICS.COMPLETED')}</th>
+                  <th scope="col">{t('METRICS.FAILED')}</th>
+                  <th scope="col">{t('METRICS.DURATION')}</th>
+                  <th scope="col">{t('METRICS.WAIT')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -328,4 +337,3 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
     </section>
   );
 }
-

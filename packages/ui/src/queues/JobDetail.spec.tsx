@@ -85,7 +85,7 @@ describe('JobDetail', () => {
     stubDetailApi(failedJob);
     render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
 
-    expect(await screen.findByText('failed')).toBeInTheDocument();
+    expect(await screen.findByText('Failed')).toBeInTheDocument();
     expect(screen.getByText('#f1')).toBeInTheDocument();
     expect(screen.getByText('welcome-email')).toBeInTheDocument();
     expect(screen.getByText('20%')).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe('JobDetail', () => {
     stubDetailApi(failedJob);
     render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
 
-    await screen.findByText('failed');
+    await screen.findByText('Failed');
     const data = screen.getByRole('region', { name: 'Job data' });
     expect(within(data).getByText(/a@example\.com/)).toBeInTheDocument();
 
@@ -109,7 +109,7 @@ describe('JobDetail', () => {
     stubDetailApi(failedJob);
     render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
 
-    await screen.findByText('failed');
+    await screen.findByText('Failed');
     const reason = screen.getByRole('region', { name: 'Failed reason' });
     expect(within(reason).getByText('kaboom')).toBeInTheDocument();
 
@@ -131,7 +131,7 @@ describe('JobDetail', () => {
     stubDetailApi(failedJob, ['log row 2', 'log row 1'], 1, 2);
     render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
 
-    await screen.findByText('failed');
+    await screen.findByText('Failed');
     const logs = screen.getByRole('region', { name: 'Logs' });
     const rows = await within(logs).findAllByText(/log row/);
     expect(rows.map((row) => row.textContent)).toEqual(['log row 2', 'log row 1']);

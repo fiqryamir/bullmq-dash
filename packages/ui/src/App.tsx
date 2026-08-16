@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { readUiConfig, type UIConfig } from './config';
+import { LocaleSelect } from './i18n/LocaleSelect';
 import { CommandPalette } from './queues/CommandPalette';
 import { JobDetail } from './queues/JobDetail';
 import { QueueFlow } from './queues/QueueFlow';
@@ -27,6 +29,7 @@ export function App({ uiConfig = readUiConfig() }: { uiConfig?: UIConfig }) {
 }
 
 function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
+  const { t } = useTranslation();
   const pollingInterval = uiConfig.pollingInterval?.forceInterval ?? DEFAULT_POLLING_INTERVAL;
   const { queues, status } = useQueues(pollingInterval);
   const [query, setQuery] = useState('');
@@ -78,6 +81,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
     <div className="app">
       <header className="app__header">
         <span className="app__brand">{boardTitle}</span>
+        <LocaleSelect />
         <ThemeToggle />
       </header>
       <main className={selectedQueue ? 'app__main app__main--queue' : 'app__main'}>
@@ -142,8 +146,8 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
             <input
               type="search"
               className="command-bar"
-              placeholder="Search queues…"
-              aria-label="Search queues"
+              placeholder={t('APP.SEARCH_PLACEHOLDER')}
+              aria-label={t('APP.SEARCH_ARIA')}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -157,13 +161,13 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
               }}
             />
             {status === 'loading' && queues.length === 0 ? (
-              <p className="queues-status">Loading queues…</p>
+              <p className="queues-status">{t('APP.LOADING_QUEUES')}</p>
             ) : status === 'error' && queues.length === 0 ? (
-              <p className="queues-status queues-status--error">Failed to load queues</p>
+              <p className="queues-status queues-status--error">{t('APP.LOAD_QUEUES_FAILED')}</p>
             ) : queues.length === 0 ? (
-              <p className="queues-status">No queues</p>
+              <p className="queues-status">{t('APP.NO_QUEUES')}</p>
             ) : visibleQueues.length === 0 ? (
-              <p className="queues-status">No queues match the search</p>
+              <p className="queues-status">{t('APP.NO_QUEUES_MATCH')}</p>
             ) : (
               <QueuesList queues={visibleQueues} onSelect={(queue) => openQueue(queue.name)} />
             )}

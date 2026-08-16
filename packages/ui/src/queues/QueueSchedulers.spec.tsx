@@ -55,7 +55,7 @@ describe('QueueSchedulers', () => {
     const table = await screen.findByRole('table');
     expect(within(table).getByText('nightly')).toBeInTheDocument();
     expect(within(table).getByText('nightly-digest')).toBeInTheDocument();
-    expect(within(table).getByText('every 1 days')).toBeInTheDocument();
+    expect(within(table).getByText('every 1d')).toBeInTheDocument();
     expect(within(table).getByText('3')).toBeInTheDocument();
     expect(within(table).getByText('of 10')).toBeInTheDocument();
   });

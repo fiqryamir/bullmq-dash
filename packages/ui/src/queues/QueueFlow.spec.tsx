@@ -73,7 +73,7 @@ describe('QueueFlow', () => {
     expect(within(graph).getByText('child-job')).toBeInTheDocument();
     expect(within(graph).getByText('grand-job')).toBeInTheDocument();
     expect(within(graph).getByText('#r1')).toBeInTheDocument();
-    expect(within(graph).getByText('waiting-children')).toBeInTheDocument();
+    expect(within(graph).getByText('Waiting Children')).toBeInTheDocument();
   });
 
   it('shows the truncated notice when the graph is capped', async () => {

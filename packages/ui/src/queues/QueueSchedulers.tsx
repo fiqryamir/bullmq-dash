@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AppJobScheduler, AppQueue, JobSchedulerRepeatOptions } from '../api/contract';
 import { addJobScheduler, removeJobScheduler, updateJobScheduler } from '../api/contract';
 import { QueueNav, type QueueViewName } from './QueueNav';
@@ -53,6 +54,7 @@ function initialForm(mode: 'add' | 'edit', scheduler?: AppJobScheduler): FormSta
 }
 
 export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: QueueSchedulersProps) {
+  const { t } = useTranslation();
   const { schedulers, status, refresh } = useQueueSchedulers(queue.name);
   const [form, setForm] = useState<FormState | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -83,7 +85,7 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
     if (form.kind === 'every') {
       const every = Number(form.every);
       if (!Number.isInteger(every) || every <= 0) {
-        return 'Interval must be a positive number of milliseconds';
+        return t('ERRORS.INVALID_SCHEDULER_INTERVAL');
       }
       return {
         every,
@@ -92,7 +94,7 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
       };
     }
     if (form.pattern.trim().length === 0) {
-      return 'Cron pattern is required';
+      return t('SCHEDULERS.CRON_REQUIRED');
     }
     return {
       pattern: form.pattern.trim(),
@@ -118,14 +120,14 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
     if (form.mode === 'add') {
       const trimmedId = form.id.trim();
       if (trimmedId.length === 0) {
-        setFormError('A scheduler id is required');
+        setFormError(t('SCHEDULERS.ID_REQUIRED'));
         return;
       }
       if (form.jobData.trim().length > 0) {
         try {
           jobData = JSON.parse(form.jobData);
         } catch {
-          setFormError('Job data must be valid JSON');
+          setFormError(t('SCHEDULERS.JSON_INVALID'));
           return;
         }
       }
@@ -145,14 +147,14 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
       closeForm();
       refresh();
     } catch {
-      setFormError('The scheduler could not be saved');
+      setFormError(t('SCHEDULERS.SAVE_FAILED'));
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async (scheduler: AppJobScheduler) => {
-    if (!window.confirm(`Remove scheduler ${scheduler.id} in ${queue.name}?`)) {
+    if (!window.confirm(t('SCHEDULERS.REMOVE_CONFIRM', { id: scheduler.id, queue: queue.name }))) {
       return;
     }
     setBusy(true);
@@ -160,34 +162,34 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
       await removeJobScheduler(queue.name, scheduler.id);
       refresh();
     } catch {
-      setFormError('The scheduler could not be removed');
+      setFormError(t('SCHEDULERS.REMOVE_FAILED'));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <section className="queue-schedulers" aria-label={`Schedulers of ${queue.name}`}>
+    <section className="queue-schedulers" aria-label={t('SCHEDULERS.VIEW_ARIA', { queue: queue.name })}>
       <header className="queue-jobs__header">
         <button
           type="button"
           className="queue-jobs__back"
           onClick={onBack}
-          aria-label="Back to jobs"
+          aria-label={t('COMMON.BACK_TO_JOBS')}
         >
-          ← Back
+          {t('COMMON.BACK')}
         </button>
         <h1 className="queue-jobs__title">{queue.name}</h1>
-        <span className="queue-flow__subtitle">Schedulers</span>
+        <span className="queue-flow__subtitle">{t('SCHEDULERS.TITLE')}</span>
         {!queue.readOnlyMode && (
           <button
             type="button"
             className="action-btn queue-jobs__view-action"
             onClick={form ? closeForm : openAdd}
             disabled={busy}
-            aria-label={form ? 'Close scheduler form' : 'Add scheduler'}
+            aria-label={form ? t('SCHEDULERS.CLOSE_FORM_ARIA') : t('SCHEDULERS.ADD_ARIA')}
           >
-            {form ? 'Close' : 'Add scheduler'}
+            {form ? t('SCHEDULERS.CLOSE_FORM') : t('SCHEDULERS.ADD')}
           </button>
         )}
       </header>
@@ -195,101 +197,101 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
       <QueueNav queue={queue} active="schedulers" onSelect={onSelectView} showMetrics={showMetrics} />
 
       {form && (
-        <form className="scheduler-form" onSubmit={submit} aria-label="Scheduler form">
+        <form className="scheduler-form" onSubmit={submit} aria-label={t('SCHEDULERS.FORM_ARIA')}>
           <div className="scheduler-form__grid">
             {form.mode === 'add' && (
               <label className="scheduler-form__field">
-                <span>ID</span>
+                <span>{t('COMMON.ID')}</span>
                 <input
                   value={form.id}
                   onChange={(event) => set({ id: event.target.value })}
-                  aria-label="Scheduler id"
+                  aria-label={t('SCHEDULERS.ID_ARIA')}
                   required
                 />
               </label>
             )}
             <label className="scheduler-form__field">
-              <span>Schedule</span>
+              <span>{t('SCHEDULERS.KIND')}</span>
               <select
                 value={form.kind}
                 onChange={(event) => set({ kind: event.target.value as ScheduleKind })}
-                aria-label="Schedule kind"
+                aria-label={t('SCHEDULERS.KIND_ARIA')}
               >
-                <option value="every">Interval</option>
-                <option value="pattern">Cron pattern</option>
+                <option value="every">{t('SCHEDULERS.EDIT.KIND_EVERY')}</option>
+                <option value="pattern">{t('SCHEDULERS.EDIT.KIND_PATTERN')}</option>
               </select>
             </label>
             {form.kind === 'every' ? (
               <label className="scheduler-form__field">
-                <span>Every (ms)</span>
+                <span>{t('SCHEDULERS.EVERY_MS')}</span>
                 <input
                   type="number"
                   min={1}
                   value={form.every}
                   onChange={(event) => set({ every: event.target.value })}
-                  aria-label="Interval in milliseconds"
+                  aria-label={t('SCHEDULERS.EVERY_ARIA')}
                   required
                 />
               </label>
             ) : (
               <>
                 <label className="scheduler-form__field">
-                  <span>Cron pattern</span>
+                  <span>{t('SCHEDULERS.EDIT.KIND_PATTERN')}</span>
                   <input
                     value={form.pattern}
                     placeholder="0 3 * * *"
                     onChange={(event) => set({ pattern: event.target.value })}
-                    aria-label="Cron pattern"
+                    aria-label={t('SCHEDULERS.PATTERN_ARIA')}
                     required
                   />
                 </label>
                 <label className="scheduler-form__field">
-                  <span>Timezone</span>
+                  <span>{t('SCHEDULERS.TZ')}</span>
                   <input
                     value={form.tz}
                     placeholder="UTC"
                     onChange={(event) => set({ tz: event.target.value })}
-                    aria-label="Timezone"
+                    aria-label={t('SCHEDULERS.TZ_ARIA')}
                   />
                 </label>
               </>
             )}
             <label className="scheduler-form__field">
-              <span>Limit</span>
+              <span>{t('SCHEDULERS.LIMIT')}</span>
               <input
                 type="number"
                 min={1}
                 value={form.limit}
                 onChange={(event) => set({ limit: event.target.value })}
-                aria-label="Run limit"
+                aria-label={t('SCHEDULERS.LIMIT_ARIA')}
               />
             </label>
             <label className="scheduler-form__field">
-              <span>End date</span>
+              <span>{t('SCHEDULERS.EDIT.END_DATE')}</span>
               <input
                 type="datetime-local"
                 value={form.endDate}
                 onChange={(event) => set({ endDate: event.target.value })}
-                aria-label="End date"
+                aria-label={t('SCHEDULERS.END_DATE_ARIA')}
               />
             </label>
             {form.mode === 'add' && (
               <>
                 <label className="scheduler-form__field">
-                  <span>Job name</span>
+                  <span>{t('ADD_JOB.JOB_NAME')}</span>
                   <input
                     value={form.jobName}
                     onChange={(event) => set({ jobName: event.target.value })}
-                    aria-label="Job name"
+                    aria-label={t('SCHEDULERS.NAME_ARIA')}
                   />
                 </label>
                 <label className="scheduler-form__field scheduler-form__field--wide">
-                  <span>Job data (JSON)</span>
+                  <span>{t('SCHEDULERS.JOB_DATA_JSON')}</span>
                   <textarea
                     value={form.jobData}
                     placeholder={'{"key": "value"}'}
                     onChange={(event) => set({ jobData: event.target.value })}
-                    aria-label="Job data"
+                    aria-label={t('SCHEDULERS.DATA_ARIA')}
                   />
                 </label>
               </>
@@ -297,10 +299,10 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
           </div>
           <div className="scheduler-form__actions">
             <button type="submit" className="action-btn" disabled={busy}>
-              {form.mode === 'add' ? 'Add' : 'Save'}
+              {form.mode === 'add' ? t('ADD_JOB.ADD') : t('SCHEDULERS.EDIT.SAVE')}
             </button>
             <button type="button" className="action-btn" onClick={closeForm} disabled={busy}>
-              Cancel
+              {t('CONFIRM.CANCEL_BTN')}
             </button>
             {formError && (
               <span className="queues-status queues-status--error" role="alert">
@@ -312,24 +314,24 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
       )}
 
       {status === 'loading' ? (
-        <p className="queues-status">Loading schedulers…</p>
+        <p className="queues-status">{t('SCHEDULERS.LOADING')}</p>
       ) : status === 'error' ? (
         <p className="queues-status queues-status--error" role="alert">
-          Failed to load schedulers
+          {t('SCHEDULERS.LOAD_FAILED')}
         </p>
       ) : schedulers.length === 0 ? (
-        <p className="queues-status">No repeatable jobs scheduled</p>
+        <p className="queues-status">{t('SCHEDULERS.NO_SCHEDULERS')}</p>
       ) : (
         <div className="queue-schedulers__table-wrap">
           <table className="job-table">
             <thead>
               <tr>
-                <th scope="col">Scheduler</th>
-                <th scope="col">Schedule</th>
-                <th scope="col">Next run</th>
-                <th scope="col">Last run</th>
-                <th scope="col">Runs</th>
-                {!queue.readOnlyMode && <th scope="col">Actions</th>}
+                <th scope="col">{t('SCHEDULERS.COLUMNS.SCHEDULER')}</th>
+                <th scope="col">{t('SCHEDULERS.COLUMNS.SCHEDULE')}</th>
+                <th scope="col">{t('SCHEDULERS.COLUMNS.NEXT_RUN')}</th>
+                <th scope="col">{t('SCHEDULERS.COLUMNS.LAST_RUN')}</th>
+                <th scope="col">{t('SCHEDULERS.COLUMNS.RUNS')}</th>
+                {!queue.readOnlyMode && <th scope="col">{t('COMMON.ACTIONS')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -340,14 +342,19 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
                     <div className="queue-schedulers__job-name">{scheduler.name || '-'}</div>
                   </td>
                   <td>
-                    <code className="queue-schedulers__schedule">{describeSchedule(scheduler)}</code>
+                    <code className="queue-schedulers__schedule">{describeSchedule(scheduler, t)}</code>
                     {scheduler.tz && <div className="queue-schedulers__meta">{scheduler.tz}</div>}
                   </td>
                   <td>{formatTimestamp(scheduler.next)}</td>
                   <td>{formatTimestamp(scheduler.lastRun)}</td>
                   <td>
                     {scheduler.iterationCount ?? '-'}
-                    {scheduler.limit ? <span className="queue-schedulers__meta"> of {scheduler.limit}</span> : null}
+                    {scheduler.limit ? (
+                      <span className="queue-schedulers__meta">
+                        {' '}
+                        {t('SCHEDULERS.OF_LIMIT', { limit: scheduler.limit })}
+                      </span>
+                    ) : null}
                   </td>
                   {!queue.readOnlyMode && (
                     <td>
@@ -355,20 +362,20 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
                         <button
                           type="button"
                           className="action-btn"
-                          aria-label={`Edit scheduler ${scheduler.id}`}
+                          aria-label={t('SCHEDULERS.EDIT_ARIA', { id: scheduler.id })}
                           disabled={busy}
                           onClick={() => openEdit(scheduler)}
                         >
-                          Edit
+                          {t('COMMON.EDIT')}
                         </button>
                         <button
                           type="button"
                           className="action-btn"
-                          aria-label={`Remove scheduler ${scheduler.id}`}
+                          aria-label={t('SCHEDULERS.REMOVE_ARIA', { id: scheduler.id })}
                           disabled={busy}
                           onClick={() => void remove(scheduler)}
                         >
-                          Remove
+                          {t('COMMON.REMOVE')}
                         </button>
                       </span>
                     </td>

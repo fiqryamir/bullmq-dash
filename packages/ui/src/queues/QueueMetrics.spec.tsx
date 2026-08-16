@@ -65,7 +65,7 @@ describe('QueueMetrics', () => {
     ]);
     renderQueueMetrics();
 
-    expect(await screen.findByText(/5 completed, 2 failed in the last 24h/i)).toBeInTheDocument();
+    expect(await screen.findByText(/5 completed, 2 failed in the last 24 hours/i)).toBeInTheDocument();
     expect(screen.getByText(/150 ms average duration/i)).toBeInTheDocument();
     expect(screen.getByText(/40 ms average wait/i)).toBeInTheDocument();
 
