@@ -44,10 +44,10 @@ importers:
         version: 3.2.7(vitest@3.2.7(@types/debug@4.1.13)(@types/node@20.19.43)(jsdom@26.1.0)(yaml@2.9.0))
       bullmq:
         specifier: ^6.1.0
-        version: 6.1.0(ioredis@5.11.1)
+        version: 6.1.0(ioredis@6.0.0)
       ioredis:
-        specifier: ^5.11.1
-        version: 5.11.1
+        specifier: ^6.0.0
+        version: 6.0.0
       tsup:
         specifier: ^8.5.0
         version: 8.5.1(postcss@8.5.26)(typescript@5.9.3)(yaml@2.9.0)
@@ -87,13 +87,13 @@ importers:
         version: 3.2.7(vitest@3.2.7(@types/debug@4.1.13)(@types/node@20.19.43)(jsdom@26.1.0)(yaml@2.9.0))
       bullmq:
         specifier: ^6.1.0
-        version: 6.1.0(ioredis@5.11.1)
+        version: 6.1.0(ioredis@6.0.0)
       express:
         specifier: ^5.2.1
         version: 5.2.1
       ioredis:
-        specifier: ^5.8.2
-        version: 5.11.1
+        specifier: ^6.0.0
+        version: 6.0.0
       supertest:
         specifier: ^7.2.2
         version: 7.2.2
@@ -136,13 +136,13 @@ importers:
         version: 3.2.7(vitest@3.2.7(@types/debug@4.1.13)(@types/node@20.19.43)(jsdom@26.1.0)(yaml@2.9.0))
       bullmq:
         specifier: ^6.1.0
-        version: 6.1.0(ioredis@5.11.1)
+        version: 6.1.0(ioredis@6.0.0)
       fastify:
         specifier: ^5.12.0
         version: 5.12.0
       ioredis:
-        specifier: ^5.8.2
-        version: 5.11.1
+        specifier: ^6.0.0
+        version: 6.0.0
       tsup:
         specifier: ^8.5.0
         version: 8.5.1(postcss@8.5.26)(typescript@5.9.3)(yaml@2.9.0)
@@ -173,7 +173,7 @@ importers:
         version: 11.0.5(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.29)
       '@nestjs/bullmq':
         specifier: ^11.0.4
-        version: 11.0.5(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.29)(bullmq@6.1.0(ioredis@5.11.1))
+        version: 11.0.5(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.29)(bullmq@6.1.0(ioredis@6.0.0))
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -200,10 +200,10 @@ importers:
         version: 3.2.7(vitest@3.2.7(@types/debug@4.1.13)(@types/node@20.19.43)(jsdom@26.1.0)(yaml@2.9.0))
       bullmq:
         specifier: ^6.1.0
-        version: 6.1.0(ioredis@5.11.1)
+        version: 6.1.0(ioredis@6.0.0)
       ioredis:
-        specifier: ^5.8.2
-        version: 5.11.1
+        specifier: ^6.0.0
+        version: 6.0.0
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -236,13 +236,13 @@ importers:
         version: link:../ui
       bullmq:
         specifier: ^6.1.0
-        version: 6.1.0(ioredis@5.11.1)
+        version: 6.1.0(ioredis@6.0.0)
       express:
         specifier: ^5.2.1
         version: 5.2.1
       ioredis:
-        specifier: ^5.8.2
-        version: 5.11.1
+        specifier: ^6.0.0
+        version: 6.0.0
     devDependencies:
       '@playwright/test':
         specifier: ^1.55.0
@@ -1276,6 +1276,9 @@ packages:
 
   '@ioredis/commands@1.10.0':
     resolution: {integrity: sha512-UmeW7z4LfctwoQ5wkhVzgq8tXkreED2xZGpX+Bg+zA+WJFZCT6c062AfCK/Dfk81xZnnwdhJCUMkitihRaoC2Q==}
+
+  '@ioredis/commands@2.0.0':
+    resolution: {integrity: sha512-vrx0AE/T0h7cRZwfo1M39Cr+ZhZrkf0V8mQN75wucKCxCLD9l/VX6no3gFvrLqD1IlG/1LtzWovqEw3t0Vr9zg==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -3259,6 +3262,10 @@ packages:
   ioredis@5.11.1:
     resolution: {integrity: sha512-ehuGcf94bQXhfagULNXrJdfnWO38v070jxSx/qE87Kjzmu2fU7ro5EFAb+OPituLqgfyuQaym5DlrNydW2sJ9A==}
     engines: {node: '>=12.22.0'}
+
+  ioredis@6.0.0:
+    resolution: {integrity: sha512-f+Dtubxfpf6KYFq7WVXJoOLn0bk4TJrMrN9SzeE+jrWrCWj7XX3fA6vkryafhADX+GMymRxgDJDOI33COkJc0w==}
+    engines: {node: '>=20.0.0'}
 
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
@@ -6247,7 +6254,10 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.2.0
 
-  '@ioredis/commands@1.10.0': {}
+  '@ioredis/commands@1.10.0':
+    optional: true
+
+  '@ioredis/commands@2.0.0': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:
@@ -6356,12 +6366,12 @@ snapshots:
       '@nestjs/core': 11.1.29(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.29)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       tslib: 2.8.1
 
-  '@nestjs/bullmq@11.0.5(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.29)(bullmq@6.1.0(ioredis@5.11.1))':
+  '@nestjs/bullmq@11.0.5(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.29)(bullmq@6.1.0(ioredis@6.0.0))':
     dependencies:
       '@nestjs/bull-shared': 11.0.5(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.29)
       '@nestjs/common': 11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.1.29(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.29)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      bullmq: 6.1.0(ioredis@5.11.1)
+      bullmq: 6.1.0(ioredis@6.0.0)
       tslib: 2.8.1
 
   '@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2)':
@@ -7398,7 +7408,7 @@ snapshots:
 
   buffer-from@1.1.2: {}
 
-  bullmq@6.1.0(ioredis@5.11.1):
+  bullmq@6.1.0(ioredis@6.0.0):
     dependencies:
       cron-parser: 5.8.1
       msgpackr: 2.0.5
@@ -7406,7 +7416,7 @@ snapshots:
       semver: 7.8.5
       tslib: 2.8.1
     optionalDependencies:
-      ioredis: 5.11.1
+      ioredis: 6.0.0
 
   bundle-require@5.1.0(esbuild@0.27.7):
     dependencies:
@@ -8604,6 +8614,18 @@ snapshots:
       denque: 2.1.0
       redis-errors: 1.2.0
       redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
+    optional: true
+
+  ioredis@6.0.0:
+    dependencies:
+      '@ioredis/commands': 2.0.0
+      cluster-key-slot: 1.1.1
+      debug: 4.4.3
+      denque: 2.1.0
+      redis-errors: 1.2.0
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
@@ -9823,6 +9845,7 @@ snapshots:
   redis-parser@3.0.0:
     dependencies:
       redis-errors: 1.2.0
+    optional: true
 
   redux-thunk@3.1.0(redux@5.0.1):
     dependencies:
