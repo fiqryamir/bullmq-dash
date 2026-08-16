@@ -1,0 +1,29 @@
+{
+  "name": "@bullmq-dash/website",
+  "version": "1.0.0",
+  "description": "bullmq-dash docs site - Astro Starlight site with TypeDoc API reference",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:typedoc": "typedoc && node scripts/add-frontmatter.mjs",
+    "build": "pnpm run build:typedoc && astro build",
+    "dev": "astro dev",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.40.0",
+    "astro": "^6.4.8",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.12.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

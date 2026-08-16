@@ -7,8 +7,8 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "pnpm --filter \"./packages/*\" run typecheck",
-    "build": "pnpm --filter \"./packages/*\" run build",
+    "typecheck": "pnpm --filter \"./packages/*\" --filter \"./website\" run typecheck",
+    "build": "pnpm --filter \"./packages/*\" --filter \"./website\" run build",
     "release": "pnpm run build && pnpm changeset publish"
   },
   "pnpm": {
