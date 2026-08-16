@@ -32,7 +32,7 @@
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",
     "@dagrejs/dagre": "^3.1.1",
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table": "^9.1.2",
     "@tanstack/react-virtual": "^3.14.9",
     "@xyflow/react": "^12.11.3",
     "i18next": "^26.3.6",
