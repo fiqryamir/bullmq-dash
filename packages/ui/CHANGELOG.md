@@ -1,12 +1,8 @@
-# @bullmq-dash/api
+# @bullmq-dash/ui
 
 ## 2.0.0
 
 ### Minor Changes
-
-- b224085: New `@bullmq-dash/fastify` package: the Fastify server adapter. `FastifyAdapter` implements the same `IServerAdapter` contract as the Express adapter, and `registerPlugin()` returns a Fastify plugin that mounts the core's full route table — queues, per-state jobs, job detail + logs, search, and every mutation (all gated by `readOnly`) — and serves the UI SPA entry (ejs via `@fastify/view`) and its static assets (`@fastify/static`). The plugin picks up a host-app base path from `setBasePath` or the Fastify `prefix` option for the `<base href>`.
-
-  The core gains two server-adapter helpers — `buildBullBoardRequest` (assembles the `BullBoardRequest` a handler receives from a framework request, defaulting an absent body to `{}`) and `expandRouteDefs` (expands array methods/routes into every method-route pair) — and the Express adapter now builds on them.
 
 - 1e85a0a: Flow view: `GET /api/queues/:queueName/flow` assembles the queue-level flow graph - root jobs discovered across the active, waiting, and waiting-children states, each expanded into its child tree via `FlowProducer.getFlow` (depth capped at 5, the response capped at 200 nodes with a `truncated` notice), and `GET /api/queues/:queueName/:jobId/flow` serves a job's flow tree from its root (mirroring bull-board's `{ nodeId, isFlowNode, flowRoot }` shape, walking the parent chain across queues). The UI renders the graph with @xyflow/react + @dagrejs/dagre: dagre auto-layout, state-colored nodes, and click-to-detail navigation; a Flow button on the queue's jobs view opens the whole-pipeline graph, and the job detail view shows the job's flow tree when it is part of a flow.
 - f0bbc91: Historical metrics for queues: `GET /api/queues/:queueName/metrics` serves
@@ -33,6 +29,22 @@
   script on BullMQ v6's adapted clients (previously `runCommand` failed on
   the first write).
 
+- 79539b3: i18n: the dashboard speaks the 12 locales bull-board ships (en-US, en-GB,
+  da-DK, de-DE, es-ES, fr-FR, ja-JP, ko-KR, pt-BR, ru-RU, tr-TR, zh-CN) through
+  the same infrastructure bull-board uses — i18next with a `messages` namespace
+  grouped per view. Locale files are copied from the MIT-licensed bull-board
+  repo at v8.6.1 and kept in sync with en-US by an `i18next-locales-sync` script
+  (`pnpm --filter @bullmq-dash/ui sync:locales`) plus a spec that fails when the
+  files drift. Every existing view resolves its copy through the translation
+  layer: state names via bull-board's `QUEUE.STATUS` keys, shared actions via
+  `JOB.ACTIONS`/`QUEUE.ACTIONS`, and the dashboard-specific strings (APP,
+  COMMON, NAV, QUEUE_JOBS, JOB_DETAIL, WORKERS, FLOW, SEARCH groups and the
+  METRICS/REDIS/SCHEDULERS additions) are translated in all 12 locales too. A
+  language switcher sits in the header: the choice persists in localStorage,
+  honors `uiConfig.locale.lng` as the board-configured default, and falls back
+  to the browser language (region-less values like `de` match their shipped
+  locale) then en-US. en-US stays bundled; other locales load as ~7.5 kB
+  gzipped chunks on first use.
 - 41552ba: Job detail view: `GET /api/queues/:queueName/:jobId` returns the job's data, options, progress, attempts, stacktrace, and timestamps (mirroring bull-board's `{ job, status }` shape), and `GET /api/queues/:queueName/:jobId/logs` pages the job's log rows newest-first (`page`, `logsPerPage`) with a total count. Clicking a job row in the jobs list opens the detail view showing data, options, failed reason, stacktrace, and paginated logs.
 - dc20e6c: Job + queue actions, all gated by `readOnly`. `createBullBoard` accepts `options.readOnly` (or `uiConfig.readOnly`) — when set, every mutating REST route answers 403 and the queues response marks each queue read-only so the UI hides the controls. Mutation endpoints mirror bull-board's shapes (`PUT /api/queues/:queueName/retry/:queueStatus` → `{ retried, skipped }`, `.../promote`, `.../clean/:queueStatus` with a `grace` in seconds, `.../pause`, `.../resume`, `.../empty`, and per-job `PUT /api/queues/:queueName/:jobId/retry|promote` → 204), plus two additions beyond bull-board: job remove (`.../:jobId/remove`, with the `.../:jobId/clean` route kept as bull-board's alias) and bulk remove by state (`.../remove/:queueStatus` → `{ removed }`). The UI wires every action: per-row Retry/Promote/Remove, per-tab Retry all/Promote all/Clean/Remove all (with confirmation for destructive ones), and Pause/Resume/Empty in the queue header — all hidden in read-only mode.
 - c5876b7: Job search: `GET /api/search` searches jobs by id or name across every visible queue, and `GET /api/queues/:queueName/search` scopes the search to one queue — case-insensitive substring matches, narrowed by a comma-separated `status` list, results capped at 500 with a `start` deepen-search continuation (`totalScanned`/`deepen` in the response). The UI adds a 300ms-debounced command palette with state filter chips, a virtualized result list, and a deepen button that continues past the cap: cross-queue on the home view, scoped to the queue inside a queue's jobs view. Clicking a result opens the job's detail from any queue.
@@ -59,22 +71,3 @@
   memory, version and client stats as calm panels.
 
 - 76ed550: New `@bullmq-dash/ui` package: the dashboard SPA shell (Base UI design system, dark mode by default with a light toggle, search-first command bar) rendering the queues list live from `GET /api/queues`. `createBullBoard` now resolves the UI package and drives the server adapter to serve the SPA's entry template and static assets; `options.uiBasePath` still overrides the bundle location.
-
-### Patch Changes
-
-- Updated dependencies [1e85a0a]
-- Updated dependencies [f0bbc91]
-- Updated dependencies [79539b3]
-- Updated dependencies [41552ba]
-- Updated dependencies [dc20e6c]
-- Updated dependencies [c5876b7]
-- Updated dependencies [ef51d9f]
-- Updated dependencies [7428e23]
-- Updated dependencies [76ed550]
-  - @bullmq-dash/ui@2.0.0
-
-## 1.0.0
-
-### Minor Changes
-
-- 65d752a: Express walking skeleton: `BullMQAdapter` wraps a BullMQ `Queue`, and the new `@bullmq-dash/express` server adapter mounts the core's route table on the host app, serving `GET /api/queues` with per-state counts for every registered queue.

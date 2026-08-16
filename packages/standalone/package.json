@@ -1,6 +1,6 @@
 {
   "name": "@bullmq-dash/standalone",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Standalone bullmq-dash server - the bullmq-dash bin, zero-config dashboard on localhost:3000",
   "license": "MIT",
   "type": "module",

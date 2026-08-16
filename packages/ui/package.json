@@ -1,6 +1,6 @@
 {
   "name": "@bullmq-dash/ui",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "React SPA for the bullmq-dash dashboard — dark-first, search-first shell and queue views",
   "license": "MIT",
   "type": "module",
