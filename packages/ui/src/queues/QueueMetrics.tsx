@@ -11,6 +11,7 @@ import {
 import type { AppQueue } from '../api/contract';
 import { useTheme } from '../theme/ThemeProvider';
 import { aggregateBuckets } from './metricsDownsample';
+import { QueueNav, type QueueViewName } from './QueueNav';
 import { useQueueMetrics, type MetricsRange } from './useQueueMetrics';
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -64,11 +65,13 @@ function formatTick(ts: number, range: MetricsRange): string {
 type QueueMetricsProps = {
   queue: AppQueue;
   onBack: () => void;
+  onSelectView: (view: QueueViewName) => void;
+  showMetrics: boolean;
 };
 
 const RANGES: MetricsRange[] = ['24h', '7d'];
 
-export function QueueMetrics({ queue, onBack }: QueueMetricsProps) {
+export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: QueueMetricsProps) {
   const [range, setRange] = useState<MetricsRange>('24h');
   const { buckets, status, refresh } = useQueueMetrics(queue.name, range);
   const tokens = useTokenColors();
@@ -127,6 +130,8 @@ export function QueueMetrics({ queue, onBack }: QueueMetricsProps) {
         <h1 className="queue-jobs__title">{queue.name}</h1>
         <span className="queue-flow__subtitle">Metrics</span>
       </header>
+
+      <QueueNav queue={queue} active="metrics" onSelect={onSelectView} showMetrics={showMetrics} />
 
       <div className="queue-metrics__controls">
         <div className="metrics-range" role="group" aria-label="Metrics range">

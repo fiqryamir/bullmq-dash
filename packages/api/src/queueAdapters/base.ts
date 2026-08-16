@@ -2,11 +2,16 @@ import type { FlowProducer } from 'bullmq';
 import type { MetricsSource } from '../metrics/capture';
 import type { NativeMetrics } from '../metrics/native';
 import type {
+  AppJobScheduler,
   BullBoardRequest,
   FormatterField,
   JobCleanStatus,
   JobCounts,
   JobLogs,
+  JobSchedulerAddResult,
+  JobSchedulerRepeatOptions,
+  JobSchedulerTemplate,
+  JobSchedulerUpdateResult,
   JobStatus,
   QueueAdapterOptions,
   QueueJob,
@@ -96,6 +101,48 @@ export abstract class BaseAdapter {
   public abstract getGlobalConcurrency(): Promise<number | null>;
 
   public abstract getJobSchedulersCount(): Promise<number>;
+
+  /**
+   * Schedulers of this queue, without their runs. Returned as a plain list
+   * because there are rarely enough of them to page through.
+   */
+  public abstract getJobSchedulers(): Promise<Omit<AppJobScheduler, 'queueName'>[]>;
+
+  /** Removes a scheduler; answers whether one with that id existed. */
+  public abstract removeJobScheduler(id: string): Promise<boolean>;
+
+  /**
+   * Rewrites the schedule of an existing scheduler, leaving the job it
+   * produces untouched. Adapters that cannot do this leave
+   * {@link supportsJobSchedulerUpdate} false and are never asked.
+   */
+  public abstract updateJobScheduler(
+    id: string,
+    repeat: JobSchedulerRepeatOptions
+  ): Promise<JobSchedulerUpdateResult>;
+
+  /** Whether {@link updateJobScheduler} does anything. */
+  public get supportsJobSchedulerUpdate(): boolean {
+    return false;
+  }
+
+  /**
+   * Registers a new scheduler (repeatable job) with an explicit template.
+   * Adapters whose backing library has no scheduler concept answer
+   * `not-supported` so the handler can reject with a 405.
+   */
+  public async addJobScheduler(
+    _id: string,
+    _repeat: JobSchedulerRepeatOptions,
+    _jobTemplate?: JobSchedulerTemplate
+  ): Promise<JobSchedulerAddResult> {
+    return 'not-supported';
+  }
+
+  /**
+   * Raw Redis `INFO` output, or null when the queue is not backed by Redis.
+   */
+  public abstract getRedisInfo(): Promise<string | null>;
 
   public abstract getStatuses(): Status[];
 

@@ -611,6 +611,44 @@
   background: var(--dash-accent);
 }
 
+/* ---------- queue view navigation ---------- */
+
+.queue-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  padding: 3px;
+  width: fit-content;
+}
+
+.queue-nav__tab {
+  border: none;
+  background: transparent;
+  color: var(--dash-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.queue-nav__tab:hover {
+  color: var(--dash-text);
+}
+
+.queue-nav__tab:focus-visible {
+  outline: 2px solid var(--dash-accent);
+  outline-offset: 2px;
+}
+
+.queue-nav__tab--selected {
+  background: color-mix(in srgb, var(--dash-accent) 16%, var(--dash-surface));
+  color: var(--dash-text);
+}
+
 /* ---------- flow view ---------- */
 
 .queue-jobs__view-action {
@@ -873,6 +911,175 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---------- schedulers view ---------- */
+
+.queue-schedulers {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 60vh;
+}
+
+.queue-schedulers__table-wrap {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.queue-schedulers__job-name {
+  font-size: 12px;
+  color: var(--dash-muted);
+}
+
+.queue-schedulers__schedule {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+
+.queue-schedulers__meta {
+  font-size: 11px;
+  color: var(--dash-muted);
+}
+
+.scheduler-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.scheduler-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+}
+
+.scheduler-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--dash-muted);
+}
+
+.scheduler-form__field--wide {
+  grid-column: 1 / -1;
+}
+
+.scheduler-form__field input,
+.scheduler-form__field select,
+.scheduler-form__field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  color: var(--dash-text);
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.scheduler-form__field textarea {
+  min-height: 64px;
+  resize: vertical;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+
+.scheduler-form__field input:focus,
+.scheduler-form__field select:focus,
+.scheduler-form__field textarea:focus {
+  border-color: var(--dash-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-accent) 13%, transparent);
+}
+
+.scheduler-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- workers view ---------- */
+
+.queue-workers {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 60vh;
+}
+
+.queue-workers__table-wrap {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.queue-workers__unnamed {
+  color: var(--dash-muted);
+  font-style: italic;
+}
+
+/* ---------- redis stats view ---------- */
+
+.queue-redis {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 60vh;
+}
+
+.redis-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.redis-stats__group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+}
+
+.redis-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.redis-stat__label {
+  color: var(--dash-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.redis-stat__value {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.redis-stat__value--mono {
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 500;
 }
 
 

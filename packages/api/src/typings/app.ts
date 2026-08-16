@@ -1,4 +1,4 @@
-import type { Job } from 'bullmq';
+import type { Job, JobSchedulerTemplateOptions } from 'bullmq';
 import type { CleanableStatus } from '../constants/statuses';
 import type { BaseAdapter } from '../queueAdapters/base';
 
@@ -49,6 +49,82 @@ export interface QueueWorker {
   addr: string;
   age: number;
 }
+
+export interface QueueWorkersResponse {
+  workers: QueueWorker[] | null;
+}
+
+/**
+ * One repeatable job (job scheduler), shaped like bull-board's
+ * `AppJobScheduler`. `queueName` is filled by the schedulers endpoint so the
+ * list stays cross-queue; the adapter itself never knows it.
+ */
+export interface AppJobScheduler {
+  id: string;
+  name: string;
+  pattern?: string;
+  every?: number;
+  tz?: string;
+  limit?: number;
+  startDate?: number;
+  endDate?: number;
+  next?: number;
+  nextRunJobId?: string;
+  lastRun?: number;
+  lastRunJobId?: string;
+  iterationCount?: number;
+  template?: Record<string, unknown>;
+  queueName?: string;
+}
+
+export interface JobSchedulersResponse {
+  schedulers: AppJobScheduler[];
+}
+
+/**
+ * The schedule a scheduler mutation can set — exactly one of `pattern` (cron)
+ * or `every` (millisecond interval), plus the optional bounds.
+ */
+export type JobSchedulerRepeatOptions = {
+  pattern?: string;
+  every?: number;
+  tz?: string;
+  limit?: number;
+  endDate?: number;
+};
+
+export type JobSchedulerTemplate = {
+  name?: string;
+  data?: unknown;
+  opts?: JobSchedulerTemplateOptions;
+};
+
+export type JobSchedulerUpdateResult = 'updated' | 'not-found' | 'invalid-schedule';
+
+export type JobSchedulerAddResult = 'created' | 'invalid-schedule' | 'not-supported';
+
+/**
+ * Redis/backend info the dashboard can report, shaped like bull-board's
+ * `RedisStats`.
+ */
+export type RedisStats = {
+  backend: 'redis';
+  version: string;
+  mode?: string;
+  port?: number;
+  os?: string;
+  uptime?: number;
+  memory: {
+    total: number;
+    used: number;
+    fragmentationRatio: number;
+    peak: number;
+  };
+  clients: {
+    connected: number;
+    blocked: number;
+  };
+};
 
 export interface AppJob {
   id: string | undefined;
@@ -212,7 +288,7 @@ export type AppRouteDefs = {
 
 export type HTTPMethod = 'get' | 'post' | 'put' | 'patch';
 
-export type HTTPStatus = 200 | 204 | 400 | 403 | 404 | 405 | 409 | 500;
+export type HTTPStatus = 200 | 201 | 204 | 400 | 403 | 404 | 405 | 409 | 500;
 
 export interface BullBoardRequest {
   queues: BullBoardQueues;

@@ -281,10 +281,25 @@ describe('createBullBoard', () => {
     expect(serverAdapter.apiRoutes).toEqual([
       expect.objectContaining({ method: 'get', route: '/api/queues' }),
       expect.objectContaining({ method: 'get', route: '/api/search' }),
+      expect.objectContaining({ method: 'get', route: '/api/job-schedulers' }),
+      expect.objectContaining({ method: 'get', route: '/api/redis/stats' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/jobs' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/search' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/flow' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/metrics' }),
+      expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/workers' }),
+      expect.objectContaining({
+        method: 'post',
+        route: '/api/queues/:queueName/job-schedulers',
+      }),
+      expect.objectContaining({
+        method: 'patch',
+        route: '/api/queues/:queueName/job-schedulers/:schedulerId',
+      }),
+      expect.objectContaining({
+        method: 'put',
+        route: '/api/queues/:queueName/job-schedulers/:schedulerId/remove',
+      }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId/logs' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId/flow' }),
       expect.objectContaining({ method: 'get', route: '/api/queues/:queueName/:jobId' }),

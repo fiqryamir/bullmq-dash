@@ -1,15 +1,25 @@
 import type { AppQueue, FlowNode } from '../api/contract';
 import { FlowGraph } from './FlowGraph';
+import { QueueNav, type QueueViewName } from './QueueNav';
 import { useQueueFlow } from './useQueueFlow';
 
 type QueueFlowProps = {
   queue: AppQueue;
   pollingInterval?: number;
   onBack: () => void;
+  onSelectView: (view: QueueViewName) => void;
+  showMetrics: boolean;
   onSelectNode: (node: FlowNode) => void;
 };
 
-export function QueueFlow({ queue, pollingInterval, onBack, onSelectNode }: QueueFlowProps) {
+export function QueueFlow({
+  queue,
+  pollingInterval,
+  onBack,
+  onSelectView,
+  showMetrics,
+  onSelectNode,
+}: QueueFlowProps) {
   const { roots, nodeCount, truncated, status } = useQueueFlow(queue.name, pollingInterval);
 
   return (
@@ -21,6 +31,8 @@ export function QueueFlow({ queue, pollingInterval, onBack, onSelectNode }: Queu
         <h1 className="queue-jobs__title">{queue.name}</h1>
         <span className="queue-flow__subtitle">Flow</span>
       </header>
+
+      <QueueNav queue={queue} active="flow" onSelect={onSelectView} showMetrics={showMetrics} />
 
       {status === 'loading' ? (
         <p className="queues-status">Loading flow…</p>

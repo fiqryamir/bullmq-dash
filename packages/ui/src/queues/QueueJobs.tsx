@@ -21,6 +21,7 @@ import {
 } from '../api/contract';
 import { formatProgress } from './formatProgress';
 import { CommandPalette } from './CommandPalette';
+import { QueueNav, type QueueViewName } from './QueueNav';
 import { useQueueJobs } from './useQueueJobs';
 
 export const JOB_STATES: JobStatus[] = [
@@ -46,8 +47,7 @@ type QueueJobsProps = {
   pollingInterval?: number;
   onBack: () => void;
   onSelectJob: (job: AppJob) => void;
-  onShowFlow: () => void;
-  onShowMetrics: () => void;
+  onSelectView: (view: QueueViewName) => void;
   showMetrics?: boolean;
 };
 
@@ -149,8 +149,7 @@ export function QueueJobs({
   pollingInterval,
   onBack,
   onSelectJob,
-  onShowFlow,
-  onShowMetrics,
+  onSelectView,
   showMetrics = true,
 }: QueueJobsProps) {
   const [activeState, setActiveState] = useState<JobStatus>('waiting');
@@ -311,24 +310,6 @@ export function QueueJobs({
         </button>
         <h1 className="queue-jobs__title">{queue.name}</h1>
         {isPaused && <span className="queue-item__paused">paused</span>}
-        <button
-          type="button"
-          className="action-btn queue-jobs__view-action"
-          onClick={onShowFlow}
-          aria-label="Open flow view"
-        >
-          Flow
-        </button>
-        {showMetrics && (
-          <button
-            type="button"
-            className="action-btn queue-jobs__view-action"
-            onClick={onShowMetrics}
-            aria-label="Open metrics view"
-          >
-            Metrics
-          </button>
-        )}
         {!queue.readOnlyMode && (
           <div className="queue-jobs__actions" role="group" aria-label="Queue actions">
             <button
@@ -352,6 +333,8 @@ export function QueueJobs({
           </div>
         )}
       </header>
+
+      <QueueNav queue={queue} active="jobs" onSelect={onSelectView} showMetrics={showMetrics} />
 
       <CommandPalette
         queueName={queue.name}

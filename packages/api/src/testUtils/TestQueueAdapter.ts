@@ -1,7 +1,10 @@
 import type {
+  AppJobScheduler,
   JobCleanStatus,
   JobCounts,
   JobLogs,
+  JobSchedulerRepeatOptions,
+  JobSchedulerUpdateResult,
   JobStatus,
   QueueAdapterOptions,
   QueueJob,
@@ -59,6 +62,25 @@ export class TestQueueAdapter extends BaseAdapter {
 
   async getJobSchedulersCount(): Promise<number> {
     return 0;
+  }
+
+  async getJobSchedulers(): Promise<Omit<AppJobScheduler, 'queueName'>[]> {
+    return [];
+  }
+
+  async removeJobScheduler(_id: string): Promise<boolean> {
+    return false;
+  }
+
+  async updateJobScheduler(
+    _id: string,
+    _repeat: JobSchedulerRepeatOptions
+  ): Promise<JobSchedulerUpdateResult> {
+    return 'not-found';
+  }
+
+  async getRedisInfo(): Promise<string | null> {
+    return null;
   }
 
   async pause(): Promise<void> {}

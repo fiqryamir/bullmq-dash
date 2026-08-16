@@ -21,7 +21,19 @@ test.beforeAll(async () => {
     },
     { name: 'smoke-reports', jobs: [{ name: 'daily-report', data: { date: '2026-08-14' } }] },
     { name: 'smoke-metrics' },
+    { name: 'smoke-schedulers' },
   ]);
+
+  const schedulerQueue = new Queue('smoke-schedulers', {
+    connection: redisOptions(),
+    prefix: PREFIX,
+  });
+  await schedulerQueue.upsertJobScheduler(
+    'nightly-digest',
+    { every: 86_400_000 },
+    { name: 'digest' }
+  );
+  await schedulerQueue.close();
 
   const producer = new FlowProducer({ connection: redisOptions(), prefix: PREFIX });
   try {
@@ -130,9 +142,11 @@ test('captures traffic and renders the metrics view', async ({ page }) => {
         async () => {
           const response = await fetch(`${serverUrl}/api/queues/smoke-metrics/metrics`);
           const body = (await response.json()) as {
-            buckets: Array<{ completed: number; durationAvgMs: number | null }>;
+            buckets?: Array<{ completed: number; durationAvgMs: number | null }>;
           };
-          return body.buckets.reduce((sum, bucket) => sum + bucket.completed, 0);
+          // The queue may not be registered the moment the poll starts; a
+          // missing body is a retry, not a failure.
+          return body.buckets?.reduce((sum, bucket) => sum + bucket.completed, 0) ?? 0;
         },
         { timeout: 15_000 }
       )
@@ -148,4 +162,43 @@ test('captures traffic and renders the metrics view', async ({ page }) => {
 
   await expect(page.locator('.metrics-summary')).toContainText(/2 completed/);
   await expect(page.locator('.metrics-chart')).toHaveCount(3);
+});
+
+test('manages schedulers from the schedulers view', async ({ page }) => {
+  await page.goto(serverUrl);
+  await page.getByRole('button', { name: /smoke-schedulers/ }).click();
+  await page.getByRole('button', { name: 'Open schedulers view' }).click();
+
+  const table = page.locator('.queue-schedulers__table-wrap');
+  await expect(table).toContainText('nightly-digest');
+  await expect(table).toContainText('every 1 days');
+
+  await page.getByRole('button', { name: 'Add scheduler' }).click();
+  const form = page.getByRole('form', { name: 'Scheduler form' });
+  await form.getByLabel('Scheduler id').fill('hourly-sync');
+  await form.getByLabel('Schedule kind').selectOption('every');
+  await form.getByLabel('Interval in milliseconds').fill('3600000');
+  await form.getByLabel('Job name').fill('sync');
+  await form.getByRole('button', { name: 'Add' }).click();
+
+  await expect(table).toContainText('hourly-sync');
+  await expect(table).toContainText('every 1 hours');
+
+  page.once('dialog', (dialog) => void dialog.accept());
+  await table.getByRole('button', { name: 'Remove scheduler hourly-sync' }).click();
+  await expect(table).not.toContainText('hourly-sync');
+});
+
+test('renders the workers and Redis tabs', async ({ page }) => {
+  await page.goto(serverUrl);
+  await page.getByRole('button', { name: /smoke-schedulers/ }).click();
+
+  await page.getByRole('button', { name: 'Open workers view' }).click();
+  await expect(page.locator('.queue-workers')).toContainText('No workers connected');
+
+  await page.getByRole('button', { name: 'Open redis view' }).click();
+  const stats = page.locator('.redis-stats');
+  await expect(stats).toContainText('Version');
+  await expect(stats).toContainText('Memory used');
+  await expect(stats).toContainText('Connected clients');
 });

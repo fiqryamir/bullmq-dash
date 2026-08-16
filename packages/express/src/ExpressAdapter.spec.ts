@@ -512,6 +512,184 @@ describe('ExpressAdapter', () => {
     }, 20_000);
   });
 
+  describe('schedulers, workers and Redis stats through the REST contract', () => {
+    const queueName = `bullmq-dash-express-schedulers-${randomUUID()}`;
+    const otherQueueName = `bullmq-dash-express-schedulers-2-${randomUUID()}`;
+    let queue: Queue;
+    let otherQueue: Queue;
+    let worker: Worker;
+    let app: Express;
+
+    beforeAll(async () => {
+      queue = new Queue(queueName, { connection });
+      otherQueue = new Queue(otherQueueName, { connection });
+      worker = new Worker(queueName, async () => 'result', { connection, name: 'mailer' });
+      await worker.waitUntilReady();
+
+      await queue.upsertJobScheduler('nightly', { every: 86_400_000 }, { name: 'nightly-digest' });
+      await otherQueue.upsertJobScheduler('weekly', { pattern: '0 0 * * 1' }, { name: 'weekly-report' });
+
+      const serverAdapter = new ExpressAdapter();
+      createBullBoard({
+        queues: [new BullMQAdapter(queue), new BullMQAdapter(otherQueue)],
+        serverAdapter,
+      });
+
+      app = express();
+      app.use(serverAdapter.getRouter());
+    }, 30_000);
+
+    afterAll(async () => {
+      await worker.close();
+      await queue.obliterate({ force: true });
+      await otherQueue.obliterate({ force: true });
+      await queue.close();
+      await otherQueue.close();
+    }, 30_000);
+
+    describe('GET /api/job-schedulers', () => {
+      it('lists every scheduler across the queues with their queue names', async () => {
+        const response = await request(app).get('/api/job-schedulers').expect(200);
+
+        const schedulers = response.body.schedulers as Array<{ id: string; queueName: string }>;
+        expect(schedulers.map((scheduler) => scheduler.id).sort()).toEqual(['nightly', 'weekly']);
+        const nightly = schedulers.find((scheduler) => scheduler.id === 'nightly');
+        expect(nightly).toMatchObject({ queueName, name: 'nightly-digest' });
+      });
+
+      it('scopes the list to one queue through the queueName query', async () => {
+        const response = await request(app)
+          .get('/api/job-schedulers')
+          .query({ queueName })
+          .expect(200);
+
+        const schedulers = response.body.schedulers as Array<{ id: string; queueName: string }>;
+        expect(schedulers).toHaveLength(1);
+        expect(schedulers[0]).toMatchObject({ id: 'nightly', queueName });
+      });
+    });
+
+    describe('scheduler CRUD', () => {
+      it('creates a scheduler through POST and lists it afterwards', async () => {
+        const created = await request(app)
+          .post(`/api/queues/${queueName}/job-schedulers`)
+          .send({
+            id: 'created-via-http',
+            repeat: { every: 60_000 },
+            jobTemplate: { name: 'heartbeat', data: { via: 'http' } },
+          })
+          .expect(201);
+        expect(created.body.scheduler).toMatchObject({ id: 'created-via-http', name: 'heartbeat' });
+
+        const listed = await request(app).get('/api/job-schedulers').expect(200);
+        const schedulers = listed.body.schedulers as Array<{ id: string; template?: { data?: unknown } }>;
+        const stored = schedulers.find((scheduler) => scheduler.id === 'created-via-http');
+        expect(stored).toBeDefined();
+        expect(stored?.template?.data).toEqual({ via: 'http' });
+      });
+
+      it('updates a scheduler schedule through PATCH', async () => {
+        await request(app)
+          .patch(`/api/queues/${queueName}/job-schedulers/nightly`)
+          .send({ every: 43_200_000, limit: 5 })
+          .expect(204);
+
+        const stored = await queue.getJobScheduler('nightly');
+        expect(stored).toMatchObject({ every: 43_200_000, limit: 5, name: 'nightly-digest' });
+      });
+
+      it('rejects an update without a schedule with 400', async () => {
+        await request(app)
+          .patch(`/api/queues/${queueName}/job-schedulers/nightly`)
+          .send({})
+          .expect(400);
+      });
+
+      it('removes a scheduler through PUT and 404s the second time', async () => {
+        await request(app)
+          .put(`/api/queues/${queueName}/job-schedulers/nightly/remove`)
+          .expect(204);
+        expect(await queue.getJobScheduler('nightly')).toBeUndefined();
+
+        await request(app)
+          .put(`/api/queues/${queueName}/job-schedulers/nightly/remove`)
+          .expect(404);
+      });
+
+      it('answers unknown queues and schedulers with 404', async () => {
+        await request(app)
+          .post('/api/queues/not-a-queue/job-schedulers')
+          .send({ id: 'x', repeat: { every: 1000 } })
+          .expect(404);
+        await request(app)
+          .patch(`/api/queues/${queueName}/job-schedulers/missing`)
+          .send({ every: 1000 })
+          .expect(404);
+        await request(app)
+          .put(`/api/queues/${queueName}/job-schedulers/missing/remove`)
+          .expect(404);
+      });
+
+      it('rejects a malformed create with 400', async () => {
+        await request(app)
+          .post(`/api/queues/${queueName}/job-schedulers`)
+          .send({ id: 'broken', repeat: {} })
+          .expect(400);
+        await request(app)
+          .post(`/api/queues/${queueName}/job-schedulers`)
+          .send({ id: 'broken', repeat: { pattern: 'not a cron' } })
+          .expect(400);
+      });
+    });
+
+    describe('GET /api/queues/:queueName/workers', () => {
+      it('lists the connected workers of a queue', async () => {
+        const response = await request(app)
+          .get(`/api/queues/${queueName}/workers`)
+          .expect(200);
+
+        expect(response.body.workers).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ name: 'mailer', addr: expect.any(String) }),
+          ])
+        );
+      });
+
+      it('answers an empty list when no worker is connected', async () => {
+        const response = await request(app)
+          .get(`/api/queues/${otherQueueName}/workers`)
+          .expect(200);
+
+        expect(response.body.workers).toEqual([]);
+      });
+
+      it('answers 404 for an unknown queue', async () => {
+        await request(app).get('/api/queues/not-a-queue/workers').expect(404);
+      });
+    });
+
+    describe('GET /api/redis/stats', () => {
+      it('reports the Redis version, memory and clients', async () => {
+        const response = await request(app).get('/api/redis/stats').expect(200);
+
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            backend: 'redis',
+            version: expect.any(String),
+            memory: expect.objectContaining({
+              used: expect.any(Number),
+              peak: expect.any(Number),
+            }),
+            clients: expect.objectContaining({
+              connected: expect.any(Number),
+              blocked: expect.any(Number),
+            }),
+          })
+        );
+      });
+    });
+  });
+
   describe('readOnly board', () => {
     const queueName = `bullmq-dash-express-readonly-${randomUUID()}`;
     let queue: Queue;
@@ -520,6 +698,7 @@ describe('ExpressAdapter', () => {
     beforeAll(async () => {
       queue = new Queue(queueName, { connection });
       await queue.add('wait', { index: 1 });
+      await queue.upsertJobScheduler('kept', { every: 60_000 }, { name: 'kept' });
 
       const serverAdapter = new ExpressAdapter();
       createBullBoard({
@@ -552,6 +731,19 @@ describe('ExpressAdapter', () => {
       await request(app).put(`/api/queues/${queueName}/clean/completed`).expect(403);
       await request(app).put(`/api/queues/${queueName}/remove/failed`).expect(403);
 
+      await request(app)
+        .post(`/api/queues/${queueName}/job-schedulers`)
+        .send({ id: 'new', repeat: { every: 1000 } })
+        .expect(403);
+      await request(app)
+        .patch(`/api/queues/${queueName}/job-schedulers/kept`)
+        .send({ every: 2000 })
+        .expect(403);
+      await request(app)
+        .put(`/api/queues/${queueName}/job-schedulers/kept/remove`)
+        .expect(403);
+      expect(await queue.getJobScheduler('kept')).toBeDefined();
+
       const [job] = await queue.getJobs(['waiting']);
       await request(app).put(`/api/queues/${queueName}/${job!.id}/retry`).expect(403);
       await request(app).put(`/api/queues/${queueName}/${job!.id}/promote`).expect(403);
@@ -559,7 +751,9 @@ describe('ExpressAdapter', () => {
       await request(app).put(`/api/queues/${queueName}/${job!.id}/remove`).expect(403);
 
       expect(await queue.isPaused()).toBe(false);
-      expect(await queue.getJobCountByTypes('waiting')).toBe(1);
+      // The seeded `wait` job plus the scheduler's first run job: `empty` and
+      // `remove` were blocked, so nothing was drained.
+      expect(await queue.getJobCountByTypes('waiting')).toBeGreaterThanOrEqual(1);
     });
   });
 
