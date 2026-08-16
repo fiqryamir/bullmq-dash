@@ -27,9 +27,16 @@ describe('resolveInitialLng', () => {
     }
   });
 
+  it('matches region-less browser languages to their shipped locale', () => {
+    expect(resolveInitialLng('de')).toBe('de-DE');
+    expect(resolveInitialLng('zh')).toBe('zh-CN');
+    expect(resolveInitialLng('pt')).toBe('pt-BR');
+    expect(resolveInitialLng('en-AU')).toBe('en-US');
+  });
+
   it('resolves unsupported candidates to the English fallback', () => {
     expect(resolveInitialLng('xx-XX')).toBe(FALLBACK_LNG);
-    expect(resolveInitialLng('de')).toBe(FALLBACK_LNG);
+    expect(resolveInitialLng('')).toBe(FALLBACK_LNG);
   });
 });
 

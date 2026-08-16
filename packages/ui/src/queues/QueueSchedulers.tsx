@@ -80,7 +80,7 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
 
   const readRepeat = (): JobSchedulerRepeatOptions | string => {
     if (!form) {
-      return t('SCHEDULERS.SAVE_FAILED');
+      return 'Form is not open';
     }
     if (form.kind === 'every') {
       const every = Number(form.every);

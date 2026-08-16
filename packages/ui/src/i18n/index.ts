@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import type { Resource } from 'i18next';
-import { FALLBACK_LNG, isSupportedLng } from './languages';
+import { FALLBACK_LNG, isSupportedLng, LANGUAGES } from './languages';
 import enUS from './locales/en-US/messages.json';
 
 export const LOCALE_STORAGE_KEY = 'bullmq-dash:locale';
@@ -15,12 +15,24 @@ const localeModules = import.meta.glob<{ default: Resource }>('./locales/*/messa
 /**
  * The language a fresh visit starts in: an explicit choice from a previous
  * visit wins, then the board's `uiConfig.locale.lng`, then the browser
- * language. Anything not in the shipped set resolves to en-US.
+ * language. Region-less browser values (`de`, `zh`) match their shipped
+ * locale by language prefix; anything else resolves to en-US.
  */
 export function resolveInitialLng(configured?: string): string {
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
   const candidate = stored ?? configured ?? navigator.language;
-  return isSupportedLng(candidate) ? candidate : FALLBACK_LNG;
+  return matchLng(candidate);
+}
+
+function matchLng(lng: string): string {
+  if (isSupportedLng(lng)) {
+    return lng;
+  }
+  const prefix = lng.split('-')[0]?.toLowerCase() ?? '';
+  const byPrefix = LANGUAGES.find(
+    (language) => language.code.split('-')[0]?.toLowerCase() === prefix
+  );
+  return byPrefix?.code ?? FALLBACK_LNG;
 }
 
 i18n.use(initReactI18next).init({
