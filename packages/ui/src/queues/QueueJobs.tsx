@@ -185,6 +185,7 @@ export function QueueJobs({
 
   const isPaused = pausedOverride ?? queue.isPaused;
   const pageCount = pagination?.pageCount ?? 0;
+  const activeStateLabel = t(STATUS_KEY[activeState]);
 
   useEffect(() => {
     if (pageCount > 0 && page > pageCount) {
@@ -209,20 +210,19 @@ export function QueueJobs({
     []
   );
 
-  // Bulk labels embed the raw state word ("Retry all failed") the way
-  // bull-board's own copy does, so the phrase reads naturally in every
-  // language; only the state tabs and chips carry the translated label.
+  // Bulk labels interpolate the translated state label (bull-board's own
+  // confirmations do the same), so the sentence translates in every locale.
   const bulkActions = useMemo(
     () =>
       BULK_ACTIONS_PER_STATE[activeState]
         .filter((spec) => spec.allowed?.(queue) ?? true)
         .map((spec) => ({
-          label: t(spec.labelKey, { status: activeState }),
+          label: t(spec.labelKey, { status: activeStateLabel }),
           run: () =>
             runAction(async () => {
               if (spec.confirmKey) {
                 const message = t(spec.confirmKey, {
-                  status: activeState,
+                  status: activeStateLabel,
                   queue: queue.name,
                 });
                 if (!window.confirm(message)) {
@@ -232,7 +232,7 @@ export function QueueJobs({
               await spec.run(queue);
             }),
         })),
-    [activeState, queue, runAction, t]
+    [activeState, activeStateLabel, queue, runAction, t]
   );
 
   const togglePause = () => {
@@ -393,7 +393,7 @@ export function QueueJobs({
         <div
           className="queue-jobs__bulk"
           role="group"
-          aria-label={t('QUEUE_JOBS.BULK_ARIA', { status: activeState })}
+          aria-label={t('QUEUE_JOBS.BULK_ARIA', { status: activeStateLabel })}
         >
           {bulkActions.map((action) => (
             <button

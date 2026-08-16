@@ -335,7 +335,7 @@ describe('QueueJobs actions', () => {
     renderQueueJobs();
 
     await user.click(stateTab('Failed'));
-    await user.click(screen.getByRole('button', { name: 'Retry all failed' }));
+    await user.click(screen.getByRole('button', { name: 'Retry all Failed' }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/retry/failed', { method: 'PUT' })
@@ -362,7 +362,7 @@ describe('QueueJobs actions', () => {
     renderQueueJobs();
 
     await user.click(stateTab('Completed'));
-    await user.click(screen.getByRole('button', { name: 'Clean completed' }));
+    await user.click(screen.getByRole('button', { name: 'Clean Completed' }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/clean/completed?grace=5', {
@@ -378,7 +378,7 @@ describe('QueueJobs actions', () => {
     renderQueueJobs();
 
     await user.click(stateTab('Failed'));
-    await user.click(screen.getByRole('button', { name: 'Clean failed' }));
+    await user.click(screen.getByRole('button', { name: 'Clean Failed' }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/clean/failed?grace=5', {
@@ -406,7 +406,7 @@ describe('QueueJobs actions', () => {
     renderQueueJobs();
 
     await user.click(stateTab('Failed'));
-    await user.click(screen.getByRole('button', { name: 'Remove all failed' }));
+    await user.click(screen.getByRole('button', { name: 'Remove all Failed' }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/remove/failed', { method: 'PUT' })
@@ -440,7 +440,7 @@ describe('QueueJobs actions', () => {
     expect(screen.queryByRole('group', { name: 'Queue actions' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Retry job a1' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove job a1' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Retry all failed' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry all Failed' })).not.toBeInTheDocument();
     const headers = within(table).getAllByRole('columnheader').map((cell) => cell.textContent);
     expect(headers).not.toContain('Actions');
   });
@@ -463,8 +463,8 @@ describe('QueueJobs actions', () => {
 
     expect(screen.queryByRole('button', { name: 'Retry job a1' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove job a1' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Retry all failed' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Remove all failed' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry all Failed' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove all Failed' })).toBeInTheDocument();
   });
 
   it('shows an error when an action fails', async () => {

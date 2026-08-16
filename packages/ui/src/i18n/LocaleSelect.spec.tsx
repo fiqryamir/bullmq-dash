@@ -81,7 +81,10 @@ describe('LocaleSelect', () => {
     await user.click(await screen.findByRole('button', { name: /emails/ }));
 
     expect(await screen.findByText('Wiederholen')).toBeInTheDocument();
-    const states = screen.getByRole('group', { name: 'Job states' });
+    // The nav tab and the states group both carry dashboard-specific copy
+    // that is now translated too.
+    expect(screen.getByText('Zeitpläne')).toBeInTheDocument();
+    const states = screen.getByRole('group', { name: 'Job-Status' });
     expect(within(states).getByRole('button', { name: /Wartend/ })).toBeInTheDocument();
   });
 });

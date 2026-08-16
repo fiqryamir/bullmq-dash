@@ -8,11 +8,13 @@ the same infrastructure bull-board uses — i18next with a `messages` namespace
 grouped per view. Locale files are copied from the MIT-licensed bull-board
 repo at v8.6.1 and kept in sync with en-US by an `i18next-locales-sync` script
 (`pnpm --filter @bullmq-dash/ui sync:locales`) plus a spec that fails when the
-files drift. Every existing view now resolves its copy through the translation
-layer (state names via bull-board's `QUEUE.STATUS` keys, shared actions via
-`JOB.ACTIONS`/`QUEUE.ACTIONS`, plus new per-view groups for dashboard-specific
-strings, which stay English until translated). A language switcher sits in the
-header: the choice persists in localStorage, honors `uiConfig.locale.lng` as
-the board-configured default, and falls back to the browser language then
-en-US. en-US stays bundled; other locales load as ~7.5 kB gzipped chunks on
-first use.
+files drift. Every existing view resolves its copy through the translation
+layer: state names via bull-board's `QUEUE.STATUS` keys, shared actions via
+`JOB.ACTIONS`/`QUEUE.ACTIONS`, and the dashboard-specific strings (APP,
+COMMON, NAV, QUEUE_JOBS, JOB_DETAIL, WORKERS, FLOW, SEARCH groups and the
+METRICS/REDIS/SCHEDULERS additions) are translated in all 12 locales too. A
+language switcher sits in the header: the choice persists in localStorage,
+honors `uiConfig.locale.lng` as the board-configured default, and falls back
+to the browser language (region-less values like `de` match their shipped
+locale) then en-US. en-US stays bundled; other locales load as ~7.5 kB
+gzipped chunks on first use.
