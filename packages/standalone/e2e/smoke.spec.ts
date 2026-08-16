@@ -142,9 +142,11 @@ test('captures traffic and renders the metrics view', async ({ page }) => {
         async () => {
           const response = await fetch(`${serverUrl}/api/queues/smoke-metrics/metrics`);
           const body = (await response.json()) as {
-            buckets: Array<{ completed: number; durationAvgMs: number | null }>;
+            buckets?: Array<{ completed: number; durationAvgMs: number | null }>;
           };
-          return body.buckets.reduce((sum, bucket) => sum + bucket.completed, 0);
+          // The queue may not be registered the moment the poll starts; a
+          // missing body is a retry, not a failure.
+          return body.buckets?.reduce((sum, bucket) => sum + bucket.completed, 0) ?? 0;
         },
         { timeout: 15_000 }
       )
