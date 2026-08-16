@@ -1,0 +1,14 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "API Reference",
+  "entryPoints": ["../packages/api/src/index.ts"],
+  "tsconfig": "../packages/api/tsconfig.json",
+  "plugin": ["typedoc-plugin-markdown"],
+  "out": "src/content/docs/reference",
+  "cleanOutputDir": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "hidePageTitle": true,
+  "useCodeBlocks": true
+}

@@ -51,7 +51,7 @@ export const STANDALONE_DEFAULTS: StandaloneConfig = {
   queues: undefined,
 };
 
-const CLI_OPTIONS = {
+export const CLI_OPTIONS = {
   config: { type: 'string' },
   host: { type: 'string' },
   port: { type: 'string' },
@@ -64,6 +64,34 @@ const CLI_OPTIONS = {
   help: { type: 'boolean' },
   version: { type: 'boolean' },
 } as const;
+
+/**
+ * The environment variable that shadows each CLI flag - flags win over
+ * env vars, which win over the JSON config file.
+ */
+export const CLI_ENV_VARS = {
+  config: 'BULLMQ_DASH_CONFIG',
+  host: 'BULLMQ_DASH_HOST',
+  port: 'BULLMQ_DASH_PORT',
+  'redis-host': 'REDIS_HOST',
+  'redis-port': 'REDIS_PORT',
+  'redis-password': 'REDIS_PASSWORD',
+  'redis-db': 'REDIS_DB',
+  'redis-prefix': 'REDIS_PREFIX',
+  queues: 'BULLMQ_DASH_QUEUES',
+} as const;
+
+type CLIFlag = keyof typeof CLI_ENV_VARS;
+
+/**
+ * Every flag except these two has an env var shadow. Declared as a
+ * compile-time check: adding a flag to `CLI_OPTIONS` without a matching
+ * `CLI_ENV_VARS` entry (or vice versa) fails the build here.
+ */
+export const FLAGS_WITHOUT_ENV_VAR = ['help', 'version'] as const satisfies readonly Exclude<
+  keyof typeof CLI_OPTIONS,
+  keyof typeof CLI_ENV_VARS
+>[];
 
 export type ResolvedStandaloneConfig = {
   config: StandaloneConfig;
@@ -111,7 +139,7 @@ export function resolveStandaloneConfig(args: {
 
   let file: StandaloneConfigFile = {};
   if (!help && !version) {
-    const configPath = parsed.values.config || args.env.BULLMQ_DASH_CONFIG;
+    const configPath = parsed.values.config || args.env[CLI_ENV_VARS.config];
     if (configPath) {
       if (!args.readConfigFile) {
         throw new Error('No config file reader configured');
@@ -133,14 +161,16 @@ export function resolveStandaloneConfig(args: {
     return undefined;
   };
 
+  const envVar = (flagName: CLIFlag): string | undefined => env[CLI_ENV_VARS[flagName]];
+
   const raw = {
-    host: pick([flag.host, env.BULLMQ_DASH_HOST, file.host]),
-    port: pick([flag.port, env.BULLMQ_DASH_PORT, file.port]),
-    redisHost: pick([flag['redis-host'], env.REDIS_HOST, file.redis?.host]),
-    redisPort: pick([flag['redis-port'], env.REDIS_PORT, file.redis?.port]),
-    password: pick([flag['redis-password'], env.REDIS_PASSWORD, file.redis?.password]),
-    db: pick([flag['redis-db'], env.REDIS_DB, file.redis?.db]),
-    prefix: pick([flag['redis-prefix'], env.REDIS_PREFIX, file.redis?.prefix]),
+    host: pick([flag.host, envVar('host'), file.host]),
+    port: pick([flag.port, envVar('port'), file.port]),
+    redisHost: pick([flag['redis-host'], envVar('redis-host'), file.redis?.host]),
+    redisPort: pick([flag['redis-port'], envVar('redis-port'), file.redis?.port]),
+    password: pick([flag['redis-password'], envVar('redis-password'), file.redis?.password]),
+    db: pick([flag['redis-db'], envVar('redis-db'), file.redis?.db]),
+    prefix: pick([flag['redis-prefix'], envVar('redis-prefix'), file.redis?.prefix]),
   };
 
   // An explicitly-present allow-list wins even when empty - an empty list
@@ -148,8 +178,8 @@ export function resolveStandaloneConfig(args: {
   const queues =
     flag.queues !== undefined
       ? parseAllowList(flag.queues)
-      : env.BULLMQ_DASH_QUEUES !== undefined
-        ? parseAllowList(env.BULLMQ_DASH_QUEUES)
+      : envVar('queues') !== undefined
+        ? parseAllowList(envVar('queues') as string)
         : file.queues !== undefined
           ? file.queues
           : undefined;

@@ -1,0 +1,41 @@
+name: Deploy docs
+
+# The docs site goes live when the version-bump merge lands - the changesets
+# action merges its "chore: version packages" PR on every release, and that
+# merge is the signal that the published packages' docs are current.
+on:
+  push:
+    branches: [master]
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    name: Build and deploy to GitHub Pages
+    if: startsWith(github.event.head_commit.message, 'chore: version packages')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @bullmq-dash/website run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
