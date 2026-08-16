@@ -1,6 +1,6 @@
 {
   "name": "@bullmq-dash/website",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.1",
   "description": "bullmq-dash docs site - Astro Starlight site with TypeDoc API reference",
   "private": true,
   "type": "module",

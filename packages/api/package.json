@@ -1,6 +1,6 @@
 {
   "name": "@bullmq-dash/api",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.1",
   "description": "Framework-free core of the bullmq-dash dashboard — drop-in mirror of @bull-board/api",
   "license": "MIT",
   "type": "module",
@@ -36,7 +36,7 @@
     "test": "vitest run --coverage"
   },
   "peerDependencies": {
-    "@bullmq-dash/ui": "^1.0.0",
+    "@bullmq-dash/ui": "^1.0.0-alpha.1",
     "bullmq": ">=5.79.2 <7"
   },
   "peerDependenciesMeta": {
