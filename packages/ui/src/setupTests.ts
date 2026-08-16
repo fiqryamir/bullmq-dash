@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
+// Initializes the shared i18next instance (en-US eager) so every component
+// test resolves translations, not raw keys.
+import './i18n';
 
 // jsdom performs no layout, so every element reports zero offset sizes. The
 // virtualized job table and the command palette measure their scroll

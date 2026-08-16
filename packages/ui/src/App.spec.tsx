@@ -295,7 +295,7 @@ describe('App shell', () => {
     render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
     await user.click(await screen.findByRole('button', { name: /emails/ }));
 
-    await user.click(screen.getByRole('button', { name: 'Open flow view' }));
+    await user.click(screen.getByRole('button', { name: 'Open Flow view' }));
     expect(await screen.findByText('root-job')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('child-job'));
@@ -330,8 +330,8 @@ describe('App shell', () => {
     render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
     await user.click(await screen.findByRole('button', { name: /emails/ }));
 
-    await user.click(screen.getByRole('button', { name: 'Open metrics view' }));
-    expect(await screen.findByText(/2 completed, 1 failed in the last 24h/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Open Metrics view' }));
+    expect(await screen.findByText(/2 completed, 1 failed in the last 24 hours/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Counts' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /back/i }));
@@ -345,8 +345,8 @@ describe('App shell', () => {
     render(<App uiConfig={{ pollingInterval: { forceInterval: 0 }, showMetrics: false }} />);
     await user.click(await screen.findByRole('button', { name: /emails/ }));
 
-    expect(screen.queryByRole('button', { name: 'Open metrics view' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Open flow view' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open Metrics view' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Flow view' })).toBeInTheDocument();
   });
 
   it('opens the schedulers view through the tab strip', async () => {
@@ -381,11 +381,11 @@ describe('App shell', () => {
     render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
     await user.click(await screen.findByRole('button', { name: /emails/ }));
 
-    await user.click(screen.getByRole('button', { name: 'Open schedulers view' }));
+    await user.click(screen.getByRole('button', { name: 'Open Schedulers view' }));
     expect(await screen.findByText('nightly-digest')).toBeInTheDocument();
-    expect(screen.getByText('every 1 days')).toBeInTheDocument();
+    expect(screen.getByText('every 1d')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Open jobs view' }));
+    await user.click(screen.getByRole('button', { name: 'Open Jobs view' }));
     expect(await screen.findByRole('group', { name: 'Job states' })).toBeInTheDocument();
   });
 
@@ -425,10 +425,10 @@ describe('App shell', () => {
     render(<App uiConfig={{ pollingInterval: { forceInterval: 0 } }} />);
     await user.click(await screen.findByRole('button', { name: /emails/ }));
 
-    await user.click(screen.getByRole('button', { name: 'Open workers view' }));
+    await user.click(screen.getByRole('button', { name: 'Open Workers view' }));
     expect(await screen.findByText('mailer')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Open redis view' }));
+    await user.click(screen.getByRole('button', { name: 'Open Redis view' }));
     expect(await screen.findByText('7.2.5')).toBeInTheDocument();
     expect(screen.getByText('256.0 MB')).toBeInTheDocument();
   });

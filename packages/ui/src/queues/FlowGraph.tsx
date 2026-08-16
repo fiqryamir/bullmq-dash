@@ -11,7 +11,9 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { FlowNode } from "../api/contract";
+import { STATUS_KEY } from "./statusKeys";
 
 const NODE_WIDTH = 220;
 const NODE_HEIGHT = 72;
@@ -23,13 +25,14 @@ function flowNodeKey(node: FlowNode): string {
 }
 
 function FlowCard({ data }: NodeProps<Node<FlowCardData>>) {
+  const { t } = useTranslation();
   const { flowNode, foreign } = data;
 
   return (
     <div className={`flow-node flow-node--${flowNode.state}`}>
-      <span className="flow-node__name">{flowNode.name || "(unnamed)"}</span>
+      <span className="flow-node__name">{flowNode.name || t("FLOW.UNNAMED")}</span>
       <span className="flow-node__id">#{flowNode.id}</span>
-      <span className={`chip chip--${flowNode.state}`}>{flowNode.state}</span>
+      <span className={`chip chip--${flowNode.state}`}>{t(STATUS_KEY[flowNode.state])}</span>
       {foreign && (
         <span className="flow-node__queue">{flowNode.queueName}</span>
       )}
@@ -112,6 +115,7 @@ export function FlowGraph({
   sourceQueueName,
   onSelectNode,
 }: FlowGraphProps) {
+  const { t } = useTranslation();
   const { nodes, edges } = useMemo(
     () => layoutGraph(roots, sourceQueueName),
     [roots, sourceQueueName],
@@ -135,7 +139,7 @@ export function FlowGraph({
         fitView
         fitViewOptions={{ padding: 0.1, minZoom: 0.7 }}
         proOptions={{ hideAttribution: true }}
-        aria-label="Flow graph of jobs"
+        aria-label={t("FLOW.GRAPH_ARIA")}
       >
         <Background />
         <Controls />

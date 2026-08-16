@@ -5,6 +5,10 @@ export type UIConfig = {
   };
   /** Set to false to hide the per-queue metrics view. */
   showMetrics?: boolean;
+  /** The locale the dashboard opens in; the user's own choice wins. */
+  locale?: {
+    lng?: string;
+  };
 };
 
 const DEFAULT_CONFIG: UIConfig = {

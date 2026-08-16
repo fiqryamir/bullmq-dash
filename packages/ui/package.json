@@ -25,6 +25,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "sync:locales": "node ./scripts/sync-locales.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -34,8 +35,10 @@
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.14.9",
     "@xyflow/react": "^12.11.3",
+    "i18next": "^26.3.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-i18next": "^17.0.11",
     "recharts": "^3.10.1"
   },
   "devDependencies": {
@@ -46,6 +49,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "i18next-locales-sync": "^2.1.1",
     "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
     "vite": "^7.3.6",

@@ -21,6 +21,26 @@
   letter-spacing: 0.3px;
 }
 
+.locale-select {
+  margin-left: auto;
+  margin-right: 12px;
+}
+
+.locale-select select {
+  background: var(--dash-surface);
+  color: var(--dash-text);
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.locale-select select:focus {
+  border-color: var(--dash-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-accent) 13%, transparent);
+}
+
 .app__main {
   width: 100%;
   max-width: 680px;

@@ -6,6 +6,7 @@ import {
   type ColumnDef,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useTranslation } from 'react-i18next';
 import type { AppJob, AppQueue, JobStatus } from '../api/contract';
 import {
   cleanJobs,
@@ -22,6 +23,7 @@ import {
 import { formatProgress } from './formatProgress';
 import { CommandPalette } from './CommandPalette';
 import { QueueNav, type QueueViewName } from './QueueNav';
+import { STATUS_KEY } from './statusKeys';
 import { useQueueJobs } from './useQueueJobs';
 
 export const JOB_STATES: JobStatus[] = [
@@ -51,7 +53,7 @@ type QueueJobsProps = {
   showMetrics?: boolean;
 };
 
-type RowAction = { label: string; run: () => Promise<unknown> | void };
+type RowAction = { labelKey: string; ariaKey: string; run: () => Promise<unknown> | void };
 
 /**
  * The row actions each state offers, in order. Active jobs hold a worker lock
@@ -84,15 +86,27 @@ function rowActionsFor(job: AppJob, queue: AppQueue): RowAction[] {
             ? queue.allowCompletedRetries !== false
             : queue.allowRetries !== false;
         if (allowed) {
-          actions.push({ label: 'Retry', run: () => retryJob(queue.name, job.id!) });
+          actions.push({
+            labelKey: 'JOB.ACTIONS.RETRY',
+            ariaKey: 'QUEUE_JOBS.RETRY_JOB',
+            run: () => retryJob(queue.name, job.id!),
+          });
         }
         break;
       }
       case 'promote':
-        actions.push({ label: 'Promote', run: () => promoteJob(queue.name, job.id!) });
+        actions.push({
+          labelKey: 'JOB.ACTIONS.PROMOTE',
+          ariaKey: 'QUEUE_JOBS.PROMOTE_JOB',
+          run: () => promoteJob(queue.name, job.id!),
+        });
         break;
       case 'remove':
-        actions.push({ label: 'Remove', run: () => removeJob(queue.name, job.id!) });
+        actions.push({
+          labelKey: 'COMMON.REMOVE',
+          ariaKey: 'QUEUE_JOBS.REMOVE_JOB',
+          run: () => removeJob(queue.name, job.id!),
+        });
         break;
     }
   }
@@ -101,33 +115,33 @@ function rowActionsFor(job: AppJob, queue: AppQueue): RowAction[] {
 }
 
 type BulkActionSpec = {
-  label: string;
+  labelKey: string;
+  confirmKey?: string;
   run: (queue: AppQueue) => Promise<unknown>;
-  confirm?: (queue: AppQueue) => string;
   allowed?: (queue: AppQueue) => boolean;
 };
 
 const removeAllAction = (status: JobStatus): BulkActionSpec => ({
-  label: `Remove all ${status}`,
+  labelKey: 'QUEUE_JOBS.REMOVE_ALL',
+  confirmKey: 'QUEUE_JOBS.REMOVE_ALL_CONFIRM',
   run: (queue) => removeJobs(queue.name, status),
-  confirm: (queue) => `Remove all ${status} jobs in ${queue.name}?`,
 });
 
 const retryAllAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
-  label: `Retry all ${status}`,
+  labelKey: 'QUEUE_JOBS.RETRY_ALL',
   run: (queue) => retryJobs(queue.name, status),
   allowed: (queue) =>
     status === 'completed' ? queue.allowCompletedRetries !== false : queue.allowRetries !== false,
 });
 
 const cleanAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
-  label: `Clean ${status}`,
+  labelKey: 'QUEUE_JOBS.CLEAN',
+  confirmKey: 'QUEUE_JOBS.CLEAN_CONFIRM',
   run: (queue) => cleanJobs(queue.name, status, DEFAULT_CLEAN_GRACE_SECONDS),
-  confirm: (queue) => `Clean ${status} jobs in ${queue.name}?`,
 });
 
 const promoteAllAction: BulkActionSpec = {
-  label: 'Promote all delayed',
+  labelKey: 'QUEUE_JOBS.PROMOTE_ALL_DELAYED',
   run: (queue) => promoteJobs(queue.name),
 };
 
@@ -152,6 +166,7 @@ export function QueueJobs({
   onSelectView,
   showMetrics = true,
 }: QueueJobsProps) {
+  const { t } = useTranslation();
   const [activeState, setActiveState] = useState<JobStatus>('waiting');
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
@@ -194,22 +209,30 @@ export function QueueJobs({
     []
   );
 
+  // Bulk labels embed the raw state word ("Retry all failed") the way
+  // bull-board's own copy does, so the phrase reads naturally in every
+  // language; only the state tabs and chips carry the translated label.
   const bulkActions = useMemo(
     () =>
       BULK_ACTIONS_PER_STATE[activeState]
         .filter((spec) => spec.allowed?.(queue) ?? true)
         .map((spec) => ({
-          label: spec.label,
+          label: t(spec.labelKey, { status: activeState }),
           run: () =>
             runAction(async () => {
-              const message = spec.confirm?.(queue);
-              if (message && !window.confirm(message)) {
-                return;
+              if (spec.confirmKey) {
+                const message = t(spec.confirmKey, {
+                  status: activeState,
+                  queue: queue.name,
+                });
+                if (!window.confirm(message)) {
+                  return;
+                }
               }
               await spec.run(queue);
             }),
         })),
-    [activeState, queue, runAction]
+    [activeState, queue, runAction, t]
   );
 
   const togglePause = () => {
@@ -221,7 +244,7 @@ export function QueueJobs({
 
   const empty = () => {
     void runAction(async () => {
-      if (!window.confirm(`Empty ${queue.name}?`)) {
+      if (!window.confirm(t('QUEUE_JOBS.EMPTY_CONFIRM', { queue: queue.name }))) {
         return;
       }
       await emptyQueue(queue.name);
@@ -232,55 +255,61 @@ export function QueueJobs({
     () => [
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: t('COMMON.ID'),
         cell: (info) => <span className="job-cell__id">{String(info.getValue())}</span>,
       },
-      { accessorKey: 'name', header: 'Name' },
+      { accessorKey: 'name', header: t('COMMON.NAME') },
       {
         accessorKey: 'state',
-        header: 'State',
-        cell: (info) => (
-          <span className={`chip chip--${String(info.getValue() ?? '')}`}>
-            {String(info.getValue() ?? '')}
-          </span>
-        ),
+        header: t('COMMON.STATE'),
+        cell: (info) => {
+          const state = info.getValue() as JobStatus | null;
+          return (
+            <span className={`chip chip--${String(state ?? '')}`}>
+              {state ? t(STATUS_KEY[state]) : ''}
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'progress',
-        header: 'Progress',
+        header: t('COMMON.PROGRESS'),
         cell: (info) => formatProgress(info.getValue() as number | object),
       },
-      { accessorKey: 'attempts', header: 'Attempts' },
+      { accessorKey: 'attempts', header: t('COMMON.ATTEMPTS') },
       ...(queue.readOnlyMode
         ? []
         : [
             {
               id: 'actions',
-              header: 'Actions',
-              cell: (info: { row: { original: AppJob } }) => (
-                <span className="job-cell__actions">
-                  {rowActionsFor(info.row.original, queue).map((action) => (
-                    <button
-                      key={action.label}
-                      type="button"
-                      className="action-btn"
-                      aria-label={`${action.label} job ${info.row.original.id}`}
-                      disabled={busy}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void runAction(action.run);
-                      }}
-                      onKeyDown={(event) => event.stopPropagation()}
-                    >
-                      {action.label}
-                    </button>
-                  ))}
-                </span>
-              ),
+              header: t('COMMON.ACTIONS'),
+              cell: (info: { row: { original: AppJob } }) => {
+                const job = info.row.original;
+                return (
+                  <span className="job-cell__actions">
+                    {rowActionsFor(job, queue).map((action) => (
+                      <button
+                        key={action.labelKey}
+                        type="button"
+                        className="action-btn"
+                        aria-label={t(action.ariaKey, { id: job.id })}
+                        disabled={busy}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void runAction(action.run);
+                        }}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        {t(action.labelKey)}
+                      </button>
+                    ))}
+                  </span>
+                );
+              },
             } as ColumnDef<AppJob>,
           ]),
     ],
-    [queue, busy, runAction]
+    [queue, busy, runAction, t]
   );
 
   const table = useReactTable({
@@ -303,32 +332,32 @@ export function QueueJobs({
   };
 
   return (
-    <section className="queue-jobs" aria-label={`Jobs in ${queue.name}`}>
+    <section className="queue-jobs" aria-label={t('QUEUE_JOBS.VIEW_ARIA', { queue: queue.name })}>
       <header className="queue-jobs__header">
         <button type="button" className="queue-jobs__back" onClick={onBack}>
-          ← Back
+          {t('COMMON.BACK')}
         </button>
         <h1 className="queue-jobs__title">{queue.name}</h1>
-        {isPaused && <span className="queue-item__paused">paused</span>}
+        {isPaused && <span className="queue-item__paused">{t(STATUS_KEY.paused)}</span>}
         {!queue.readOnlyMode && (
-          <div className="queue-jobs__actions" role="group" aria-label="Queue actions">
+          <div className="queue-jobs__actions" role="group" aria-label={t('COMMON.QUEUE_ACTIONS')}>
             <button
               type="button"
               className="action-btn"
               onClick={togglePause}
               disabled={busy}
-              aria-label={isPaused ? 'Resume queue' : 'Pause queue'}
+              aria-label={t(isPaused ? 'QUEUE_JOBS.RESUME_ARIA' : 'QUEUE_JOBS.PAUSE_ARIA')}
             >
-              {isPaused ? 'Resume' : 'Pause'}
+              {t(isPaused ? 'QUEUE.ACTIONS.RESUME' : 'QUEUE.ACTIONS.PAUSE')}
             </button>
             <button
               type="button"
               className="action-btn"
               onClick={empty}
               disabled={busy}
-              aria-label="Empty queue"
+              aria-label={t('QUEUE_JOBS.EMPTY_ARIA')}
             >
-              Empty
+              {t('QUEUE.ACTIONS.EMPTY')}
             </button>
           </div>
         )}
@@ -345,7 +374,7 @@ export function QueueJobs({
         }}
       />
 
-      <div className="queue-jobs__states" role="group" aria-label="Job states">
+      <div className="queue-jobs__states" role="group" aria-label={t('COMMON.JOB_STATES')}>
         {JOB_STATES.map((state) => (
           <button
             key={state}
@@ -355,13 +384,17 @@ export function QueueJobs({
             onClick={() => selectState(state)}
           >
             <span className="state-tab__count">{stateCount(queue, state)}</span>
-            <span className="state-tab__name">{state}</span>
+            <span className="state-tab__name">{t(STATUS_KEY[state])}</span>
           </button>
         ))}
       </div>
 
       {!queue.readOnlyMode && bulkActions.length > 0 && (
-        <div className="queue-jobs__bulk" role="group" aria-label={`Bulk actions for ${activeState} jobs`}>
+        <div
+          className="queue-jobs__bulk"
+          role="group"
+          aria-label={t('QUEUE_JOBS.BULK_ARIA', { status: activeState })}
+        >
           {bulkActions.map((action) => (
             <button
               key={action.label}
@@ -375,7 +408,7 @@ export function QueueJobs({
           ))}
           {actionFailed && (
             <span className="queues-status queues-status--error" role="alert">
-              Action failed
+              {t('COMMON.ACTION_FAILED')}
             </span>
           )}
         </div>
@@ -433,33 +466,33 @@ export function QueueJobs({
 
       <footer className="queue-jobs__footer">
         {status === 'loading' ? (
-          <span className="queues-status">Loading jobs…</span>
+          <span className="queues-status">{t('QUEUE_JOBS.LOADING')}</span>
         ) : status === 'error' ? (
-          <span className="queues-status queues-status--error">Failed to load jobs</span>
+          <span className="queues-status queues-status--error">{t('QUEUE_JOBS.LOAD_FAILED')}</span>
         ) : jobs.length === 0 ? (
-          <span className="queues-status">No jobs in this state</span>
+          <span className="queues-status">{t('QUEUE_JOBS.NO_JOBS_IN_STATE')}</span>
         ) : (
           <span className="queues-status">
-            Page {page} of {pageCount}
+            {t('COMMON.PAGE_OF', { page, pageCount })}
           </span>
         )}
         {pageCount > 0 && (
           <div className="queue-jobs__pager">
             <button
               type="button"
-              aria-label="Previous page"
+              aria-label={t('COMMON.PREV_PAGE')}
               disabled={page <= 1}
               onClick={() => setPage((current) => current - 1)}
             >
-              Prev
+              {t('COMMON.PREV')}
             </button>
             <button
               type="button"
-              aria-label="Next page"
+              aria-label={t('COMMON.NEXT_PAGE')}
               disabled={page >= pageCount}
               onClick={() => setPage((current) => current + 1)}
             >
-              Next
+              {t('COMMON.NEXT')}
             </button>
           </div>
         )}
@@ -467,4 +500,3 @@ export function QueueJobs({
     </section>
   );
 }
-

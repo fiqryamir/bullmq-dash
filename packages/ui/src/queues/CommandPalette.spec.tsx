@@ -77,7 +77,7 @@ describe('CommandPalette', () => {
 
     expect(screen.getByText('mail-1-name')).toBeInTheDocument();
     expect(screen.getByText('later-mail')).toBeInTheDocument();
-    expect(within(screen.getByTestId('palette-scroll')).getByText('delayed')).toBeInTheDocument();
+    expect(within(screen.getByTestId('palette-scroll')).getByText('Delayed')).toBeInTheDocument();
     expect(within(screen.getByTestId('palette-scroll')).getAllByText('emails')).toHaveLength(2);
   });
 
@@ -91,15 +91,15 @@ describe('CommandPalette', () => {
     render(<CommandPalette onSelectJob={() => {}} />);
     await typeAndWait('mail');
 
-    fireEvent.click(screen.getByRole('button', { name: 'delayed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delayed' }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(300);
     });
 
     expect(fetchMock).toHaveBeenLastCalledWith('api/search?term=mail&status=delayed');
-    expect(screen.getByRole('button', { name: 'delayed' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Delayed' })).toHaveAttribute('aria-pressed', 'true');
 
-    fireEvent.click(screen.getByRole('button', { name: 'delayed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delayed' }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(300);
     });

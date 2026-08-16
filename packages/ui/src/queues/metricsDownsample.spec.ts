@@ -22,9 +22,13 @@ describe('aggregateBuckets', () => {
       3_600_000
     );
 
+    // Windows align to the epoch grid the metric store writes on
+    // (`Math.floor(ts / bucketMs) * bucketMs`), so the first two minute
+    // buckets collapse into 1_699_999_200_000 and the third starts a window
+    // of its own at 1_700_002_800_000.
     expect(aggregated).toHaveLength(2);
-    expect(aggregated[0]).toMatchObject({ ts: 1_700_000_400_000, completed: 5, failed: 1 });
-    expect(aggregated[1]).toMatchObject({ ts: 1_700_003_600_000, completed: 4, failed: 0 });
+    expect(aggregated[0]).toMatchObject({ ts: 1_699_999_200_000, completed: 5, failed: 1 });
+    expect(aggregated[1]).toMatchObject({ ts: 1_700_002_800_000, completed: 4, failed: 0 });
   });
 
   it('averages the per-minute duration and wait samples', () => {
@@ -57,7 +61,11 @@ describe('aggregateBuckets', () => {
       1_800_000
     );
 
-    expect(aggregated[0]!.ts).toBe(1_700_000_400_000);
+    // Both minute buckets sit in the same 30-minute window
+    // (`Math.floor(1_700_000_000_000 / 1_800_000) * 1_800_000`), so the two
+    // samples collapse into a single aligned window.
+    expect(aggregated[0]!.ts).toBe(1_699_999_200_000);
+    expect(aggregated[0]!.completed).toBe(2);
     expect(aggregated).toHaveLength(1);
   });
 
