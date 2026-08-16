@@ -44,7 +44,7 @@ expose it publicly).
 
 ## Development
 
-pnpm monorepo, Node >= 20:
+pnpm monorepo, Node >= 22.12:
 
 ```bash
 pnpm install
