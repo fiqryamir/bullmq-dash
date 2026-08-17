@@ -11,7 +11,7 @@ The dashboard is styled by a two-layer token system plus a recipe layer, all pla
 - **`packages/ui/src/design-system/tokens.css`** — the authoritative token file. Two layers in one file:
   1. **Primitive ramps** (`:root`, theme-independent) — warm stone neutrals (`--dash-stone-*`, hue ≈ 55°, chroma ≈ 0.008), a slate accent (`--dash-accent-*` spanning both themes' accents), and all scale steps (spacing, type, radius, motion, glass). Defined once; both themes draw from them.
   2. **Semantic layer** (redefined per theme) — tokens named by use, not value (`--dash-bg`, `--dash-surface`, `--dash-text-muted`, …), pointing at the primitives. Dark is `:root` (default); light is `[data-theme='light']`. Job-state colors are semantic-only — six fixed meanings, no ramps.
-- **`packages/ui/src/design-system/recipes.css`** — the `.dash-*` recipe classes (button, chip, tab, input, table, panel, dialog, pager, focus-ring, and the shell's switch). They style component *look, states, and focus/press only* — page layout stays in view CSS.
+- **`packages/ui/src/design-system/recipes.css`** — the `.dash-*` recipe classes (button, chip, tab, input, table, panel, dialog, pager, focus-ring, shared status/text/form utilities, flow-node, React Flow integration, and the shell's switch). They style component *look, states, and focus/press only* — page layout stays in view CSS.
 - **`packages/ui/src/design-system/design-system.spec.ts`** — the contract seam: token inventory completeness, WCAG contrast locks, and recipe presence are asserted by the test suite.
 
 All colors are encoded in `oklch()`. Hex values below are reference equivalents for documentation, communication, and design review — code must use the tokens.
@@ -65,8 +65,6 @@ Consumption rule: component styles consume **semantic color tokens** and **scale
 | `--dash-focus-ring` | `--dash-accent-3` (`#a2c7dd`) | `--dash-accent-0` (`#32576d`) |
 | `--dash-overlay` | `0.1265 0.0073 42.78 / 0.55` | `0.1265 0.0073 42.78 / 0.4` |
 | `--dash-selected` | `color-mix(in oklab, accent-2 16%, surface)` | `color-mix(in oklab, accent-1 14%, surface)` |
-
-`--dash-muted` is a legacy alias for `--dash-text-muted`, present for unmigrated views; it is removed as migration slices land and must not be used in new code.
 
 ### Job state colors (semantic-only, six fixed meanings)
 
@@ -202,10 +200,31 @@ Recipes style component **look + states + focus/press only** — page layout (he
 - **Purpose**: surface container with three content variants.
 - **Classes**: `.dash-panel`.
 - **Modifiers**: `--code` (mono block), `--meta` (dl/dt/dd key-value), `--logs` (mono list with soft separators).
+- **Additional modifiers**: `--chart`, `--table`, `--table-frame`, `--form`, and `--stats` provide the shared surface treatments used by metrics, scheduler, worker, and Redis views.
 - **Snippet**:
   ```html
-  <dl class="dash-panel dash-panel--meta"><dt>Attempts</dt><dd>3</dd></dl>
-  ```
+   <dl class="dash-panel dash-panel--meta"><dt>Attempts</dt><dd>3</dd></dl>
+   ```
+
+### Status, text, and form utilities
+
+- **`.dash-shell` / `.dash-shell__header` / `.dash-shell__brand`** — app shell surface, separator, and brand typography.
+- **`.dash-tab-list`** — the shared rounded container around navigation and range tabs.
+- **`.dash-status`** — loading, empty, notice, and error copy; combine with `--error` for failed states and `--summary` for metrics summaries.
+- **`.dash-view-title` / `.dash-view-subtitle` / `.dash-view-job-name` / `.dash-section-title`** — shared view and section typography.
+- **`.dash-job-id` / `.dash-code-inline` / `.dash-meta`** — tokenized monospace and muted metadata treatment.
+- **`.dash-text-muted` / `.dash-text-small` / `.dash-text-italic`** — compact muted metadata variants.
+- **`.dash-panel__title` / `.dash-stat-label` / `.dash-stat-value`** — shared panel headings and Redis statistic labels/values; `dash-stat-value--mono` uses the mono stack.
+- **`.dash-form__*`** — scheduler form layout and labels; controls use `.dash-input`, with `--code` for JSON textareas.
+- **`.dash-table--interactive`** — adds the pointer affordance to tables whose rows open a job; ordinary `.dash-table` remains non-interactive.
+- **Panel variants**: `.dash-panel--chart`, `--table`, `--table-frame`, `--form`, and `--stats` identify the shared surface treatment used by metrics, data tables, scheduler forms, and Redis statistics. Their page-specific sizing and layout remain in `App.css`.
+
+### Flow node and React Flow integration
+
+- **`.flow-node`** — the custom React Flow node recipe. It carries the six canonical state modifiers: `--waiting`, `--active`, `--delayed`, `--completed`, `--failed`, and `--paused`.
+- **BullMQ aliases**: `flow-node--waiting-children` consumes delayed state tokens and `flow-node--prioritized` consumes active state tokens. The rendered node also carries its canonical modifier so state meaning stays consistent with chips and tabs.
+- **`.dash-flow`** — the React Flow surface. It maps the installed `@xyflow/react` 12.11.3 public `--xy-*` variables used by the rendered graph (background, pattern, edges, connection line, nodes, handles, selection, controls, and labels) to semantic dashboard tokens and passes the dashboard's `dark`/`light` theme as React Flow's `colorMode`. React Flow's structural stylesheet remains imported from the package; unrendered minimap and resize variables retain upstream defaults, and edge stroke width remains the upstream one-pixel default.
+- **Focus**: React Flow node focus uses `--dash-focus-ring` because the upstream stylesheet removes the default selectable-node outline.
 
 ### Dialog — `.dash-dialog`
 
@@ -273,6 +292,8 @@ Rules of thumb:
 **Scope / isolation.** Every system value lives under the `--dash-*` namespace; recipes use the `.dash-` prefix. This keeps the dashboard self-contained in a host app — no host-app style can collide, and the dashboard won't leak tokens outward. Host apps that ship their own `--dash-*` variables should be treated as an explicit override surface.
 
 **Elevation is per-theme; glass is theme-independent.** Shadows (3 levels) are redefined for light; blur values are defined once in `:root`. The reduced-transparency media query (`prefers-reduced-transparency: reduce`) zeroes the blur and the dialog scrim goes solid — users who opt out of transparency always get solid surfaces.
+
+**React Flow follows the dashboard theme.** `.dash-flow` maps the supported React Flow 12.11.3 `--xy-*` variables to `--dash-*` tokens, while `FlowGraph` passes the current `ThemeProvider` value through `colorMode`. The installed public variable names are locked by the design-system contract test.
 
 ## 7. Accessibility
 

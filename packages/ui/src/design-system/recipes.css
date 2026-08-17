@@ -8,17 +8,126 @@
    state from data-* selectors (e.g. .dash-switch[data-checked]).
    BEM naming: .dash-block__element, .dash-block--modifier.
 
-   Families: button, chip, tab, input, table, panel, dialog,
-   pager, focus-ring — plus the shell's .dash-switch.
+    Families: button, chip, tab, input, table, panel, dialog,
+    pager, focus-ring, flow, form — plus the shell's .dash-switch.
    ============================================================ */
 
 /* ---- shared utilities -------------------------------------- */
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
 
 /* Focus ring — opt-in via class; the single ring definition all
    interactive recipes and components share (accent, 3:1+). */
 .dash-focus-ring:focus-visible {
   outline: 2px solid var(--dash-focus-ring);
   outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- shell and shared text --------------------------------- */
+
+.dash-shell {
+  background: var(--dash-bg);
+  color: var(--dash-text);
+  font-family: var(--dash-font-sans);
+}
+
+.dash-shell__header {
+  border-bottom: 1px solid var(--dash-border);
+}
+
+.dash-shell__brand {
+  font-size: var(--dash-text-md);
+  font-weight: var(--dash-weight-bold);
+  letter-spacing: 0.3px;
+}
+
+.dash-view-title {
+  font-size: var(--dash-text-lg);
+  font-weight: var(--dash-weight-bold);
+}
+
+.dash-view-subtitle {
+  color: var(--dash-text-muted);
+  font-size: var(--dash-text-base);
+  font-weight: var(--dash-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dash-view-job-name {
+  font-size: var(--dash-text-base);
+  font-weight: var(--dash-weight-semibold);
+}
+
+.dash-section-title {
+  margin: 0;
+  color: var(--dash-text-muted);
+  font-size: var(--dash-text-base);
+  font-weight: var(--dash-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dash-job-id,
+.dash-code-inline {
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-sm);
+}
+
+.dash-job-id,
+.dash-text-muted,
+.dash-meta {
+  color: var(--dash-text-muted);
+}
+
+.dash-text-small,
+.dash-meta {
+  font-size: var(--dash-text-caption);
+}
+
+.dash-text-italic {
+  font-style: italic;
+}
+
+.dash-status {
+  color: var(--dash-text-muted);
+  font-size: var(--dash-text-base);
+}
+
+.dash-status--error {
+  color: var(--dash-state-failed);
+}
+
+.dash-status--summary {
+  margin-bottom: var(--dash-space-3);
+}
+
+/* ---- tab list ----------------------------------------------- */
+
+.dash-tab-list {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius-pill);
 }
 
 /* ---- button ------------------------------------------------ */
@@ -216,13 +325,13 @@
   border-bottom: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
 }
 
-.dash-table tbody tr {
-  cursor: pointer;
-}
-
 .dash-table tbody tr:hover,
 .dash-table tbody tr:focus-visible {
   background: color-mix(in srgb, var(--dash-accent) 8%, transparent);
+}
+
+.dash-table--interactive tbody tr {
+  cursor: pointer;
 }
 
 .dash-table__row--selected {
@@ -284,6 +393,177 @@
 
 .dash-panel--logs > *:last-child {
   border-bottom: none;
+}
+
+/* panel variants used by metrics, forms, tables and stats */
+.dash-panel__title {
+  font-size: var(--dash-text-base);
+  font-weight: var(--dash-weight-bold);
+}
+
+.dash-panel--table {
+  font-size: var(--dash-text-sm);
+}
+
+.dash-panel--table summary {
+  cursor: pointer;
+  color: var(--dash-text-muted);
+  font-weight: var(--dash-weight-semibold);
+}
+
+.dash-panel--table .dash-table {
+}
+
+.dash-panel--table .dash-table th {
+  font-size: var(--dash-text-caption);
+}
+
+.dash-panel--table .dash-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-form__field {
+  color: var(--dash-text-muted);
+  font-size: var(--dash-text-sm);
+}
+
+.dash-input--code {
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-sm);
+}
+
+.dash-stat-label {
+  color: var(--dash-text-muted);
+  font-size: var(--dash-text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dash-stat-value {
+  margin: 0;
+  font-size: var(--dash-text-base);
+  font-weight: var(--dash-weight-semibold);
+}
+
+.dash-stat-value--mono {
+  font-family: var(--dash-font-mono);
+  font-weight: var(--dash-weight-regular);
+}
+
+/* ---- flow --------------------------------------------------- */
+
+.dash-flow {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius-md);
+  --xy-background-color: var(--dash-surface);
+  --xy-background-pattern-color: var(--dash-border);
+  --xy-edge-stroke: var(--dash-border);
+  --xy-edge-stroke-selected: var(--dash-accent);
+  --xy-connectionline-stroke: var(--dash-border);
+  --xy-node-color: var(--dash-text);
+  --xy-node-background-color: var(--dash-surface);
+  --xy-node-border: 1px solid var(--dash-border);
+  --xy-node-border-radius: var(--dash-radius-md);
+  --xy-node-boxshadow-hover: var(--dash-shadow-1);
+  --xy-node-boxshadow-selected: 0 0 0 2px var(--dash-focus-ring);
+  --xy-handle-background-color: var(--dash-accent);
+  --xy-handle-border-color: var(--dash-surface);
+  --xy-selection-background-color: var(--dash-selected);
+  --xy-selection-border: 1px dotted var(--dash-accent);
+  --xy-controls-button-background-color: var(--dash-surface);
+  --xy-controls-button-background-color-hover: var(--dash-surface-elevated);
+  --xy-controls-button-color: var(--dash-text-muted);
+  --xy-controls-button-color-hover: var(--dash-text);
+  --xy-controls-button-border-color: var(--dash-border);
+  --xy-controls-box-shadow: var(--dash-shadow-1);
+  --xy-minimap-background-color: var(--dash-bg);
+  --xy-edge-label-background-color: var(--dash-surface);
+  --xy-edge-label-color: var(--dash-text);
+}
+
+.dash-flow__canvas {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+}
+
+.dash-flow .react-flow__node {
+  cursor: pointer;
+}
+
+.dash-flow .react-flow__node:focus-visible {
+  outline: 2px solid var(--dash-focus-ring);
+  outline-offset: 2px;
+}
+
+.dash-flow .react-flow__controls-button:focus-visible {
+  outline: 2px solid var(--dash-focus-ring);
+  outline-offset: -2px;
+}
+
+.dash-flow .react-flow__controls {
+  border-radius: var(--dash-radius-sm);
+  overflow: hidden;
+}
+
+.dash-flow .react-flow__controls-button {
+  border-bottom: 1px solid var(--dash-border);
+}
+
+.dash-flow .react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+.flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--dash-space-1);
+  width: 200px;
+  padding: var(--dash-space-2) var(--dash-space-3);
+  background: color-mix(in oklab, var(--dash-surface) 94%, var(--dash-text));
+  border: 1px solid color-mix(in oklab, var(--dash-border) 88%, var(--dash-text));
+  border-left: 3px solid var(--dash-border);
+  border-radius: var(--dash-radius-md);
+  font-family: var(--dash-font-sans);
+  box-shadow: var(--dash-shadow-1);
+}
+
+.flow-node--waiting { border-left-color: var(--dash-state-waiting); }
+.flow-node--active { border-left-color: var(--dash-state-active); }
+.flow-node--delayed { border-left-color: var(--dash-state-delayed); }
+.flow-node--completed { border-left-color: var(--dash-state-completed); }
+.flow-node--failed { border-left-color: var(--dash-state-failed); }
+.flow-node--paused { border-left-color: var(--dash-state-paused); }
+.flow-node--waiting-children { border-left-color: var(--dash-state-delayed); }
+.flow-node--prioritized { border-left-color: var(--dash-state-active); }
+
+.flow-node__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--dash-text-sm);
+  font-weight: var(--dash-weight-semibold);
+}
+
+.flow-node__id,
+.flow-node__queue {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dash-text-muted);
+  font-family: var(--dash-font-mono);
+}
+
+.flow-node__id {
+  font-size: var(--dash-text-caption);
+}
+
+.flow-node__queue {
+  font-size: var(--dash-text-caption);
 }
 
 /* ---- dialog ------------------------------------------------ */

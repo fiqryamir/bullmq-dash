@@ -26,8 +26,9 @@ export function redisConnectionOptions(config: StandaloneConfig['redis']): Queue
  * Boots the standalone dashboard server: discovers the queues on the Redis
  * connection (an allow-list shows exactly the listed queues, even ones with
  * no keys yet - a fresh queue must be visible), registers each with the
- * board, and starts listening. Fails fast with the underlying Redis error
- * when the connection is unreachable.
+ * board, and starts listening. The default discovery mode also picks up new
+ * queue meta keys while the server is running. Fails fast with the underlying
+ * Redis error when the connection is unreachable.
  */
 export async function startStandaloneServer(
   config: StandaloneConfig
@@ -43,15 +44,40 @@ export async function startStandaloneServer(
 
   const discovered = await discoverQueueNames(discoveryClient, config.redis.prefix);
   const names = config.queues ? [...config.queues].sort() : discovered;
-  const queues = names.map(
-    (name) => new Queue(name, { connection, prefix: config.redis.prefix })
+  const queueMap = new Map(
+    names.map((name) => [name, new Queue(name, { connection, prefix: config.redis.prefix })])
   );
+  const queues = [...queueMap.values()];
 
   const serverAdapter = new ExpressAdapter();
-  createBullBoard({
+  const board = createBullBoard({
     queues: queues.map((queue) => new BullMQAdapter(queue)),
     serverAdapter,
   });
+
+  let discoveryInFlight = false;
+  const syncDiscoveredQueues = async (): Promise<void> => {
+    if (config.queues !== undefined || discoveryInFlight) {
+      return;
+    }
+    discoveryInFlight = true;
+    try {
+      for (const name of await discoverQueueNames(discoveryClient, config.redis.prefix)) {
+        if (queueMap.has(name)) {
+          continue;
+        }
+        const queue = new Queue(name, { connection, prefix: config.redis.prefix });
+        queueMap.set(name, queue);
+        board.addQueue(new BullMQAdapter(queue));
+      }
+    } finally {
+      discoveryInFlight = false;
+    }
+  };
+  const discoveryTimer =
+    config.queues === undefined
+      ? setInterval(() => void syncDiscoveredQueues().catch(() => {}), 500)
+      : undefined;
 
   const server = serverAdapter.getRouter().listen(config.port, config.host);
   await new Promise<void>((resolve, reject) => {
@@ -64,11 +90,14 @@ export async function startStandaloneServer(
   const url = `http://${config.host}:${boundPort}`;
 
   const close = async () => {
+    if (discoveryTimer) {
+      clearInterval(discoveryTimer);
+    }
     await new Promise<void>((resolve) => {
       server.close(() => resolve());
       server.closeAllConnections?.();
     });
-    await Promise.all(queues.map((queue) => queue.close()));
+    await Promise.all([...queueMap.values()].map((queue) => queue.close()));
     await discoveryClient.quit();
   };
 

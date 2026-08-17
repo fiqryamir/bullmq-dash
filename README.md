@@ -55,6 +55,23 @@ pnpm run build
 pnpm --filter @bullmq-dash/website dev   # run the docs site locally
 ```
 
+To inspect a repeatable local demo with schedulers, metrics, and a live worker,
+run Redis and the seed command in separate terminals:
+
+```bash
+# terminal 1
+npx bullmq-dash
+
+# terminal 2
+pnpm demo:seed
+```
+
+The seed command prepares the demo queues, waits for the dashboard to discover
+them, processes a fixed batch of completed and failed metric jobs, and keeps
+`demo-worker` connected for the Workers view. Press Ctrl+C to stop the worker;
+the seeded queue data remains in Redis. Use `BULLMQ_DASH_URL` when the
+dashboard is not at `http://localhost:3000`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

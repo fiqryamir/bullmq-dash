@@ -50,6 +50,12 @@ afterEach(() => {
 });
 
 describe('CommandPalette', () => {
+  it('does not apply the dialog scrim to the embedded palette surface', () => {
+    render(<CommandPalette onSelectJob={() => {}} />);
+
+    expect(screen.getByRole('region', { name: 'Job search' })).not.toHaveClass('dash-dialog');
+  });
+
   it('debounces typing for 300ms and renders the matched jobs', async () => {
     vi.useFakeTimers();
     const fetchMock = stubSearchApi(

@@ -44,15 +44,15 @@ function formatUptime(seconds: number): string {
 function Stat({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="redis-stat">
-      <dt className="redis-stat__label">{label}</dt>
-      <dd className={`redis-stat__value${mono ? ' redis-stat__value--mono' : ''}`}>{value}</dd>
+      <dt className="dash-stat-label">{label}</dt>
+      <dd className={`dash-stat-value${mono ? ' dash-stat-value--mono' : ''}`}>{value}</dd>
     </div>
   );
 }
 
 function MemoryStat({ stats, t }: { stats: RedisStats; t: TFunction }) {
   return (
-    <dl className="redis-stats__group">
+    <dl className="dash-panel dash-panel--stats">
       <Stat label={t('REDIS.MEMORY_USED')} value={formatBytes(stats.memory.used)} />
       <Stat label={t('REDIS.MEMORY_LIMIT')} value={formatBytes(stats.memory.total)} />
       <Stat label={t('REDIS.PEAK')} value={formatBytes(stats.memory.peak)} />
@@ -73,17 +73,17 @@ export function QueueRedis({ queue, onBack, onSelectView, showMetrics }: QueueRe
       <header className="queue-jobs__header">
         <button
           type="button"
-          className="queue-jobs__back"
+          className="dash-button dash-button--ghost dash-focus-ring"
           onClick={onBack}
           aria-label={t('COMMON.BACK_TO_JOBS')}
         >
           {t('COMMON.BACK')}
         </button>
-        <h1 className="queue-jobs__title">{queue.name}</h1>
-        <span className="queue-flow__subtitle">{t('NAV.REDIS')}</span>
+        <h1 className="dash-view-title">{queue.name}</h1>
+        <span className="dash-view-subtitle">{t('NAV.REDIS')}</span>
         <button
           type="button"
-          className="action-btn queue-jobs__view-action"
+          className="dash-button dash-button--ghost dash-focus-ring queue-jobs__view-action"
           onClick={refresh}
           aria-label={t('REDIS.REFRESH_ARIA')}
         >
@@ -94,16 +94,16 @@ export function QueueRedis({ queue, onBack, onSelectView, showMetrics }: QueueRe
       <QueueNav queue={queue} active="redis" onSelect={onSelectView} showMetrics={showMetrics} />
 
       {status === 'loading' ? (
-        <p className="queues-status">{t('REDIS.LOADING')}</p>
+        <p className="dash-status">{t('REDIS.LOADING')}</p>
       ) : status === 'error' ? (
-        <p className="queues-status queues-status--error" role="alert">
+        <p className="dash-status dash-status--error" role="alert">
           {t('REDIS.LOAD_FAILED')}
         </p>
       ) : !stats ? (
-        <p className="queues-status">{t('REDIS.UNAVAILABLE')}</p>
+        <p className="dash-status">{t('REDIS.UNAVAILABLE')}</p>
       ) : (
         <div className="redis-stats" aria-label={t('REDIS.BACKING_STORE_ARIA')}>
-          <dl className="redis-stats__group">
+          <dl className="dash-panel dash-panel--stats">
             <Stat label={t('REDIS.VERSION')} value={stats.version} mono />
             <Stat label={t('REDIS.MODE')} value={stats.mode ?? '-'} />
             <Stat label={t('REDIS.PORT')} value={stats.port ? String(stats.port) : '-'} mono />
@@ -111,7 +111,7 @@ export function QueueRedis({ queue, onBack, onSelectView, showMetrics }: QueueRe
             <Stat label={t('REDIS.UP_TIME')} value={stats.uptime ? formatUptime(stats.uptime) : '-'} />
           </dl>
           <MemoryStat stats={stats} t={t} />
-          <dl className="redis-stats__group">
+          <dl className="dash-panel dash-panel--stats">
             <Stat label={t('REDIS.CONNECTED_CLIENTS')} value={String(stats.clients.connected)} />
             <Stat label={t('REDIS.BLOCKED_CLIENTS')} value={String(stats.clients.blocked)} />
           </dl>

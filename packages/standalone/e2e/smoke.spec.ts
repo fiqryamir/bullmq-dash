@@ -11,6 +11,7 @@ const BIN_PATH = new URL('../dist/bin.js', import.meta.url).pathname.replace(/^\
 
 let serverUrl: string;
 let bin: ChildProcess;
+let demoWorker: Worker | undefined;
 
 test.beforeAll(async () => {
   await seedQueues(PREFIX, [
@@ -22,8 +23,9 @@ test.beforeAll(async () => {
       ],
     },
     { name: 'smoke-reports', jobs: [{ name: 'daily-report', data: { date: '2026-08-14' } }] },
-    { name: 'smoke-metrics' },
-    { name: 'smoke-schedulers' },
+      { name: 'smoke-metrics' },
+      { name: 'smoke-schedulers' },
+      { name: 'smoke-workers' },
   ]);
 
   const schedulerQueue = new Queue('smoke-schedulers', {
@@ -36,6 +38,13 @@ test.beforeAll(async () => {
     { name: 'digest' }
   );
   await schedulerQueue.close();
+
+  demoWorker = new Worker('smoke-workers', async () => {}, {
+    connection: redisOptions(),
+    prefix: PREFIX,
+    name: 'e2e-demo-worker',
+  });
+  await demoWorker.waitUntilReady();
 
   const producer = new FlowProducer({ connection: redisOptions(), prefix: PREFIX });
   try {
@@ -83,7 +92,8 @@ test.beforeAll(async () => {
   serverUrl = await waitForUrl(bin, 20_000);
 });
 
-test.afterAll(() => {
+test.afterAll(async () => {
+  await demoWorker?.close();
   bin.kill('SIGTERM');
 });
 
@@ -98,7 +108,7 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
   await page.goto(serverUrl);
   await page.getByRole('button', { name: /smoke-emails/ }).click();
 
-  await expect(page.locator('.queue-jobs__title')).toHaveText('smoke-emails');
+  await expect(page.locator('.dash-view-title')).toHaveText('smoke-emails');
   await expect(page.locator('.dash-table')).toContainText('welcome-email');
   await expect(page.locator('.dash-table')).toContainText('receipt-email');
 
@@ -164,9 +174,25 @@ test('renders a readable flow graph', async ({ page }) => {
   await page.getByRole('button', { name: 'Open Flow view' }).click();
 
   await expect(page.locator('.flow-node', { hasText: 'checkout' })).toBeVisible();
+  const canvas = page.locator('.dash-flow__canvas');
+  await expect(canvas).toBeVisible();
+  const canvasBox = await canvas.boundingBox();
+  expect(canvasBox?.width ?? 0).toBeGreaterThan(0);
+  expect(canvasBox?.height ?? 0).toBeGreaterThan(0);
   const transform = await page.locator('.react-flow__viewport').getAttribute('style');
   const scale = Number(transform?.match(/scale\(([\d.]+)\)/)?.[1] ?? 0);
   expect(scale).toBeGreaterThanOrEqual(0.7);
+});
+
+test('keeps the embedded palette and flow graph in light theme', async ({ page }) => {
+  await page.goto(serverUrl);
+  await page.getByLabel('Toggle theme').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+  await page.getByRole('button', { name: /smoke-emails/ }).click();
+  await expect(page.locator('.command-palette')).not.toHaveClass(/dash-dialog/);
+  await page.getByRole('button', { name: 'Open Flow view' }).click();
+  await expect(page.locator('.react-flow.light')).toHaveCount(1);
 });
 
 test('searches a job across queues and opens its detail', async ({ page }) => {
@@ -177,7 +203,7 @@ test('searches a job across queues and opens its detail', async ({ page }) => {
   await expect(result).toBeVisible();
   await result.click();
 
-  await expect(page.locator('.job-detail__job-name')).toHaveText('receipt-email');
+  await expect(page.locator('.dash-view-job-name')).toHaveText('receipt-email');
 });
 
 test('captures traffic and renders the metrics view', async ({ page }) => {
@@ -217,8 +243,8 @@ test('captures traffic and renders the metrics view', async ({ page }) => {
   await page.getByRole('button', { name: /smoke-metrics/ }).click();
   await page.getByRole('button', { name: 'Open Metrics view' }).click();
 
-  await expect(page.locator('.metrics-summary')).toContainText(/2 completed/);
-  await expect(page.locator('.metrics-chart')).toHaveCount(3);
+  await expect(page.locator('#metrics-summary')).toContainText(/2 completed/);
+  await expect(page.locator('.dash-panel--chart')).toHaveCount(3);
 });
 
 test('manages schedulers from the schedulers view', async ({ page }) => {
@@ -226,7 +252,7 @@ test('manages schedulers from the schedulers view', async ({ page }) => {
   await page.getByRole('button', { name: /smoke-schedulers/ }).click();
   await page.getByRole('button', { name: 'Open Schedulers view' }).click();
 
-  const table = page.locator('.queue-schedulers__table-wrap');
+  const table = page.locator('.dash-panel--table-frame');
   await expect(table).toContainText('nightly-digest');
   await expect(table).toContainText('every 1d');
 
@@ -248,14 +274,25 @@ test('manages schedulers from the schedulers view', async ({ page }) => {
 
 test('renders the workers and Redis tabs', async ({ page }) => {
   await page.goto(serverUrl);
-  await page.getByRole('button', { name: /smoke-schedulers/ }).click();
+  await page.getByRole('button', { name: /smoke-workers/ }).click();
 
   await page.getByRole('button', { name: 'Open Workers view' }).click();
-  await expect(page.locator('.queue-workers')).toContainText('No workers connected');
+  await expect(page.locator('.queue-workers')).toContainText('e2e-demo-worker');
 
   await page.getByRole('button', { name: 'Open Redis view' }).click();
   const stats = page.locator('.redis-stats');
   await expect(stats).toContainText('Version');
   await expect(stats).toContainText('Memory used');
   await expect(stats).toContainText('Connected clients');
+});
+
+test('resets the page margin and centers the dashboard content', async ({ page }) => {
+  await page.goto(serverUrl);
+
+  await expect(page.locator('body')).toHaveCSS('margin', '0px');
+  const centered = await page.locator('.app__main').evaluate((element) => {
+    const { left, width } = element.getBoundingClientRect();
+    return Math.abs(left - (window.innerWidth - width) / 2) < 1;
+  });
+  expect(centered).toBe(true);
 });

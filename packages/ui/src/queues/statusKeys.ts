@@ -17,3 +17,18 @@ export const STATUS_KEY: Record<JobStatus | 'unknown', string> = {
   prioritized: 'QUEUE.STATUS.PRIORITIZED',
   unknown: 'QUEUE.STATUS.UNKNOWN',
 };
+
+export type StateColor = 'waiting' | 'active' | 'delayed' | 'completed' | 'failed' | 'paused';
+
+export function stateColor(state: JobStatus | 'unknown'): StateColor | undefined {
+  switch (state) {
+    case 'waiting-children':
+      return 'delayed';
+    case 'prioritized':
+      return 'active';
+    case 'unknown':
+      return undefined;
+    default:
+      return state;
+  }
+}

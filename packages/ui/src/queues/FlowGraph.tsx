@@ -13,7 +13,8 @@ import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { FlowNode } from "../api/contract";
-import { STATUS_KEY } from "./statusKeys";
+import { useTheme } from "../theme/ThemeProvider";
+import { stateColor, STATUS_KEY } from "./statusKeys";
 
 const NODE_WIDTH = 220;
 const NODE_HEIGHT = 72;
@@ -27,12 +28,16 @@ function flowNodeKey(node: FlowNode): string {
 function FlowCard({ data }: NodeProps<Node<FlowCardData>>) {
   const { t } = useTranslation();
   const { flowNode, foreign } = data;
+  const modifier = stateColor(flowNode.state);
+  const canonicalModifier = modifier && modifier !== flowNode.state ? ` flow-node--${modifier}` : "";
 
   return (
-    <div className={`flow-node flow-node--${flowNode.state}`}>
+    <div className={`flow-node flow-node--${flowNode.state}${canonicalModifier}`}>
       <span className="flow-node__name">{flowNode.name || t("FLOW.UNNAMED")}</span>
       <span className="flow-node__id">#{flowNode.id}</span>
-      <span className={`chip chip--${flowNode.state}`}>{t(STATUS_KEY[flowNode.state])}</span>
+      <span className={`dash-chip${modifier ? ` dash-chip--${modifier}` : ""}`}>
+        {t(STATUS_KEY[flowNode.state])}
+      </span>
       {foreign && (
         <span className="flow-node__queue">{flowNode.queueName}</span>
       )}
@@ -116,34 +121,47 @@ export function FlowGraph({
   onSelectNode,
 }: FlowGraphProps) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const { nodes, edges } = useMemo(
     () => layoutGraph(roots, sourceQueueName),
     [roots, sourceQueueName],
   );
 
   return (
-    <div className="flow-graph">
-      <ReactFlow
-        className="flow-graph"
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodeClick={(_event, node) =>
-          onSelectNode((node.data as FlowCardData).flowNode)
+    <ReactFlow
+      className="dash-flow__canvas"
+      colorMode={theme}
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      onNodeClick={(_event, node) =>
+        onSelectNode((node.data as FlowCardData).flowNode)
+      }
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
         }
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable
-        minZoom={0.2}
-        maxZoom={2.5}
-        fitView
-        fitViewOptions={{ padding: 0.1, minZoom: 0.7 }}
-        proOptions={{ hideAttribution: true }}
-        aria-label={t("FLOW.GRAPH_ARIA")}
-      >
-        <Background />
-        <Controls />
-      </ReactFlow>
-    </div>
+        const nodeId = (event.target as HTMLElement).closest<HTMLElement>(
+          ".react-flow__node",
+        )?.dataset.id;
+        const node = nodeId ? nodes.find((entry) => entry.id === nodeId) : undefined;
+        if (node) {
+          event.preventDefault();
+          onSelectNode((node.data as FlowCardData).flowNode);
+        }
+      }}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      elementsSelectable
+      minZoom={0.2}
+      maxZoom={2.5}
+      fitView
+      fitViewOptions={{ padding: 0.1, minZoom: 0.7 }}
+      proOptions={{ hideAttribution: true }}
+      aria-label={t("FLOW.GRAPH_ARIA")}
+    >
+      <Background />
+      <Controls />
+    </ReactFlow>
   );
 }

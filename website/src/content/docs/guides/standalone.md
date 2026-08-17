@@ -100,7 +100,26 @@ Without an allow-list the server scans the BullMQ keyspace
 (`<prefix>:*:meta` keys) for every queue on the connection - BullMQ v6 has no
 queue-registry API, so the meta keys are the ground truth. A non-default
 `--redis-prefix` is honored in both the discovery scan and the queues it
-opens.
+opens. New queues are picked up while the standalone server is running too.
+
+## Local demo data
+
+The repository includes a fixed local demo seed for inspecting schedulers,
+workers, and historical metrics. From the repository root, with Redis running:
+
+```bash
+# terminal 1
+npx bullmq-dash
+
+# terminal 2
+pnpm demo:seed
+```
+
+The seed command creates demo queue keys, waits for the dashboard to discover
+them, processes four completed and two intentionally failed metric jobs, and
+keeps a named `demo-worker` connected on `bullmq-dash-workers`. Press Ctrl+C
+to stop the worker; queue data remains in Redis. Set `BULLMQ_DASH_URL` if the
+dashboard is running somewhere other than `http://localhost:3000`.
 
 ## What it runs
 

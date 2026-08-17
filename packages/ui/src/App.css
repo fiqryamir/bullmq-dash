@@ -1,10 +1,7 @@
 .app {
   min-height: 100vh;
-  background: var(--dash-bg);
-  color: var(--dash-text);
   display: flex;
   flex-direction: column;
-  font-family: var(--dash-font-sans);
 }
 
 .app__header {
@@ -12,13 +9,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
-  border-bottom: 1px solid var(--dash-border);
-}
-
-.app__brand {
-  font-weight: var(--dash-weight-bold);
-  font-size: var(--dash-text-md);
-  letter-spacing: 0.3px;
 }
 
 .locale-select {
@@ -27,6 +17,7 @@
 }
 
 .app__main {
+  box-sizing: border-box;
   width: 100%;
   max-width: 680px;
   margin: 0 auto;
@@ -36,7 +27,16 @@
   gap: 8px;
 }
 
-/* ---------- command palette ---------- */
+.dash-view-title {
+  margin: 0;
+}
+
+.dash-status {
+  margin: 0;
+  padding: var(--dash-space-2) var(--dash-space-0);
+}
+
+/* ---------- command palette ---------------------------------- */
 
 .command-palette {
   display: flex;
@@ -126,60 +126,19 @@
   gap: 6px;
 }
 
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  background: color-mix(in srgb, currentColor 12%, transparent);
-}
-
-.chip--waiting {
-  color: var(--dash-state-waiting);
-}
-
-.chip--active {
-  color: var(--dash-state-active);
-}
-
-.chip--delayed {
-  color: var(--dash-state-delayed);
-}
-
-.chip--completed {
-  color: var(--dash-state-completed);
-}
-
-.chip--failed {
-  color: var(--dash-state-failed);
-}
-
-.chip--paused {
-  color: var(--dash-state-paused);
-}
-
-.chip--waiting-children {
-  color: var(--dash-state-delayed);
-}
-
-.chip--prioritized {
-  color: var(--dash-state-active);
-}
-
-.chip--unknown {
-  color: var(--dash-muted);
-}
-
-/* ---------- queue jobs view ---------- */
+/* ---------- queue jobs view ---------------------------------- */
 
 .app__main--queue {
   max-width: 1200px;
 }
 
-.queue-jobs {
+.queue-jobs,
+.job-detail,
+.queue-flow,
+.queue-metrics,
+.queue-schedulers,
+.queue-workers,
+.queue-redis {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -187,24 +146,11 @@
   min-height: 60vh;
 }
 
-.queue-jobs__header {
+.queue-jobs__header,
+.job-detail__header {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.queue-jobs__back {
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 8px;
-  color: var(--dash-text);
-  padding: 6px 12px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.queue-jobs__back:hover {
-  border-color: var(--dash-accent);
 }
 
 .queue-jobs__actions {
@@ -213,37 +159,11 @@
   gap: 8px;
 }
 
-.action-btn {
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 8px;
-  color: var(--dash-text);
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.action-btn:hover:not(:disabled) {
-  border-color: var(--dash-accent);
-}
-
-.action-btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
 .queue-jobs__bulk {
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 30px;
-}
-
-.queue-jobs__title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
 }
 
 .queue-jobs__states {
@@ -256,9 +176,6 @@
   flex: 1;
   max-height: 60vh;
   overflow: auto;
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 12px;
 }
 
 /* Virtualized rows are taken out of native table layout. Give the header and
@@ -303,48 +220,6 @@
   white-space: nowrap;
 }
 
-.job-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.job-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  text-align: left;
-  padding: 10px 16px;
-  color: var(--dash-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  background: var(--dash-surface);
-  border-bottom: 1px solid var(--dash-border);
-}
-
-.job-table tbody tr {
-  display: table-row;
-  border-bottom: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
-}
-
-.job-table tbody td {
-  padding: 8px 16px;
-  white-space: nowrap;
-}
-
-.job-cell__id {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
-  color: var(--dash-muted);
-}
-
-.job-cell__actions {
-  display: flex;
-  gap: 6px;
-}
-
 .queue-jobs__footer {
   display: flex;
   align-items: center;
@@ -357,57 +232,7 @@
   gap: 8px;
 }
 
-.queue-jobs__pager button {
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 8px;
-  color: var(--dash-text);
-  padding: 6px 14px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.queue-jobs__pager button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.queues-status {
-  color: var(--dash-muted);
-  font-size: 13px;
-  padding: 8px 2px;
-}
-
-.queues-status--error {
-  color: var(--dash-state-failed);
-}
-
-/* ---------- job detail view ---------- */
-
-.job-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  flex: 1;
-  min-height: 60vh;
-}
-
-.job-detail__header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.job-detail__title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.job-detail__job-name {
-  font-weight: 600;
-  font-size: 14px;
-}
+/* ---------- job detail view --------------------------------- */
 
 .job-detail__meta {
   display: flex;
@@ -419,15 +244,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.job-detail__section-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--dash-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin: 0;
 }
 
 .job-detail__logs {
@@ -442,45 +258,21 @@
   gap: 12px;
 }
 
-/* ---------- queue view navigation ---------- */
+/* ---------- queue view navigation ---------------------------- */
 
 .queue-nav {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 999px;
-  padding: 3px;
   width: fit-content;
 }
 
-.queue-nav__tab {
-  border: none;
-  background: transparent;
-  color: var(--dash-muted);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 999px;
-  cursor: pointer;
+.dash-tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dash-space-1);
+  padding: var(--dash-space-1);
 }
-
-.queue-nav__tab:hover {
-  color: var(--dash-text);
-}
-
-.queue-nav__tab:focus-visible {
-  outline: 2px solid var(--dash-accent);
-  outline-offset: 2px;
-}
-
-.queue-nav__tab--selected {
-  background: color-mix(in srgb, var(--dash-accent) 16%, var(--dash-surface));
-  color: var(--dash-text);
-}
-
-/* ---------- flow view ---------- */
 
 .queue-jobs__view-action {
   margin-left: auto;
@@ -490,143 +282,24 @@
   margin-left: 0;
 }
 
-.queue-flow {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  flex: 1;
-  min-height: 60vh;
-}
-
-.queue-flow__subtitle {
-  color: var(--dash-muted);
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
+/* ---------- flow view ---------------------------------------- */
 
 .flow-notice {
   margin: 0;
 }
 
-.flow-graph {
+.dash-flow {
   flex: 1;
   height: 62vh;
   min-height: 400px;
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 12px;
   overflow: hidden;
-  --xy-background-color: transparent;
-  --xy-background-color-dot: color-mix(in srgb, var(--dash-border) 80%, transparent);
-  --xy-edge-stroke: var(--dash-border);
-  --xy-edge-stroke-selected: var(--dash-accent);
-  --xy-controls-button-background-color: var(--dash-surface);
-  --xy-controls-button-background-color-hover: var(--dash-bg);
-  --xy-controls-button-color: var(--dash-muted);
-  --xy-minimap-background-color: var(--dash-bg);
 }
 
-.flow-graph--section {
+.dash-flow--section {
   height: 420px;
 }
 
-.flow-graph .react-flow__node {
-  cursor: pointer;
-}
-
-.flow-graph .react-flow__node:focus-visible {
-  outline: 2px solid var(--dash-accent);
-  outline-offset: 2px;
-}
-
-.flow-node {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  width: 200px;
-  padding: 8px 12px;
-  background: color-mix(in srgb, var(--dash-surface) 94%, var(--dash-text));
-  border: 1px solid color-mix(in srgb, var(--dash-border) 88%, var(--dash-text));
-  border-left: 3px solid var(--dash-border);
-  border-radius: 12px;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--dash-bg) 55%, transparent);
-}
-
-.flow-node--waiting {
-  border-left-color: var(--dash-state-waiting);
-}
-
-.flow-node--active {
-  border-left-color: var(--dash-state-active);
-}
-
-.flow-node--delayed {
-  border-left-color: var(--dash-state-delayed);
-}
-
-.flow-node--completed {
-  border-left-color: var(--dash-state-completed);
-}
-
-.flow-node--failed {
-  border-left-color: var(--dash-state-failed);
-}
-
-.flow-node--waiting-children {
-  border-left-color: var(--dash-state-delayed);
-}
-
-.flow-node--prioritized {
-  border-left-color: var(--dash-state-active);
-}
-
-.flow-node__name {
-  font-size: 12px;
-  font-weight: 600;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.flow-node__id {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
-  color: var(--dash-muted);
-}
-
-.flow-node__queue {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 10px;
-  color: var(--dash-muted);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.flow-graph .react-flow__edge-path {
-  stroke-width: 1.5;
-}
-
-.flow-graph .react-flow__controls {
-  box-shadow: 0 0 0 1px var(--dash-border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.flow-graph .react-flow__controls-button {
-  border-bottom: 1px solid var(--dash-border);
-}
-
-.flow-graph .react-flow__controls-button:last-child {
-  border-bottom: none;
-}
-
+/* ---------- metrics view ------------------------------------ */
 
 .queue-metrics__controls {
   display: flex;
@@ -635,257 +308,91 @@
   margin-bottom: 12px;
 }
 
-.metrics-range {
-  display: flex;
-  gap: 4px;
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 999px;
-  padding: 3px;
-}
-
-.metrics-range__button {
-  border: none;
-  background: transparent;
-  color: var(--dash-muted);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.metrics-range__button:hover {
-  color: var(--dash-text);
-}
-
-.metrics-range__button--selected {
-  background: color-mix(in srgb, var(--dash-accent) 16%, var(--dash-surface));
-  color: var(--dash-text);
-}
-
-.metrics-summary {
-  font-size: 13px;
-  color: var(--dash-muted);
-  margin: 0 0 12px;
-}
-
 .metrics-charts {
   display: grid;
   gap: 12px;
   margin-bottom: 12px;
 }
 
-.metrics-chart {
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 12px;
-  padding: 12px 16px 8px;
+.dash-panel.dash-panel--chart {
+  padding: var(--dash-space-3) var(--dash-space-4) var(--dash-space-2);
 }
 
-.metrics-chart__title {
-  font-size: 13px;
-  font-weight: 700;
-  margin: 0 0 4px;
+.dash-panel__title {
+  margin: 0 0 var(--dash-space-1);
 }
 
-.metrics-chart__canvas {
+.dash-chart__canvas {
   overflow-x: auto;
   min-height: 200px;
 }
 
-.metrics-table {
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 12px;
-  padding: 8px 16px;
-  font-size: 12px;
-}
+/* ---------- scheduler form ---------------------------------- */
 
-.metrics-table summary {
-  cursor: pointer;
-  color: var(--dash-muted);
-  font-weight: 600;
-  padding: 4px 0;
-}
-
-.metrics-table table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-}
-
-.metrics-table th {
-  text-align: left;
-  color: var(--dash-muted);
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--dash-border);
-}
-
-.metrics-table td {
-  padding: 4px 8px;
-  font-variant-numeric: tabular-nums;
-  border-bottom: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* ---------- schedulers view ---------- */
-
-.queue-schedulers {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  flex: 1;
-  min-height: 60vh;
-}
-
-.queue-schedulers__table-wrap {
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 12px;
-  overflow-x: auto;
-}
-
-.queue-schedulers__job-name {
-  font-size: 12px;
-  color: var(--dash-muted);
-}
-
-.queue-schedulers__schedule {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
-}
-
-.queue-schedulers__meta {
-  font-size: 11px;
-  color: var(--dash-muted);
-}
-
-.scheduler-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 12px;
-  padding: 14px 16px;
-}
-
-.scheduler-form__grid {
+.dash-form__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px 14px;
 }
 
-.scheduler-form__field {
+.dash-form__field {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
-  color: var(--dash-muted);
 }
 
-.scheduler-form__field--wide {
+.dash-form__field--wide {
   grid-column: 1 / -1;
 }
 
-.scheduler-form__field input,
-.scheduler-form__field select,
-.scheduler-form__field textarea {
-  box-sizing: border-box;
-  width: 100%;
-  background: var(--dash-bg);
-  border: 1px solid var(--dash-border);
-  border-radius: 8px;
-  color: var(--dash-text);
-  padding: 7px 10px;
-  font: inherit;
-  font-size: 13px;
-  outline: none;
-}
-
-.scheduler-form__field textarea {
-  min-height: 64px;
-  resize: vertical;
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
-}
-
-.scheduler-form__field input:focus,
-.scheduler-form__field select:focus,
-.scheduler-form__field textarea:focus {
-  border-color: var(--dash-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-accent) 13%, transparent);
-}
-
-.scheduler-form__actions {
+.dash-form__actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-/* ---------- workers view ---------- */
-
-.queue-workers {
+.dash-panel.dash-panel--form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  flex: 1;
-  min-height: 60vh;
+  gap: var(--dash-space-3);
 }
 
-.queue-workers__table-wrap {
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 12px;
+.dash-input--code {
+  min-height: var(--dash-space-8);
+  resize: vertical;
+}
+
+.dash-panel.dash-panel--table-frame {
+  padding: 0;
   overflow-x: auto;
 }
 
-.queue-workers__unnamed {
-  color: var(--dash-muted);
-  font-style: italic;
+.dash-panel.dash-panel--table {
+  padding: var(--dash-space-2) var(--dash-space-4);
 }
 
-/* ---------- redis stats view ---------- */
-
-.queue-redis {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  flex: 1;
-  min-height: 60vh;
+.dash-panel--table summary {
+  padding: var(--dash-space-1) var(--dash-space-0);
 }
+
+.dash-panel--table .dash-table {
+  margin-top: var(--dash-space-2);
+}
+
+.dash-panel--table .dash-table th {
+  padding: var(--dash-space-1) var(--dash-space-2);
+}
+
+.dash-panel--table .dash-table td {
+  padding: var(--dash-space-1) var(--dash-space-2);
+}
+
+/* ---------- redis stats view ------------------------------- */
 
 .redis-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
-}
-
-.redis-stats__group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-  padding: 14px 16px;
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 12px;
 }
 
 .redis-stat {
@@ -895,22 +402,15 @@
   gap: 12px;
 }
 
-.redis-stat__label {
-  color: var(--dash-muted);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.redis-stat__value {
+.dash-panel.dash-panel--stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dash-space-2);
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
+  padding: var(--dash-space-3) var(--dash-space-4);
 }
 
-.redis-stat__value--mono {
-  font-family: ui-monospace, Consolas, monospace;
-  font-weight: 500;
+.dash-cell-actions {
+  display: flex;
+  gap: var(--dash-space-1);
 }
-
-

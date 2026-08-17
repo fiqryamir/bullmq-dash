@@ -45,7 +45,7 @@ function useTokenColors(): TokenColors {
       wait: token('--dash-state-waiting'),
       surface: token('--dash-surface'),
       grid: token('--dash-border'),
-      muted: token('--dash-muted'),
+      muted: token('--dash-text-muted'),
       text: token('--dash-text'),
     };
   }, [theme]);
@@ -127,22 +127,22 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
   return (
     <section className="queue-metrics" aria-label={t('METRICS.VIEW_ARIA', { queue: queue.name })}>
       <header className="queue-jobs__header">
-        <button type="button" className="queue-jobs__back" onClick={onBack}>
+        <button type="button" className="dash-button dash-button--ghost dash-focus-ring" onClick={onBack}>
           {t('COMMON.BACK')}
         </button>
-        <h1 className="queue-jobs__title">{queue.name}</h1>
-        <span className="queue-flow__subtitle">{t('NAV.METRICS')}</span>
+        <h1 className="dash-view-title">{queue.name}</h1>
+        <span className="dash-view-subtitle">{t('NAV.METRICS')}</span>
       </header>
 
       <QueueNav queue={queue} active="metrics" onSelect={onSelectView} showMetrics={showMetrics} />
 
       <div className="queue-metrics__controls">
-        <div className="metrics-range" role="group" aria-label={t('METRICS.RANGE_ARIA')}>
+        <div className="dash-tab-list" role="group" aria-label={t('METRICS.RANGE_ARIA')}>
           {RANGES.map((option) => (
             <button
               key={option}
               type="button"
-              className={`metrics-range__button${option === range ? ' metrics-range__button--selected' : ''}`}
+              className={`dash-tab dash-focus-ring${option === range ? ' dash-tab--selected' : ''}`}
               aria-pressed={option === range}
               onClick={() => setRange(option)}
             >
@@ -152,7 +152,7 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
         </div>
         <button
           type="button"
-          className="action-btn"
+          className="dash-button dash-button--ghost dash-focus-ring"
           onClick={refresh}
           aria-label={t('METRICS.REFRESH_ARIA')}
         >
@@ -161,17 +161,17 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
       </div>
 
       {status === 'loading' ? (
-        <p className="queues-status">{t('METRICS.LOADING')}</p>
+        <p className="dash-status">{t('METRICS.LOADING')}</p>
       ) : status === 'error' ? (
-        <p className="queues-status queues-status--error" role="alert">
+        <p className="dash-status dash-status--error" role="alert">
           {t('METRICS.LOAD_FAILED')}
         </p>
       ) : (
         <>
           {!hasActivity ? (
-            <p className="queues-status">{t('METRICS.NO_ACTIVITY')}</p>
+            <p className="dash-status dash-status--summary">{t('METRICS.NO_ACTIVITY')}</p>
           ) : (
-            <p className="metrics-summary" id="metrics-summary">
+            <p className="dash-status dash-status--summary" id="metrics-summary">
               {t('METRICS.SUMMARY', { completed: summary.completed, failed: summary.failed, range: rangeLabel })}
               {summary.avgDuration !== null && (
                 <>
@@ -191,10 +191,10 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
           )}
 
           <div className="metrics-charts">
-            <div className="metrics-chart">
-              <h2 className="metrics-chart__title">{t('METRICS.COUNTS')}</h2>
+            <div className="dash-panel dash-panel--chart">
+              <h2 className="dash-panel__title">{t('METRICS.COUNTS')}</h2>
               <div
-                className="metrics-chart__canvas"
+                className="dash-chart__canvas"
                 role="img"
                 aria-label={t('METRICS.COUNTS_ARIA')}
               >
@@ -235,10 +235,10 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
               </div>
             </div>
 
-            <div className="metrics-chart">
-              <h2 className="metrics-chart__title">{t('METRICS.DURATION')}</h2>
+            <div className="dash-panel dash-panel--chart">
+              <h2 className="dash-panel__title">{t('METRICS.DURATION')}</h2>
               <div
-                className="metrics-chart__canvas"
+                className="dash-chart__canvas"
                 role="img"
                 aria-label={t('METRICS.DURATION_ARIA')}
               >
@@ -270,10 +270,10 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
               </div>
             </div>
 
-            <div className="metrics-chart">
-              <h2 className="metrics-chart__title">{t('METRICS.WAIT_TIME')}</h2>
+            <div className="dash-panel dash-panel--chart">
+              <h2 className="dash-panel__title">{t('METRICS.WAIT_TIME')}</h2>
               <div
-                className="metrics-chart__canvas"
+                className="dash-chart__canvas"
                 role="img"
                 aria-label={t('METRICS.WAIT_ARIA')}
               >
@@ -306,9 +306,9 @@ export function QueueMetrics({ queue, onBack, onSelectView, showMetrics }: Queue
             </div>
           </div>
 
-          <details className="metrics-table" role="group" aria-label={t('METRICS.TABLE_ARIA')}>
-            <summary>{t('METRICS.DATA_TABLE')}</summary>
-            <table>
+          <details className="dash-panel dash-panel--table" role="group" aria-label={t('METRICS.TABLE_ARIA')}>
+            <summary className="dash-focus-ring">{t('METRICS.DATA_TABLE')}</summary>
+            <table className="dash-table">
               <caption className="visually-hidden">{t('METRICS.CAPTION', { queue: queue.name })}</caption>
               <thead>
                 <tr>
