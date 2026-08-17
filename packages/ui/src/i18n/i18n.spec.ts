@@ -15,7 +15,8 @@ const secondaryLanguages = LANGUAGES.map((language) => language.code)
   .sort();
 const spaces = 2;
 
-const read = (p: string) => fs.readFileSync(p, 'utf8');
+// Compare locale content, not platform-specific checkout line endings.
+const read = (p: string) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
 
 describe('i18n locales', () => {
   it('registers every locale folder in the languages list (and vice versa)', () => {
