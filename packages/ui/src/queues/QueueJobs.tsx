@@ -473,7 +473,9 @@ export function QueueJobs({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      <div className="queue-jobs__cell-content">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
                     </td>
                   ))}
                 </tr>
