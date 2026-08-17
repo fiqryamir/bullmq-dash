@@ -12,15 +12,21 @@ function QueueRow({ queue, onSelect }: { queue: AppQueue; onSelect: (queue: AppQ
   })).filter(({ count }) => count > 0);
 
   return (
-    <li className="queue-item">
-      <button type="button" className="queue-item__open" onClick={() => onSelect(queue)}>
+    <li className="queue-item dash-panel">
+      <button
+        type="button"
+        className="queue-item__open dash-button dash-button--ghost dash-focus-ring"
+        onClick={() => onSelect(queue)}
+      >
         <span className="queue-item__name">{queue.displayName ?? queue.name}</span>
-        {queue.isPaused && <span className="queue-item__paused">{t(STATUS_KEY.paused)}</span>}
+        {queue.isPaused && (
+          <span className="dash-chip dash-chip--paused">{t(STATUS_KEY.paused)}</span>
+        )}
         <span className="queue-item__counts">
           {chips.map(({ state, count }) => (
-            <span key={state} className={`chip chip--${state}`}>
-              <span className="chip__count">{count}</span>
-              <span className="chip__state">{t(STATUS_KEY[state])}</span>
+            <span key={state} className={`dash-chip dash-chip--${state}`}>
+              <span>{count}</span>
+              <span>{t(STATUS_KEY[state])}</span>
             </span>
           ))}
         </span>

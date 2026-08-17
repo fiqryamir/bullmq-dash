@@ -145,7 +145,7 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
           <>
             <input
               type="search"
-              className="command-bar"
+              className="dash-input dash-input--command dash-focus-ring"
               placeholder={t('APP.SEARCH_PLACEHOLDER')}
               aria-label={t('APP.SEARCH_ARIA')}
               value={query}
