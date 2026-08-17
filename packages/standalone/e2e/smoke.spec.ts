@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 import { spawn, type ChildProcess } from 'node:child_process';
 import { FlowProducer, Queue, Worker } from 'bullmq';
 import { expect, test } from '@playwright/test';
@@ -97,8 +99,63 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
   await page.getByRole('button', { name: /smoke-emails/ }).click();
 
   await expect(page.locator('.queue-jobs__title')).toHaveText('smoke-emails');
-  await expect(page.locator('.job-table')).toContainText('welcome-email');
-  await expect(page.locator('.job-table')).toContainText('receipt-email');
+  await expect(page.locator('.dash-table')).toContainText('welcome-email');
+  await expect(page.locator('.dash-table')).toContainText('receipt-email');
+
+  const headerX = await page.locator('.dash-table thead th').evaluateAll((cells) =>
+    cells.map((cell) => cell.getBoundingClientRect().x)
+  );
+  const rowX = await page
+    .locator('.dash-table tbody tr')
+    .first()
+    .locator('td')
+    .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect().x));
+  const cellCenters = await page
+    .locator('.dash-table tbody tr')
+    .first()
+    .locator('td')
+    .evaluateAll((cells) =>
+      cells.map((cell) => {
+        const cellRect = cell.getBoundingClientRect();
+        const contentRange = document.createRange();
+        contentRange.selectNodeContents(cell);
+        const contentRect = contentRange.getBoundingClientRect();
+        return {
+          cellCenter: cellRect.top + cellRect.height / 2,
+          contentCenter: contentRect.top + contentRect.height / 2,
+        };
+      })
+    );
+  const rowMetrics = await page.locator('.dash-table tbody tr').evaluateAll((rows) =>
+    rows.map((row) => {
+      const rowRect = row.getBoundingClientRect();
+      const cellRect = row.querySelector('td')?.getBoundingClientRect();
+      return {
+        top: rowRect.top,
+        bottom: rowRect.bottom,
+        cellBottom: cellRect?.bottom,
+      };
+    })
+  );
+
+  expect(rowX).toHaveLength(headerX.length);
+  headerX.forEach((x, index) => {
+    const bodyCellX = rowX[index];
+    expect(bodyCellX).toBeDefined();
+    expect(bodyCellX).toBeCloseTo(x, 0);
+  });
+  cellCenters.forEach(({ cellCenter, contentCenter }) => {
+    expect(Math.abs(contentCenter - cellCenter)).toBeLessThanOrEqual(1);
+  });
+  rowMetrics.forEach((row) => {
+    expect(row.cellBottom).toBeDefined();
+    expect(row.cellBottom).toBeCloseTo(row.bottom, 0);
+  });
+  for (let index = 1; index < rowMetrics.length; index += 1) {
+    const previousRow = rowMetrics[index - 1];
+    const currentRow = rowMetrics[index];
+    expect(currentRow?.top).toBeCloseTo(previousRow?.bottom ?? Number.NaN, 0);
+  }
 });
 
 test('renders a readable flow graph', async ({ page }) => {

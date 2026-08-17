@@ -188,7 +188,7 @@ Recipes style component **look + states + focus/press only** — page layout (he
 
 - **Purpose**: dense job tables with sticky header, row hover, soft separators.
 - **Classes**: `.dash-table`, `.dash-table__row--selected`.
-- **States**: `tbody tr:hover` / `:focus-visible` (accent-tint row background).
+- **States**: `tbody tr:hover` / `:focus-visible` (accent-tint row background); add `.dash-focus-ring` to focusable rows so the shared visible focus ring is retained.
 - **Snippet**:
   ```html
   <table class="dash-table">
