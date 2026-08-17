@@ -50,6 +50,8 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
       : detail?.status === 'prioritized'
         ? 'active'
         : detail?.status;
+  const chipClassName =
+    chipStatus && chipStatus !== 'unknown' ? `dash-chip dash-chip--${chipStatus}` : 'dash-chip';
 
   return (
     <section
@@ -64,7 +66,7 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
         {job?.name && <span className="job-detail__job-name">{job.name}</span>}
         <span className="job-cell__id">#{jobId}</span>
         {detail && (
-          <span className={`dash-chip dash-chip--${chipStatus}`}>
+          <span className={chipClassName}>
             {t(STATUS_KEY[detail.status as JobStatus])}
           </span>
         )}
