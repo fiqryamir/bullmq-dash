@@ -1,6 +1,6 @@
 {
   "name": "@bullmq-dash/nestjs",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "NestJS module for the bullmq-dash dashboard",
   "license": "MIT",
   "type": "module",

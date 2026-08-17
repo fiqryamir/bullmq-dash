@@ -1,5 +1,15 @@
 # @bullmq-dash/standalone
 
+## 1.0.0-alpha.2
+
+### Patch Changes
+
+- Updated dependencies [91c17d6]
+- Updated dependencies [223f175]
+  - @bullmq-dash/ui@1.0.0-alpha.2
+  - @bullmq-dash/api@1.0.0-alpha.2
+  - @bullmq-dash/express@1.0.0-alpha.2
+
 ## 1.0.0-alpha.1
 
 ### Minor Changes

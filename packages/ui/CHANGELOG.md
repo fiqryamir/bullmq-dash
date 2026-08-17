@@ -1,5 +1,15 @@
 # @bullmq-dash/ui
 
+## 1.0.0-alpha.2
+
+### Minor Changes
+
+- 91c17d6: Design system foundation: two-layer oklch token system (C — Slate Steel palette), `.dash-*` recipe classes, WCAG contrast contract seam, and the app shell + theme switch migrated onto the system.
+
+### Patch Changes
+
+- 223f175: Migrate the queues list and command palette onto the dashboard design-system recipes.
+
 ## 1.0.0-alpha.1
 
 ### Minor Changes
