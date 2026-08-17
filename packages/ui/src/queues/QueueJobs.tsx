@@ -117,6 +117,7 @@ function rowActionsFor(job: AppJob, queue: AppQueue): RowAction[] {
 type BulkActionSpec = {
   labelKey: string;
   confirmKey?: string;
+  variant: 'primary' | 'ghost';
   run: (queue: AppQueue) => Promise<unknown>;
   allowed?: (queue: AppQueue) => boolean;
 };
@@ -124,11 +125,13 @@ type BulkActionSpec = {
 const removeAllAction = (status: JobStatus): BulkActionSpec => ({
   labelKey: 'QUEUE_JOBS.REMOVE_ALL',
   confirmKey: 'QUEUE_JOBS.REMOVE_ALL_CONFIRM',
+  variant: 'ghost',
   run: (queue) => removeJobs(queue.name, status),
 });
 
 const retryAllAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
   labelKey: 'QUEUE_JOBS.RETRY_ALL',
+  variant: 'primary',
   run: (queue) => retryJobs(queue.name, status),
   allowed: (queue) =>
     status === 'completed' ? queue.allowCompletedRetries !== false : queue.allowRetries !== false,
@@ -137,11 +140,13 @@ const retryAllAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
 const cleanAction = (status: 'failed' | 'completed'): BulkActionSpec => ({
   labelKey: 'QUEUE_JOBS.CLEAN',
   confirmKey: 'QUEUE_JOBS.CLEAN_CONFIRM',
+  variant: 'ghost',
   run: (queue) => cleanJobs(queue.name, status, DEFAULT_CLEAN_GRACE_SECONDS),
 });
 
 const promoteAllAction: BulkActionSpec = {
   labelKey: 'QUEUE_JOBS.PROMOTE_ALL_DELAYED',
+  variant: 'primary',
   run: (queue) => promoteJobs(queue.name),
 };
 
@@ -218,6 +223,7 @@ export function QueueJobs({
         .filter((spec) => spec.allowed?.(queue) ?? true)
         .map((spec) => ({
           label: t(spec.labelKey, { status: activeStateLabel }),
+          variant: spec.variant,
           run: () =>
             runAction(async () => {
               if (spec.confirmKey) {
@@ -264,8 +270,10 @@ export function QueueJobs({
         header: t('COMMON.STATE'),
         cell: (info) => {
           const state = info.getValue() as JobStatus | null;
+          const chipState =
+            state === 'waiting-children' ? 'delayed' : state === 'prioritized' ? 'active' : state;
           return (
-            <span className={`chip chip--${String(state ?? '')}`}>
+            <span className={`dash-chip dash-chip--${String(chipState ?? '')}`}>
               {state ? t(STATUS_KEY[state]) : ''}
             </span>
           );
@@ -291,7 +299,7 @@ export function QueueJobs({
                       <button
                         key={action.labelKey}
                         type="button"
-                        className="action-btn"
+                        className="dash-button dash-button--ghost dash-focus-ring"
                         aria-label={t(action.ariaKey, { id: job.id })}
                         disabled={busy}
                         onClick={(event) => {
@@ -334,16 +342,20 @@ export function QueueJobs({
   return (
     <section className="queue-jobs" aria-label={t('QUEUE_JOBS.VIEW_ARIA', { queue: queue.name })}>
       <header className="queue-jobs__header">
-        <button type="button" className="queue-jobs__back" onClick={onBack}>
+        <button
+          type="button"
+          className="dash-button dash-button--ghost dash-focus-ring"
+          onClick={onBack}
+        >
           {t('COMMON.BACK')}
         </button>
         <h1 className="queue-jobs__title">{queue.name}</h1>
-        {isPaused && <span className="queue-item__paused">{t(STATUS_KEY.paused)}</span>}
+        {isPaused && <span className="dash-chip dash-chip--paused">{t(STATUS_KEY.paused)}</span>}
         {!queue.readOnlyMode && (
           <div className="queue-jobs__actions" role="group" aria-label={t('COMMON.QUEUE_ACTIONS')}>
             <button
               type="button"
-              className="action-btn"
+              className="dash-button dash-button--ghost dash-focus-ring"
               onClick={togglePause}
               disabled={busy}
               aria-label={t(isPaused ? 'QUEUE_JOBS.RESUME_ARIA' : 'QUEUE_JOBS.PAUSE_ARIA')}
@@ -352,7 +364,7 @@ export function QueueJobs({
             </button>
             <button
               type="button"
-              className="action-btn"
+              className="dash-button dash-button--ghost dash-focus-ring"
               onClick={empty}
               disabled={busy}
               aria-label={t('QUEUE_JOBS.EMPTY_ARIA')}
@@ -380,11 +392,11 @@ export function QueueJobs({
             key={state}
             type="button"
             aria-pressed={state === activeState}
-            className={`state-tab state-tab--${state}${state === activeState ? ' state-tab--selected' : ''}`}
+            className={`dash-tab dash-tab--${state} dash-focus-ring${state === activeState ? ' dash-tab--selected' : ''}`}
             onClick={() => selectState(state)}
           >
-            <span className="state-tab__count">{stateCount(queue, state)}</span>
-            <span className="state-tab__name">{t(STATUS_KEY[state])}</span>
+            <span>{stateCount(queue, state)}</span>
+            <span>{t(STATUS_KEY[state])}</span>
           </button>
         ))}
       </div>
@@ -399,7 +411,7 @@ export function QueueJobs({
             <button
               key={action.label}
               type="button"
-              className="action-btn"
+              className={`dash-button dash-button--${action.variant} dash-focus-ring`}
               onClick={() => void runAction(action.run)}
               disabled={busy}
             >
@@ -415,7 +427,7 @@ export function QueueJobs({
       )}
 
       <div className="queue-jobs__table-wrap" data-testid="jobs-scroll" ref={scrollRef}>
-        <table className="job-table">
+        <table className="dash-table">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
@@ -436,7 +448,6 @@ export function QueueJobs({
               return (
                 <tr
                   key={row.id}
-                  className="job-table__row"
                   tabIndex={0}
                   onClick={() => onSelectJob(row.original)}
                   onKeyDown={(event) => {
@@ -472,14 +483,15 @@ export function QueueJobs({
         ) : jobs.length === 0 ? (
           <span className="queues-status">{t('QUEUE_JOBS.NO_JOBS_IN_STATE')}</span>
         ) : (
-          <span className="queues-status">
+          <span className="queues-status dash-pager__status">
             {t('COMMON.PAGE_OF', { page, pageCount })}
           </span>
         )}
         {pageCount > 0 && (
-          <div className="queue-jobs__pager">
+          <div className="dash-pager">
             <button
               type="button"
+              className="dash-pager__button dash-focus-ring"
               aria-label={t('COMMON.PREV_PAGE')}
               disabled={page <= 1}
               onClick={() => setPage((current) => current - 1)}
@@ -488,6 +500,7 @@ export function QueueJobs({
             </button>
             <button
               type="button"
+              className="dash-pager__button dash-focus-ring"
               aria-label={t('COMMON.NEXT_PAGE')}
               disabled={page >= pageCount}
               onClick={() => setPage((current) => current + 1)}

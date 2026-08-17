@@ -121,14 +121,6 @@
   flex: 1;
 }
 
-.queue-item__paused {
-  border: 1px solid var(--dash-border);
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 11px;
-  color: var(--dash-muted);
-}
-
 .queue-item__counts {
   display: flex;
   gap: 6px;
@@ -260,53 +252,6 @@
   gap: 8px;
 }
 
-.state-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
-  border-radius: 999px;
-  color: var(--dash-muted);
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.state-tab:hover {
-  border-color: var(--dash-accent);
-}
-
-.state-tab--waiting {
-  color: var(--dash-state-waiting);
-}
-
-.state-tab--active {
-  color: var(--dash-state-active);
-}
-
-.state-tab--completed {
-  color: var(--dash-state-completed);
-}
-
-.state-tab--failed {
-  color: var(--dash-state-failed);
-}
-
-.state-tab--delayed {
-  color: var(--dash-state-delayed);
-}
-
-.state-tab--paused {
-  color: var(--dash-state-paused);
-}
-
-.state-tab--selected {
-  border-color: currentColor;
-  background: color-mix(in srgb, currentColor 14%, var(--dash-surface));
-}
-
 .queue-jobs__table-wrap {
   flex: 1;
   max-height: 60vh;
@@ -345,16 +290,6 @@
 .job-table tbody td {
   padding: 8px 16px;
   white-space: nowrap;
-}
-
-.job-table__row {
-  cursor: pointer;
-}
-
-.job-table__row:hover,
-.job-table__row:focus-visible {
-  background: color-mix(in srgb, var(--dash-accent) 8%, transparent);
-  outline: none;
 }
 
 .job-cell__id {
