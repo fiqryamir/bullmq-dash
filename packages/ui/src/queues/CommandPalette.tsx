@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
 import type { JobStatus, SearchResult } from '../api/contract';
 import { JOB_STATES } from './QueueJobs';
-import { STATUS_KEY } from './statusKeys';
+import { stateColor, STATUS_KEY } from './statusKeys';
 import { useJobSearch } from './useJobSearch';
 
 const RESULT_ROW_HEIGHT = 40;
@@ -41,7 +41,7 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
   });
 
   return (
-    <section className="command-palette dash-dialog" aria-label={t('SEARCH.VIEW_ARIA')}>
+    <section className="command-palette" aria-label={t('SEARCH.VIEW_ARIA')}>
       <input
         type="search"
         className="dash-input dash-input--command dash-focus-ring"
@@ -68,13 +68,13 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
         ))}
       </div>
       {status === 'loading' && results.length === 0 && term.trim() !== '' && (
-        <p className="queues-status">{t('SEARCH.SEARCHING')}</p>
+        <p className="dash-status">{t('SEARCH.SEARCHING')}</p>
       )}
       {status === 'error' && results.length === 0 && (
-        <p className="queues-status queues-status--error">{t('SEARCH.FAILED')}</p>
+        <p className="dash-status dash-status--error">{t('SEARCH.FAILED')}</p>
       )}
       {status === 'ready' && results.length === 0 && term.trim() !== '' && (
-        <p className="queues-status">{t('SEARCH.NO_MATCH')}</p>
+        <p className="dash-status">{t('SEARCH.NO_MATCH')}</p>
       )}
       {results.length > 0 && (
         <>
@@ -89,6 +89,7 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
                 if (!result) {
                   return null;
                 }
+                const resultStateColor = stateColor(result.state);
                 return (
                   <li
                     key={`${result.queue}:${result.job.id}`}
@@ -102,7 +103,7 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
                     >
                       <span className="command-palette__id">{result.job.id}</span>
                       <span className="command-palette__name">{result.job.name}</span>
-                      <span className={`dash-chip dash-chip--${result.state}`}>
+                      <span className={`dash-chip${resultStateColor ? ` dash-chip--${resultStateColor}` : ''}`}>
                         {t(STATUS_KEY[result.state])}
                       </span>
                       {!queueName && <span className="command-palette__queue">{result.queue}</span>}

@@ -16,7 +16,13 @@ function readStoredTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(readStoredTheme);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const initialTheme = readStoredTheme();
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = initialTheme;
+    }
+    return initialTheme;
+  });
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

@@ -78,9 +78,9 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
   };
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <span className="app__brand">{boardTitle}</span>
+    <div className="app dash-shell">
+      <header className="app__header dash-shell__header">
+        <span className="app__brand dash-shell__brand">{boardTitle}</span>
         <LocaleSelect />
         <ThemeToggle />
       </header>
@@ -161,13 +161,13 @@ function Dashboard({ uiConfig }: { uiConfig: UIConfig }) {
               }}
             />
             {status === 'loading' && queues.length === 0 ? (
-              <p className="queues-status">{t('APP.LOADING_QUEUES')}</p>
+              <p className="dash-status">{t('APP.LOADING_QUEUES')}</p>
             ) : status === 'error' && queues.length === 0 ? (
-              <p className="queues-status queues-status--error">{t('APP.LOAD_QUEUES_FAILED')}</p>
+              <p className="dash-status dash-status--error">{t('APP.LOAD_QUEUES_FAILED')}</p>
             ) : queues.length === 0 ? (
-              <p className="queues-status">{t('APP.NO_QUEUES')}</p>
+              <p className="dash-status">{t('APP.NO_QUEUES')}</p>
             ) : visibleQueues.length === 0 ? (
-              <p className="queues-status">{t('APP.NO_QUEUES_MATCH')}</p>
+              <p className="dash-status">{t('APP.NO_QUEUES_MATCH')}</p>
             ) : (
               <QueuesList queues={visibleQueues} onSelect={(queue) => openQueue(queue.name)} />
             )}

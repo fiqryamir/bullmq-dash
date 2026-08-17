@@ -95,8 +95,6 @@
   --dash-text: var(--dash-stone-10);
   --dash-text-muted: var(--dash-stone-8);
   --dash-text-faint: var(--dash-stone-5);
-  /* legacy name for unmigrated views; removed as slices land */
-  --dash-muted: var(--dash-text-muted);
   --dash-accent: var(--dash-accent-2);
   --dash-accent-hover: var(--dash-accent-3);
   --dash-accent-contrast: oklch(0.139 0.0091 52.59); /* #0c0806 */
@@ -130,8 +128,6 @@
   --dash-text: var(--dash-stone-3);
   --dash-text-muted: var(--dash-stone-6);
   --dash-text-faint: var(--dash-stone-7);
-  /* legacy name for unmigrated views; removed as slices land */
-  --dash-muted: var(--dash-text-muted);
   --dash-accent: var(--dash-accent-1);
   --dash-accent-hover: var(--dash-accent-0);
   --dash-accent-contrast: var(--dash-stone-11);

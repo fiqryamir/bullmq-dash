@@ -35,6 +35,8 @@
   },
   "scripts": {
     "build": "tsup && tsup --config tsup.bin.config.ts",
+    "build:demo-seed": "tsup --config tsup.demo-seed.config.ts",
+    "demo:seed": "pnpm run build:demo-seed && node dist/demo-seed.js",
     "pretest": "pnpm --filter @bullmq-dash/ui run build && pnpm --filter @bullmq-dash/api run build && pnpm --filter @bullmq-dash/express run build && pnpm run build",
     "pretest:e2e": "pnpm run pretest",
     "typecheck": "tsc --noEmit",

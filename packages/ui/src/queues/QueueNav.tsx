@@ -29,12 +29,12 @@ export function QueueNav({ queue, active, onSelect, showMetrics }: QueueNavProps
   const views = showMetrics ? VIEWS : VIEWS.filter((view) => view.name !== 'metrics');
 
   return (
-    <div className="queue-nav" role="group" aria-label={t('NAV.VIEWS_OF', { queue: queue.name })}>
+    <div className="queue-nav dash-tab-list" role="group" aria-label={t('NAV.VIEWS_OF', { queue: queue.name })}>
       {views.map((view) => (
         <button
           key={view.name}
           type="button"
-          className={`queue-nav__tab${active === view.name ? ' queue-nav__tab--selected' : ''}`}
+          className={`dash-tab dash-focus-ring${active === view.name ? ' dash-tab--selected' : ''}`}
           aria-pressed={active === view.name}
           aria-label={t('NAV.OPEN_VIEW', { view: t(view.labelKey) })}
           onClick={() => onSelect(view.name)}

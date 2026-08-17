@@ -1,3 +1,4 @@
+import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -43,6 +44,29 @@ describe('startStandaloneServer', () => {
     const names = (response.body.queues as { name: string }[]).map((queue) => queue.name);
 
     expect(names).toEqual(['srv-emails', 'srv-reports']);
+  });
+
+  it('discovers queue keys created after the server boots', async () => {
+    const handle = await startStandaloneServer(testConfig());
+    handles.push(handle);
+    const lateQueue = new Queue('srv-late', {
+      connection: redisOptions(),
+      prefix: PREFIX,
+    });
+    await lateQueue.waitUntilReady();
+    await lateQueue.close();
+
+    let names: string[] = [];
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const response = await request(handle.server).get('/api/queues').expect(200);
+      names = (response.body.queues as { name: string }[]).map((queue) => queue.name);
+      if (names.includes('srv-late')) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    expect(names).toContain('srv-late');
   });
 
   it('serves the SPA entry on /', async () => {

@@ -173,18 +173,18 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
       <header className="queue-jobs__header">
         <button
           type="button"
-          className="queue-jobs__back"
+          className="dash-button dash-button--ghost dash-focus-ring"
           onClick={onBack}
           aria-label={t('COMMON.BACK_TO_JOBS')}
         >
           {t('COMMON.BACK')}
         </button>
-        <h1 className="queue-jobs__title">{queue.name}</h1>
-        <span className="queue-flow__subtitle">{t('SCHEDULERS.TITLE')}</span>
+        <h1 className="dash-view-title">{queue.name}</h1>
+        <span className="dash-view-subtitle">{t('SCHEDULERS.TITLE')}</span>
         {!queue.readOnlyMode && (
           <button
             type="button"
-            className="action-btn queue-jobs__view-action"
+            className="dash-button dash-button--ghost dash-focus-ring queue-jobs__view-action"
             onClick={form ? closeForm : openAdd}
             disabled={busy}
             aria-label={form ? t('SCHEDULERS.CLOSE_FORM_ARIA') : t('SCHEDULERS.ADD_ARIA')}
@@ -197,23 +197,25 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
       <QueueNav queue={queue} active="schedulers" onSelect={onSelectView} showMetrics={showMetrics} />
 
       {form && (
-        <form className="scheduler-form" onSubmit={submit} aria-label={t('SCHEDULERS.FORM_ARIA')}>
-          <div className="scheduler-form__grid">
+        <form className="dash-form dash-panel dash-panel--form" onSubmit={submit} aria-label={t('SCHEDULERS.FORM_ARIA')}>
+          <div className="dash-form__grid">
             {form.mode === 'add' && (
-              <label className="scheduler-form__field">
+              <label className="dash-form__field">
                 <span>{t('COMMON.ID')}</span>
                 <input
                   value={form.id}
+                  className="dash-input dash-focus-ring"
                   onChange={(event) => set({ id: event.target.value })}
                   aria-label={t('SCHEDULERS.ID_ARIA')}
                   required
                 />
               </label>
             )}
-            <label className="scheduler-form__field">
+            <label className="dash-form__field">
               <span>{t('SCHEDULERS.KIND')}</span>
               <select
                 value={form.kind}
+                className="dash-input dash-focus-ring"
                 onChange={(event) => set({ kind: event.target.value as ScheduleKind })}
                 aria-label={t('SCHEDULERS.KIND_ARIA')}
               >
@@ -222,12 +224,13 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
               </select>
             </label>
             {form.kind === 'every' ? (
-              <label className="scheduler-form__field">
+              <label className="dash-form__field">
                 <span>{t('SCHEDULERS.EVERY_MS')}</span>
                 <input
                   type="number"
                   min={1}
                   value={form.every}
+                  className="dash-input dash-focus-ring"
                   onChange={(event) => set({ every: event.target.value })}
                   aria-label={t('SCHEDULERS.EVERY_ARIA')}
                   required
@@ -235,20 +238,22 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
               </label>
             ) : (
               <>
-                <label className="scheduler-form__field">
+                <label className="dash-form__field">
                   <span>{t('SCHEDULERS.EDIT.KIND_PATTERN')}</span>
                   <input
-                    value={form.pattern}
+                  value={form.pattern}
+                  className="dash-input dash-focus-ring"
                     placeholder="0 3 * * *"
                     onChange={(event) => set({ pattern: event.target.value })}
                     aria-label={t('SCHEDULERS.PATTERN_ARIA')}
                     required
                   />
                 </label>
-                <label className="scheduler-form__field">
+                <label className="dash-form__field">
                   <span>{t('SCHEDULERS.TZ')}</span>
                   <input
-                    value={form.tz}
+                  value={form.tz}
+                  className="dash-input dash-focus-ring"
                     placeholder="UTC"
                     onChange={(event) => set({ tz: event.target.value })}
                     aria-label={t('SCHEDULERS.TZ_ARIA')}
@@ -256,39 +261,43 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
                 </label>
               </>
             )}
-            <label className="scheduler-form__field">
+            <label className="dash-form__field">
               <span>{t('SCHEDULERS.LIMIT')}</span>
               <input
                 type="number"
                 min={1}
                 value={form.limit}
+                className="dash-input dash-focus-ring"
                 onChange={(event) => set({ limit: event.target.value })}
                 aria-label={t('SCHEDULERS.LIMIT_ARIA')}
               />
             </label>
-            <label className="scheduler-form__field">
+            <label className="dash-form__field">
               <span>{t('SCHEDULERS.EDIT.END_DATE')}</span>
               <input
                 type="datetime-local"
                 value={form.endDate}
+                className="dash-input dash-focus-ring"
                 onChange={(event) => set({ endDate: event.target.value })}
                 aria-label={t('SCHEDULERS.END_DATE_ARIA')}
               />
             </label>
             {form.mode === 'add' && (
               <>
-                <label className="scheduler-form__field">
+                <label className="dash-form__field">
                   <span>{t('ADD_JOB.JOB_NAME')}</span>
                   <input
                     value={form.jobName}
+                    className="dash-input dash-focus-ring"
                     onChange={(event) => set({ jobName: event.target.value })}
                     aria-label={t('SCHEDULERS.NAME_ARIA')}
                   />
                 </label>
-                <label className="scheduler-form__field scheduler-form__field--wide">
+                <label className="dash-form__field dash-form__field--wide">
                   <span>{t('SCHEDULERS.JOB_DATA_JSON')}</span>
                   <textarea
                     value={form.jobData}
+                    className="dash-input dash-input--code dash-focus-ring"
                     placeholder={'{"key": "value"}'}
                     onChange={(event) => set({ jobData: event.target.value })}
                     aria-label={t('SCHEDULERS.DATA_ARIA')}
@@ -297,15 +306,15 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
               </>
             )}
           </div>
-          <div className="scheduler-form__actions">
-            <button type="submit" className="action-btn" disabled={busy}>
+          <div className="dash-form__actions">
+            <button type="submit" className="dash-button dash-button--primary dash-focus-ring" disabled={busy}>
               {form.mode === 'add' ? t('ADD_JOB.ADD') : t('SCHEDULERS.EDIT.SAVE')}
             </button>
-            <button type="button" className="action-btn" onClick={closeForm} disabled={busy}>
+            <button type="button" className="dash-button dash-button--ghost dash-focus-ring" onClick={closeForm} disabled={busy}>
               {t('CONFIRM.CANCEL_BTN')}
             </button>
             {formError && (
-              <span className="queues-status queues-status--error" role="alert">
+              <span className="dash-status dash-status--error" role="alert">
                 {formError}
               </span>
             )}
@@ -314,16 +323,16 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
       )}
 
       {status === 'loading' ? (
-        <p className="queues-status">{t('SCHEDULERS.LOADING')}</p>
+        <p className="dash-status">{t('SCHEDULERS.LOADING')}</p>
       ) : status === 'error' ? (
-        <p className="queues-status queues-status--error" role="alert">
+        <p className="dash-status dash-status--error" role="alert">
           {t('SCHEDULERS.LOAD_FAILED')}
         </p>
       ) : schedulers.length === 0 ? (
-        <p className="queues-status">{t('SCHEDULERS.NO_SCHEDULERS')}</p>
+        <p className="dash-status">{t('SCHEDULERS.NO_SCHEDULERS')}</p>
       ) : (
-        <div className="queue-schedulers__table-wrap">
-          <table className="job-table">
+        <div className="dash-panel dash-panel--table-frame">
+          <table className="dash-table">
             <thead>
               <tr>
                 <th scope="col">{t('SCHEDULERS.COLUMNS.SCHEDULER')}</th>
@@ -338,19 +347,19 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
               {schedulers.map((scheduler) => (
                 <tr key={scheduler.id}>
                   <td>
-                    <span className="job-cell__id">{scheduler.id}</span>
-                    <div className="queue-schedulers__job-name">{scheduler.name || '-'}</div>
+                    <span className="dash-job-id">{scheduler.id}</span>
+                    <div className="dash-text-muted dash-text-small">{scheduler.name || '-'}</div>
                   </td>
                   <td>
-                    <code className="queue-schedulers__schedule">{describeSchedule(scheduler, t)}</code>
-                    {scheduler.tz && <div className="queue-schedulers__meta">{scheduler.tz}</div>}
+                    <code className="dash-code-inline">{describeSchedule(scheduler, t)}</code>
+                    {scheduler.tz && <div className="dash-meta">{scheduler.tz}</div>}
                   </td>
                   <td>{formatTimestamp(scheduler.next)}</td>
                   <td>{formatTimestamp(scheduler.lastRun)}</td>
                   <td>
                     {scheduler.iterationCount ?? '-'}
                     {scheduler.limit ? (
-                      <span className="queue-schedulers__meta">
+                      <span className="dash-meta">
                         {' '}
                         {t('SCHEDULERS.OF_LIMIT', { limit: scheduler.limit })}
                       </span>
@@ -358,10 +367,10 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
                   </td>
                   {!queue.readOnlyMode && (
                     <td>
-                      <span className="job-cell__actions">
+                      <span className="dash-cell-actions">
                         <button
                           type="button"
-                          className="action-btn"
+                          className="dash-button dash-button--ghost dash-focus-ring"
                           aria-label={t('SCHEDULERS.EDIT_ARIA', { id: scheduler.id })}
                           disabled={busy}
                           onClick={() => openEdit(scheduler)}
@@ -370,7 +379,7 @@ export function QueueSchedulers({ queue, onBack, onSelectView, showMetrics }: Qu
                         </button>
                         <button
                           type="button"
-                          className="action-btn"
+                          className="dash-button dash-button--ghost dash-focus-ring"
                           aria-label={t('SCHEDULERS.REMOVE_ARIA', { id: scheduler.id })}
                           disabled={busy}
                           onClick={() => void remove(scheduler)}

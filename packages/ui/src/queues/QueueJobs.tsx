@@ -23,7 +23,7 @@ import {
 import { formatProgress } from './formatProgress';
 import { CommandPalette } from './CommandPalette';
 import { QueueNav, type QueueViewName } from './QueueNav';
-import { STATUS_KEY } from './statusKeys';
+import { stateColor, STATUS_KEY } from './statusKeys';
 import { useQueueJobs } from './useQueueJobs';
 
 export const JOB_STATES: JobStatus[] = [
@@ -263,7 +263,7 @@ export function QueueJobs({
       {
         accessorKey: 'id',
         header: t('COMMON.ID'),
-        cell: (info) => <span className="job-cell__id">{String(info.getValue())}</span>,
+        cell: (info) => <span className="dash-job-id">{String(info.getValue())}</span>,
       },
       { accessorKey: 'name', header: t('COMMON.NAME') },
       {
@@ -271,8 +271,7 @@ export function QueueJobs({
         header: t('COMMON.STATE'),
         cell: (info) => {
           const state = info.getValue() as JobStatus | null;
-          const chipState =
-            state === 'waiting-children' ? 'delayed' : state === 'prioritized' ? 'active' : state;
+          const chipState = state ? stateColor(state) : undefined;
           return (
             <span className={`dash-chip dash-chip--${String(chipState ?? '')}`}>
               {state ? t(STATUS_KEY[state]) : ''}
@@ -294,8 +293,8 @@ export function QueueJobs({
               header: t('COMMON.ACTIONS'),
               cell: (info: { row: { original: AppJob } }) => {
                 const job = info.row.original;
-                return (
-                  <span className="job-cell__actions">
+                  return (
+                  <span className="dash-cell-actions">
                     {rowActionsFor(job, queue).map((action) => (
                       <button
                         key={action.labelKey}
@@ -351,7 +350,7 @@ export function QueueJobs({
         >
           {t('COMMON.BACK')}
         </button>
-        <h1 className="queue-jobs__title">{queue.name}</h1>
+        <h1 className="dash-view-title">{queue.name}</h1>
         {isPaused && <span className="dash-chip dash-chip--paused">{t(STATUS_KEY.paused)}</span>}
         {!queue.readOnlyMode && (
           <div className="queue-jobs__actions" role="group" aria-label={t('COMMON.QUEUE_ACTIONS')}>
@@ -421,16 +420,16 @@ export function QueueJobs({
             </button>
           ))}
           {actionFailed && (
-            <span className="queues-status queues-status--error" role="alert">
+            <span className="dash-status dash-status--error" role="alert">
               {t('COMMON.ACTION_FAILED')}
             </span>
           )}
         </div>
       )}
 
-      <div className="queue-jobs__table-wrap" data-testid="jobs-scroll" ref={scrollRef}>
+      <div className="queue-jobs__table-wrap dash-panel dash-panel--table-frame" data-testid="jobs-scroll" ref={scrollRef}>
         <table
-          className="dash-table queue-jobs__table"
+          className="dash-table dash-table--interactive queue-jobs__table"
           data-columns={queue.readOnlyMode ? 'readonly' : 'actions'}
         >
           <thead>
@@ -487,13 +486,13 @@ export function QueueJobs({
 
       <footer className="queue-jobs__footer">
         {status === 'loading' ? (
-          <span className="queues-status">{t('QUEUE_JOBS.LOADING')}</span>
-        ) : status === 'error' ? (
-          <span className="queues-status queues-status--error">{t('QUEUE_JOBS.LOAD_FAILED')}</span>
-        ) : jobs.length === 0 ? (
-          <span className="queues-status">{t('QUEUE_JOBS.NO_JOBS_IN_STATE')}</span>
-        ) : (
-          <span className="queues-status dash-pager__status">
+        <span className="dash-status">{t('QUEUE_JOBS.LOADING')}</span>
+      ) : status === 'error' ? (
+          <span className="dash-status dash-status--error">{t('QUEUE_JOBS.LOAD_FAILED')}</span>
+      ) : jobs.length === 0 ? (
+          <span className="dash-status">{t('QUEUE_JOBS.NO_JOBS_IN_STATE')}</span>
+      ) : (
+          <span className="dash-status dash-pager__status">
             {t('COMMON.PAGE_OF', { page, pageCount })}
           </span>
         )}

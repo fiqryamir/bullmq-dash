@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AppJob, FlowNode, JobFlow } from '../api/contract';
 import { makeQueue } from '../testUtils/fixtures';
+import { ThemeProvider } from '../theme/ThemeProvider';
 import { JobDetail } from './JobDetail';
 
 function detailResponse(job: Partial<AppJob>, status = 'failed') {
@@ -208,7 +209,11 @@ describe('JobDetail', () => {
         isFlowNode: true,
         flowRoot: flowTree,
       });
-      render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
+      render(
+        <ThemeProvider>
+          <JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />
+        </ThemeProvider>
+      );
 
       await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('api/queues/emails/f1/flow'));
     });
@@ -219,7 +224,11 @@ describe('JobDetail', () => {
         isFlowNode: true,
         flowRoot: flowTree,
       });
-      render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
+      render(
+        <ThemeProvider>
+          <JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />
+        </ThemeProvider>
+      );
 
       const flow = await screen.findByRole('region', { name: 'Flow' });
       expect(await within(flow).findByText('root-job')).toBeInTheDocument();
@@ -244,7 +253,11 @@ describe('JobDetail', () => {
         flowRoot: flowTree,
       });
       const onSelectNode = vi.fn();
-      render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={onSelectNode} />);
+      render(
+        <ThemeProvider>
+          <JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={onSelectNode} />
+        </ThemeProvider>
+      );
 
       const node = await screen.findByText('child-job');
       fireEvent.click(node);

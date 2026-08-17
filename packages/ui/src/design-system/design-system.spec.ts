@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const tokensCss = readFileSync(join(process.cwd(), 'src', 'design-system', 'tokens.css'), 'utf8');
 const recipesCss = readFileSync(join(process.cwd(), 'src', 'design-system', 'recipes.css'), 'utf8');
+const appCss = readFileSync(join(process.cwd(), 'src', 'App.css'), 'utf8');
 
 /**
  * Contract seam for the design system. Asserts the system's guarantees —
@@ -276,5 +277,92 @@ describe('recipe presence', () => {
     expect(recipesCss).toContain('.dash-switch');
     expect(recipesCss).toContain('.dash-switch__thumb');
     expect(recipesCss).toMatch(/\.dash-switch\[data-checked\]/);
+  });
+
+  it('ships the shared status, form and text recipes used by migrated views', () => {
+    expect(recipesCss).toContain('.dash-shell');
+    expect(recipesCss).toContain('.dash-tab-list');
+    expect(recipesCss).toContain('.dash-status');
+    expect(recipesCss).toContain('.dash-status--error');
+    expect(recipesCss).toContain('.dash-form__field');
+    expect(recipesCss).toContain('.dash-input--code');
+    expect(recipesCss).toContain('.dash-job-id');
+    expect(recipesCss).toContain('.dash-view-title');
+    expect(recipesCss).toContain('.dash-view-job-name');
+    expect(recipesCss).toContain('.dash-text-muted');
+    expect(recipesCss).toContain('.dash-text-small');
+    expect(recipesCss).toContain('.dash-text-italic');
+    expect(recipesCss).toContain('.dash-panel__title');
+    expect(recipesCss).toContain('.dash-stat-label');
+    expect(recipesCss).toContain('.dash-stat-value');
+    expect(recipesCss).toContain('.dash-table--interactive');
+    for (const variant of ['chart', 'table', 'table-frame', 'form', 'stats']) {
+      expect(appCss).toContain(`.dash-panel.dash-panel--${variant}`);
+    }
+  });
+
+  it('resets the browser page margin for the full-height dashboard shell', () => {
+    expect(recipesCss).toMatch(/body\s*\{[\s\S]*?margin:\s*0;/);
+    expect(recipesCss).toContain('#root');
+    expect(appCss).toMatch(/\.app__main\s*\{[\s\S]*?margin:\s*0 auto;/);
+  });
+
+  it('ships flow-node state modifiers and preserves BullMQ aliases', () => {
+    expect(recipesCss).toContain('.flow-node');
+    for (const state of ['waiting', 'active', 'delayed', 'completed', 'failed', 'paused']) {
+      expect(recipesCss).toContain(`.flow-node--${state}`);
+    }
+    expect(recipesCss).toContain('.flow-node--waiting-children');
+    expect(recipesCss).toContain('.flow-node--prioritized');
+  });
+
+  it('maps the installed React Flow variables to dashboard tokens', () => {
+    const flowRecipe = recipesCss.match(/\.dash-flow\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+    for (const variable of [
+      '--xy-background-color',
+      '--xy-background-pattern-color',
+      '--xy-edge-stroke',
+      '--xy-edge-stroke-selected',
+      '--xy-connectionline-stroke',
+      '--xy-node-color',
+      '--xy-node-background-color',
+      '--xy-node-border',
+      '--xy-handle-background-color',
+      '--xy-handle-border-color',
+      '--xy-selection-background-color',
+      '--xy-selection-border',
+      '--xy-controls-button-background-color',
+      '--xy-controls-button-color',
+      '--xy-controls-button-border-color',
+      '--xy-controls-box-shadow',
+      '--xy-minimap-background-color',
+      '--xy-edge-label-background-color',
+      '--xy-edge-label-color',
+    ]) {
+      const declaration = flowRecipe.match(
+        new RegExp(`${escapeRegExp(variable)}\\s*:\\s*([^;]+)`)
+      );
+      expect(declaration, `flow recipe must map ${variable}`).not.toBeNull();
+      expect(declaration?.[1], `${variable} must consume a dashboard token`).toMatch(/var\(--dash-/);
+    }
+    expect(recipesCss).not.toContain('--xy-background-color-dot');
+    expect(recipesCss).toContain('.dash-flow .react-flow__controls-button:focus-visible');
+  });
+
+  it('contains no known legacy component selectors or temporary token aliases', () => {
+    for (const selector of [
+      '.chip',
+      '.action-btn',
+      '.job-table',
+      '.queue-jobs__back',
+      '.queue-nav__tab',
+      '.metrics-range__button',
+      '.scheduler-form',
+      '.queues-status',
+    ]) {
+      expect(appCss).not.toContain(selector);
+      expect(recipesCss).not.toContain(selector);
+    }
+    expect(tokensCss).not.toContain('--dash-muted');
   });
 });

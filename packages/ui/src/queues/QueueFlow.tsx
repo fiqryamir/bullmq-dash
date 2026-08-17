@@ -27,29 +27,29 @@ export function QueueFlow({
   return (
     <section className="queue-flow" aria-label={t('FLOW.VIEW_ARIA', { queue: queue.name })}>
       <header className="queue-jobs__header">
-        <button type="button" className="queue-jobs__back" onClick={onBack}>
+        <button type="button" className="dash-button dash-button--ghost dash-focus-ring" onClick={onBack}>
           {t('COMMON.BACK')}
         </button>
-        <h1 className="queue-jobs__title">{queue.name}</h1>
-        <span className="queue-flow__subtitle">{t('NAV.FLOW')}</span>
+        <h1 className="dash-view-title">{queue.name}</h1>
+        <span className="dash-view-subtitle">{t('NAV.FLOW')}</span>
       </header>
 
       <QueueNav queue={queue} active="flow" onSelect={onSelectView} showMetrics={showMetrics} />
 
       {status === 'loading' ? (
-        <p className="queues-status">{t('FLOW.LOADING')}</p>
+        <p className="dash-status">{t('FLOW.LOADING')}</p>
       ) : status === 'error' ? (
-        <p className="queues-status queues-status--error">{t('FLOW.LOAD_FAILED')}</p>
+        <p className="dash-status dash-status--error">{t('FLOW.LOAD_FAILED')}</p>
       ) : nodeCount === 0 ? (
-        <p className="queues-status">{t('FLOW.NO_LIVE_JOBS')}</p>
+        <p className="dash-status">{t('FLOW.NO_LIVE_JOBS')}</p>
       ) : (
         <>
           {truncated && (
-            <p className="queues-status flow-notice" role="status">
+            <p className="dash-status flow-notice" role="status">
               {t('FLOW.TRUNCATED', { nodeCount })}
             </p>
           )}
-          <div className="flow-graph" data-testid="flow-graph">
+          <div className="dash-flow" data-testid="flow-graph">
             <FlowGraph roots={roots} sourceQueueName={queue.name} onSelectNode={onSelectNode} />
           </div>
         </>
