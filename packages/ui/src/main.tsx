@@ -4,6 +4,7 @@ import { App } from './App';
 import { readUiConfig } from './config';
 import { i18n, loadLocale, resolveInitialLng } from './i18n';
 import './design-system/tokens.css';
+import './design-system/recipes.css';
 
 const container = document.getElementById('root');
 

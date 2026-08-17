@@ -10,10 +10,10 @@ export function ThemeToggle() {
     <Switch.Root
       checked={theme === 'light'}
       onCheckedChange={() => toggleTheme()}
-      className="theme-switch"
+      className="dash-switch dash-focus-ring"
       aria-label={t('COMMON.TOGGLE_THEME')}
     >
-      <Switch.Thumb className="theme-switch__thumb" />
+      <Switch.Thumb className="dash-switch__thumb" />
     </Switch.Root>
   );
 }

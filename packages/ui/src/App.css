@@ -4,7 +4,7 @@
   color: var(--dash-text);
   display: flex;
   flex-direction: column;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--dash-font-sans);
 }
 
 .app__header {
@@ -16,29 +16,14 @@
 }
 
 .app__brand {
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: var(--dash-weight-bold);
+  font-size: var(--dash-text-md);
   letter-spacing: 0.3px;
 }
 
 .locale-select {
   margin-left: auto;
   margin-right: 12px;
-}
-
-.locale-select select {
-  background: var(--dash-surface);
-  color: var(--dash-text);
-  border: 1px solid var(--dash-border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 13px;
-  outline: none;
-}
-
-.locale-select select:focus {
-  border-color: var(--dash-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-accent) 13%, transparent);
 }
 
 .app__main {
@@ -600,35 +585,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.theme-switch {
-  box-sizing: border-box;
-  width: 42px;
-  height: 24px;
-  border-radius: 999px;
-  border: 1px solid var(--dash-border);
-  background: var(--dash-surface);
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.theme-switch__thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--dash-muted);
-  margin: 2px;
-  transition:
-    transform 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.theme-switch[data-checked] .theme-switch__thumb {
-  transform: translateX(18px);
-  background: var(--dash-accent);
 }
 
 /* ---------- queue view navigation ---------- */
