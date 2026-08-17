@@ -25,6 +25,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "prototype:job-dossier": "vite --host --open /prototype-job-dossier.html",
     "sync:locales": "node ./scripts/sync-locales.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

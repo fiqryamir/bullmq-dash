@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Job dossier prototype - bullmq-dash</title>
+    <link rel="stylesheet" href="/src/design-system/tokens.css" />
+    <link rel="stylesheet" href="/src/design-system/recipes.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--dash-bg);
+        color: var(--dash-text);
+        font-family: var(--dash-font-sans);
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .prototype-shell {
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 76% -12%, color-mix(in oklab, var(--dash-accent) 10%, transparent), transparent 32rem),
+          var(--dash-bg);
+      }
+
+      .prototype-header {
+        display: flex;
+        align-items: center;
+        gap: var(--dash-space-4);
+        min-height: 56px;
+        padding: var(--dash-space-3) clamp(18px, 4vw, 48px);
+        border-bottom: 1px solid var(--dash-border);
+      }
+
+      .prototype-brand {
+        color: var(--dash-text);
+        font-size: var(--dash-text-md);
+        font-weight: var(--dash-weight-bold);
+        letter-spacing: 0.2px;
+      }
+
+      .prototype-brand span {
+        color: var(--dash-accent);
+      }
+
+      .prototype-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: var(--dash-space-2);
+        min-width: 0;
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+      }
+
+      .prototype-breadcrumb strong {
+        overflow: hidden;
+        color: var(--dash-text);
+        font-weight: var(--dash-weight-semibold);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .prototype-header .dash-button {
+        margin-left: auto;
+      }
+
+      .prototype-intro {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--dash-space-4);
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 30px clamp(18px, 4vw, 48px) 18px;
+      }
+
+      .prototype-intro__eyebrow,
+      .eyebrow {
+        margin: 0 0 var(--dash-space-1);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-caption);
+        font-weight: var(--dash-weight-bold);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .prototype-intro h1 {
+        margin: 0;
+        font-size: clamp(20px, 3vw, 28px);
+        letter-spacing: -0.02em;
+      }
+
+      .prototype-intro p {
+        max-width: 520px;
+        margin: 0;
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+        line-height: var(--dash-leading-base);
+        text-align: right;
+      }
+
+      .prototype-canvas {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 clamp(18px, 4vw, 48px) 120px;
+      }
+
+      .variant {
+        min-width: 0;
+      }
+
+      .source-context {
+        display: flex;
+        align-items: center;
+        gap: var(--dash-space-2);
+        min-width: 0;
+        margin-bottom: var(--dash-space-4);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+      }
+
+      .source-context a,
+      .related-link {
+        color: var(--dash-accent);
+        text-decoration: none;
+      }
+
+      .source-context a:hover,
+      .related-link:hover {
+        color: var(--dash-accent-hover);
+        text-decoration: underline;
+      }
+
+      .source-context strong {
+        overflow: hidden;
+        color: var(--dash-text);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-sm);
+        font-weight: var(--dash-weight-regular);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .job-identity {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: var(--dash-space-2) var(--dash-space-3);
+      }
+
+      .job-identity h2 {
+        margin: 0;
+        font-size: var(--dash-text-lg);
+        letter-spacing: -0.01em;
+      }
+
+      .job-identity__id {
+        color: var(--dash-text-muted);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-sm);
+      }
+
+      .job-identity__queue {
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+      }
+
+      .verdict {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: var(--dash-space-4);
+        padding: clamp(20px, 3vw, 32px);
+        border: 1px solid color-mix(in oklab, var(--dash-state-failed) 48%, var(--dash-border));
+        border-radius: var(--dash-radius-lg);
+        background:
+          linear-gradient(105deg, color-mix(in oklab, var(--dash-state-failed) 9%, var(--dash-surface)), var(--dash-surface) 58%),
+          var(--dash-surface);
+        box-shadow: var(--dash-shadow-1);
+      }
+
+      .verdict::after {
+        position: absolute;
+        top: -96px;
+        right: -74px;
+        width: 230px;
+        height: 230px;
+        border: 1px solid color-mix(in oklab, var(--dash-state-failed) 28%, transparent);
+        border-radius: 50%;
+        content: '';
+        opacity: 0.7;
+      }
+
+      .verdict__topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--dash-space-3);
+        margin-bottom: var(--dash-space-4);
+      }
+
+      .verdict__topline .eyebrow {
+        margin: 0;
+      }
+
+      .verdict__headline {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--dash-space-3);
+      }
+
+      .verdict__headline h2 {
+        margin: 0;
+        font-size: clamp(22px, 3.2vw, 34px);
+        letter-spacing: -0.035em;
+      }
+
+      .verdict__copy {
+        max-width: 720px;
+        margin: var(--dash-space-3) 0 0;
+        color: var(--dash-text);
+        font-size: var(--dash-text-md);
+        line-height: var(--dash-leading-base);
+      }
+
+      .verdict__copy strong {
+        font-weight: var(--dash-weight-semibold);
+      }
+
+      .gap-note {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--dash-space-2);
+        margin-top: var(--dash-space-5);
+        padding-top: var(--dash-space-3);
+        border-top: 1px solid color-mix(in oklab, var(--dash-border) 72%, transparent);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+        line-height: var(--dash-leading-base);
+      }
+
+      .gap-note__mark {
+        flex: 0 0 auto;
+        color: var(--dash-state-waiting);
+        font-size: var(--dash-text-md);
+        line-height: 1;
+      }
+
+      .stat-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1px;
+        margin-top: var(--dash-space-5);
+        overflow: hidden;
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-md);
+        background: var(--dash-border);
+      }
+
+      .stat-strip__item {
+        min-width: 0;
+        padding: var(--dash-space-3);
+        background: color-mix(in oklab, var(--dash-surface-elevated) 78%, var(--dash-surface));
+      }
+
+      .stat-strip dt {
+        margin-bottom: var(--dash-space-1);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-caption);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .stat-strip dd {
+        overflow: hidden;
+        margin: 0;
+        color: var(--dash-text);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-sm);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .stat-strip dd[data-tone='failed'] {
+        color: var(--dash-state-failed);
+      }
+
+      .evidence-frame {
+        min-width: 0;
+        padding: clamp(16px, 2.4vw, 24px);
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-md);
+        background: var(--dash-surface);
+      }
+
+      .evidence-frame__header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--dash-space-3);
+        margin-bottom: var(--dash-space-4);
+      }
+
+      .evidence-frame__header h3 {
+        margin: 0;
+        font-size: var(--dash-text-md);
+      }
+
+      .evidence-frame__header span {
+        color: var(--dash-text-muted);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-caption);
+      }
+
+      .evidence-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--dash-space-1);
+        margin-bottom: var(--dash-space-3);
+      }
+
+      .evidence-tabs .dash-button {
+        padding: var(--dash-space-1) var(--dash-space-2);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-caption);
+      }
+
+      .evidence-tabs .dash-button[data-active='true'] {
+        border-color: var(--dash-accent);
+        background: var(--dash-selected);
+        color: var(--dash-text);
+      }
+
+      .evidence-copy {
+        margin: 0;
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+        line-height: var(--dash-leading-base);
+      }
+
+      .evidence-copy strong {
+        color: var(--dash-text);
+        font-weight: var(--dash-weight-semibold);
+      }
+
+      .evidence-list,
+      .attempt-list,
+      .related-list,
+      .gap-list {
+        display: grid;
+        gap: var(--dash-space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .evidence-row,
+      .attempt-row {
+        display: grid;
+        grid-template-columns: minmax(92px, 0.7fr) minmax(0, 2fr) minmax(90px, 0.7fr);
+        gap: var(--dash-space-3);
+        align-items: baseline;
+        padding: var(--dash-space-2) 0;
+        border-bottom: 1px solid color-mix(in oklab, var(--dash-border) 66%, transparent);
+      }
+
+      .evidence-row:last-child,
+      .attempt-row:last-child {
+        border-bottom: 0;
+      }
+
+      .evidence-row__label,
+      .attempt-row__label {
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+      }
+
+      .evidence-row__value,
+      .attempt-row__value {
+        min-width: 0;
+        color: var(--dash-text);
+        font-size: var(--dash-text-sm);
+      }
+
+      .evidence-row__meta,
+      .attempt-row__meta {
+        color: var(--dash-text-muted);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-caption);
+        text-align: right;
+      }
+
+      .code-block {
+        overflow: auto;
+        max-height: 260px;
+        margin: 0;
+        padding: var(--dash-space-3);
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-sm);
+        background: var(--dash-bg);
+        color: var(--dash-text);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-sm);
+        line-height: var(--dash-leading-base);
+        white-space: pre-wrap;
+      }
+
+      .related-card {
+        padding: var(--dash-space-4);
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-md);
+        background: var(--dash-surface);
+      }
+
+      .related-card h3 {
+        margin: 0 0 var(--dash-space-1);
+        font-size: var(--dash-text-md);
+      }
+
+      .related-card > p {
+        margin: 0 0 var(--dash-space-3);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+        line-height: var(--dash-leading-base);
+      }
+
+      .related-list li {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--dash-space-3);
+        padding: var(--dash-space-2) 0;
+        border-top: 1px solid color-mix(in oklab, var(--dash-border) 62%, transparent);
+      }
+
+      .related-list__name {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--dash-text);
+        font-size: var(--dash-text-sm);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .related-list__meta {
+        flex: 0 0 auto;
+        color: var(--dash-text-muted);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-caption);
+      }
+
+      .related-card__action {
+        width: 100%;
+        margin-top: var(--dash-space-3);
+      }
+
+      .variant-a__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
+        gap: var(--dash-space-4);
+        align-items: start;
+      }
+
+      .variant-a__main {
+        min-width: 0;
+      }
+
+      .variant-a__rail {
+        display: grid;
+        gap: var(--dash-space-4);
+        position: sticky;
+        top: var(--dash-space-4);
+      }
+
+      .rail-note {
+        padding: var(--dash-space-3);
+        border-left: 2px solid var(--dash-accent);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+        line-height: var(--dash-leading-base);
+      }
+
+      .variant-b__layout {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: var(--dash-space-5);
+        align-items: start;
+        padding: var(--dash-space-5);
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-lg);
+        background: color-mix(in oklab, var(--dash-surface) 72%, transparent);
+      }
+
+      .ledger-rail {
+        display: grid;
+        gap: var(--dash-space-5);
+        position: sticky;
+        top: var(--dash-space-4);
+      }
+
+      .ledger-rail__identity {
+        display: grid;
+        gap: var(--dash-space-2);
+        padding-bottom: var(--dash-space-4);
+        border-bottom: 1px solid var(--dash-border);
+      }
+
+      .ledger-rail__identity h2 {
+        margin: 0;
+        font-size: var(--dash-text-md);
+      }
+
+      .ledger-rail__identity code {
+        color: var(--dash-text-muted);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-caption);
+      }
+
+      .ledger-rail__nav {
+        display: grid;
+        gap: var(--dash-space-1);
+      }
+
+      .ledger-rail__nav .dash-button {
+        justify-content: space-between;
+        width: 100%;
+        border-color: transparent;
+        background: transparent;
+        color: var(--dash-text-muted);
+        text-align: left;
+      }
+
+      .ledger-rail__nav .dash-button:hover,
+      .ledger-rail__nav .dash-button[data-active='true'] {
+        border-color: var(--dash-border);
+        background: var(--dash-selected);
+        color: var(--dash-text);
+      }
+
+      .ledger-rail__nav small {
+        color: var(--dash-text-faint);
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-caption);
+      }
+
+      .ledger-gaps {
+        display: grid;
+        gap: var(--dash-space-2);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-caption);
+        line-height: var(--dash-leading-base);
+      }
+
+      .ledger-gaps strong {
+        color: var(--dash-state-waiting);
+        font-weight: var(--dash-weight-semibold);
+      }
+
+      .ledger-main {
+        min-width: 0;
+      }
+
+      .ledger-main__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--dash-space-4);
+        margin-bottom: var(--dash-space-5);
+      }
+
+      .ledger-main__header h2 {
+        margin: 0;
+        font-size: clamp(24px, 3.5vw, 38px);
+        letter-spacing: -0.045em;
+      }
+
+      .ledger-main__header p {
+        max-width: 330px;
+        margin: var(--dash-space-2) 0 0;
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+        line-height: var(--dash-leading-base);
+      }
+
+      .ledger-story {
+        display: grid;
+        grid-template-columns: minmax(110px, 0.55fr) minmax(0, 2fr);
+        gap: var(--dash-space-4);
+        padding: var(--dash-space-4) 0;
+        border-top: 1px solid var(--dash-border);
+        border-bottom: 1px solid var(--dash-border);
+      }
+
+      .ledger-story__label {
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-caption);
+        font-weight: var(--dash-weight-bold);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .ledger-story p {
+        margin: 0;
+        color: var(--dash-text);
+        font-size: var(--dash-text-md);
+        line-height: var(--dash-leading-base);
+      }
+
+      .ledger-main .evidence-frame {
+        margin-top: var(--dash-space-5);
+      }
+
+      .variant-c__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(330px, 0.9fr);
+        gap: 1px;
+        overflow: hidden;
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-lg);
+        background: var(--dash-border);
+      }
+
+      .context-board,
+      .inspector {
+        min-width: 0;
+        background: var(--dash-surface);
+      }
+
+      .context-board {
+        min-height: 650px;
+        padding: clamp(18px, 3vw, 32px);
+        background:
+          linear-gradient(color-mix(in oklab, var(--dash-border) 32%, transparent) 1px, transparent 1px),
+          linear-gradient(90deg, color-mix(in oklab, var(--dash-border) 32%, transparent) 1px, transparent 1px),
+          var(--dash-bg);
+        background-size: 28px 28px;
+      }
+
+      .context-board__header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--dash-space-3);
+        margin-bottom: clamp(70px, 12vw, 132px);
+      }
+
+      .context-board__header h2,
+      .inspector__header h2 {
+        margin: 0;
+        font-size: var(--dash-text-md);
+      }
+
+      .context-board__header span {
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-caption);
+      }
+
+      .context-map {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr 1fr;
+        grid-template-rows: auto 110px auto;
+        align-items: center;
+        gap: 0 var(--dash-space-3);
+        max-width: 620px;
+        margin: 0 auto;
+      }
+
+      .context-node {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: var(--dash-space-1);
+        padding: var(--dash-space-3);
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-md);
+        background: var(--dash-surface-elevated);
+        box-shadow: var(--dash-shadow-1);
+      }
+
+      .context-node button {
+        display: block;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .context-node[data-selected='true'] {
+        border-color: var(--dash-state-failed);
+        box-shadow: 0 0 0 2px color-mix(in oklab, var(--dash-state-failed) 18%, transparent), var(--dash-shadow-2);
+      }
+
+      .context-node__role {
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-caption);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .context-node__name {
+        overflow: hidden;
+        color: var(--dash-text);
+        font-size: var(--dash-text-sm);
+        font-weight: var(--dash-weight-semibold);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .context-node__state {
+        font-family: var(--dash-font-mono);
+        font-size: var(--dash-text-caption);
+      }
+
+      .context-node__state--completed {
+        color: var(--dash-state-completed);
+      }
+
+      .context-node__state--failed {
+        color: var(--dash-state-failed);
+      }
+
+      .context-node__state--waiting {
+        color: var(--dash-state-waiting);
+      }
+
+      .context-node--parent {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .context-node--current {
+        grid-column: 2;
+        grid-row: 2;
+      }
+
+      .context-node--child {
+        grid-column: 3;
+        grid-row: 2;
+      }
+
+      .context-edge {
+        height: 1px;
+        background: var(--dash-border);
+      }
+
+      .context-edge--left {
+        grid-column: 1 / 3;
+        grid-row: 2;
+        margin-left: 72%;
+      }
+
+      .context-edge--right {
+        grid-column: 2 / 4;
+        grid-row: 2;
+        margin-right: 72%;
+      }
+
+      .context-board__note {
+        max-width: 420px;
+        margin: 110px auto 0;
+        padding: var(--dash-space-3);
+        border: 1px dashed var(--dash-border);
+        border-radius: var(--dash-radius-sm);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+        line-height: var(--dash-leading-base);
+      }
+
+      .inspector {
+        padding: clamp(18px, 3vw, 32px);
+      }
+
+      .inspector__header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--dash-space-3);
+        margin-bottom: var(--dash-space-4);
+      }
+
+      .inspector__header span {
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-caption);
+      }
+
+      .inspector .job-identity {
+        display: grid;
+        gap: var(--dash-space-1);
+        margin-bottom: var(--dash-space-4);
+      }
+
+      .inspector .job-identity h2 {
+        font-size: var(--dash-text-lg);
+      }
+
+      .inspector .verdict {
+        margin-bottom: var(--dash-space-4);
+        padding: var(--dash-space-4);
+        border-radius: var(--dash-radius-md);
+      }
+
+      .inspector .verdict::after {
+        display: none;
+      }
+
+      .inspector .verdict__headline h2 {
+        font-size: var(--dash-text-lg);
+      }
+
+      .inspector .verdict__copy {
+        font-size: var(--dash-text-sm);
+      }
+
+      .inspector .gap-note {
+        margin-top: var(--dash-space-3);
+        padding-top: var(--dash-space-2);
+      }
+
+      .prototype-switcher {
+        position: fixed;
+        right: 50%;
+        bottom: 18px;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        gap: var(--dash-space-2);
+        transform: translateX(50%);
+        padding: var(--dash-space-2) var(--dash-space-3);
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-pill);
+        background: color-mix(in oklab, var(--dash-surface-elevated) 92%, transparent);
+        box-shadow: var(--dash-shadow-3);
+        backdrop-filter: blur(var(--dash-blur-sm));
+      }
+
+      .prototype-switcher button {
+        display: inline-grid;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        padding: 0;
+        border: 1px solid var(--dash-border);
+        border-radius: 50%;
+        background: var(--dash-surface);
+        color: var(--dash-text);
+        cursor: pointer;
+      }
+
+      .prototype-switcher button:hover {
+        border-color: var(--dash-accent);
+        color: var(--dash-accent);
+      }
+
+      .prototype-switcher__label {
+        min-width: 148px;
+        color: var(--dash-text);
+        font-size: var(--dash-text-sm);
+        text-align: center;
+      }
+
+      .prototype-switcher__label small {
+        color: var(--dash-text-muted);
+        font-family: var(--dash-font-mono);
+      }
+
+      .prototype-feedback {
+        position: fixed;
+        right: 18px;
+        bottom: 22px;
+        z-index: 4;
+        max-width: 260px;
+        padding: var(--dash-space-2) var(--dash-space-3);
+        border: 1px solid var(--dash-border);
+        border-radius: var(--dash-radius-sm);
+        background: var(--dash-surface-elevated);
+        box-shadow: var(--dash-shadow-2);
+        color: var(--dash-text-muted);
+        font-size: var(--dash-text-sm);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(6px);
+        transition: opacity var(--dash-duration-base) var(--dash-ease), transform var(--dash-duration-base) var(--dash-ease);
+      }
+
+      .prototype-feedback[data-visible='true'] {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @media (max-width: 820px) {
+        .prototype-intro {
+          display: grid;
+          gap: var(--dash-space-2);
+        }
+
+        .prototype-intro p {
+          text-align: left;
+        }
+
+        .variant-a__layout,
+        .variant-b__layout,
+        .variant-c__layout {
+          grid-template-columns: 1fr;
+        }
+
+        .variant-a__rail,
+        .ledger-rail {
+          position: static;
+        }
+
+        .variant-b__layout {
+          padding: var(--dash-space-4);
+        }
+
+        .ledger-rail {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+          align-items: start;
+        }
+
+        .ledger-rail__identity {
+          padding-bottom: 0;
+          border-bottom: 0;
+        }
+
+        .ledger-gaps {
+          grid-column: 1 / -1;
+        }
+
+        .context-board {
+          min-height: 520px;
+        }
+
+        .inspector {
+          border-top: 1px solid var(--dash-border);
+        }
+
+        .prototype-feedback {
+          right: 12px;
+          bottom: 78px;
+        }
+      }
+
+      @media (max-width: 540px) {
+        .prototype-header {
+          flex-wrap: wrap;
+        }
+
+        .prototype-breadcrumb {
+          order: 3;
+          flex-basis: 100%;
+        }
+
+        .prototype-header .dash-button {
+          margin-left: auto;
+        }
+
+        .stat-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .evidence-row,
+        .attempt-row,
+        .ledger-story {
+          grid-template-columns: 1fr;
+          gap: var(--dash-space-1);
+        }
+
+        .evidence-row__meta,
+        .attempt-row__meta {
+          text-align: left;
+        }
+
+        .context-map {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto;
+          gap: var(--dash-space-3);
+        }
+
+        .context-node--parent,
+        .context-node--current,
+        .context-node--child {
+          grid-column: 1;
+          grid-row: auto;
+        }
+
+        .context-edge {
+          display: none;
+        }
+
+        .context-board__header {
+          margin-bottom: var(--dash-space-5);
+        }
+
+        .context-board__note {
+          margin-top: var(--dash-space-5);
+        }
+
+        .prototype-switcher {
+          bottom: 10px;
+        }
+
+        .prototype-switcher__label {
+          min-width: 118px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Three variants of the retained-job dossier, switchable via ?variant=, on a throwaway Vite route. -->
+    <div class="prototype-shell">
+      <header class="prototype-header">
+        <span class="prototype-brand">bullmq<span>-dash</span></span>
+        <div class="prototype-breadcrumb" aria-label="Prototype context">
+          <span>prototype</span>
+          <span aria-hidden="true">/</span>
+          <strong>billing / failed jobs / invoice-4821</strong>
+        </div>
+        <button type="button" class="dash-button dash-button--ghost dash-focus-ring" data-theme-toggle>
+          Switch to light
+        </button>
+      </header>
+      <section class="prototype-intro">
+        <div>
+          <p class="prototype-intro__eyebrow">PROTOTYPE - throwaway - wayfinder ticket</p>
+          <h1>What should a job dossier explain first?</h1>
+        </div>
+        <p>Three structural takes on the same last-known story. Click evidence and related context to test the path from a failed job to what the data can actually prove.</p>
+      </section>
+      <main id="prototype-root" class="prototype-canvas"></main>
+    </div>
+    <div id="prototype-feedback" class="prototype-feedback" role="status" aria-live="polite"></div>
+    <nav class="prototype-switcher" aria-label="Prototype variants">
+      <button type="button" data-previous aria-label="Previous variant">&larr;</button>
+      <span class="prototype-switcher__label" data-variant-label></span>
+      <button type="button" data-next aria-label="Next variant">&rarr;</button>
+    </nav>
+    <script>
+      const job = {
+        queue: 'billing',
+        name: 'send-invoice',
+        id: 'invoice-4821',
+        state: 'failed',
+        attempts: '3 / 3',
+        latestAttempt: '2.14s',
+        worker: 'worker-03',
+        updated: '14:03:41.912 UTC',
+        reason: 'ECONNRESET - upstream closed the connection',
+        logs: [
+          '14:03:39.103  retrying attempt 3/3',
+          '14:03:39.201  worker-03  started send-invoice',
+          '14:03:41.912  worker-03  failed: ECONNRESET',
+        ],
+        stack: 'Error: ECONNRESET - upstream closed the connection\n    at sendInvoice (invoice.ts:118:17)\n    at async processJob (worker.ts:74:9)',
+        data: '{\n  "invoiceId": "inv_4821",\n  "customerId": "cus_9082",\n  "attempt": 3\n}',
+      };
+
+      const variants = [
+        { key: 'a', name: 'Verdict canvas', note: 'summary first / related rail' },
+        { key: 'b', name: 'Evidence ledger', note: 'evidence index / focused pane' },
+        { key: 'c', name: 'Context inspector', note: 'relationship map / inspector' },
+      ];
+      const evidence = [
+        { key: 'summary', label: 'Summary', meta: 'retained' },
+        { key: 'attempts', label: 'Attempts', meta: '3 total' },
+        { key: 'logs', label: 'Logs', meta: '3 rows' },
+        { key: 'stack', label: 'Stack trace', meta: 'retained' },
+        { key: 'data', label: 'Job data', meta: 'retained' },
+        { key: 'relationships', label: 'Relationships', meta: 'bounded' },
+      ];
+      const params = new URLSearchParams(window.location.search);
+      let variantKey = (params.get('variant') || 'a').toLowerCase();
+      let activeEvidence = 'summary';
+      let selectedRelated = 'current';
+      let feedbackTimer;
+
+      if (!variants.some((variant) => variant.key === variantKey)) {
+        variantKey = 'a';
+      }
+
+      function chip(state) {
+        return `<span class="dash-chip dash-chip--${state}"><span class="dash-chip__dot"></span>${state}</span>`;
+      }
+
+      function sourceContext() {
+        return `<div class="source-context"><a href="#" data-source>Queues</a><span aria-hidden="true">/</span><a href="#" data-source>billing</a><span aria-hidden="true">/</span><a href="#" data-source>Failed jobs</a><span aria-hidden="true">/</span><strong>${job.id}</strong></div>`;
+      }
+
+      function identity() {
+        return `<div class="job-identity"><h2>${job.name}</h2><span class="job-identity__id">${job.id}</span><span class="job-identity__queue">queue: ${job.queue}</span></div>`;
+      }
+
+      function verdict(compact = false) {
+        return `<section class="verdict${compact ? ' verdict--compact' : ''}">
+          <div class="verdict__topline"><p class="eyebrow">Last-known story</p>${chip(job.state)}</div>
+          <div class="verdict__headline"><h2>Failed after 3 attempts</h2></div>
+          <p class="verdict__copy">The latest retained attempt ran on <strong>${job.worker}</strong> for <strong>${job.latestAttempt}</strong> and ended with <strong>${job.reason}</strong>.</p>
+          <div class="gap-note"><span class="gap-note__mark" aria-hidden="true">!</span><span>Evidence gap: earlier attempt details and queue wait are not retained. This is a last-known story, not a complete lifecycle.</span></div>
+          ${compact ? '' : `<dl class="stat-strip"><div class="stat-strip__item"><dt>Job state</dt><dd data-tone="failed">failed</dd></div><div class="stat-strip__item"><dt>Attempts</dt><dd>${job.attempts}</dd></div><div class="stat-strip__item"><dt>Latest worker</dt><dd>${job.worker}</dd></div><div class="stat-strip__item"><dt>Updated</dt><dd>${job.updated}</dd></div></dl>`}
+        </section>`;
+      }
+
+      function evidenceTabs() {
+        return `<div class="evidence-tabs" role="tablist" aria-label="Job evidence">${evidence.map((item) => `<button type="button" class="dash-button dash-focus-ring" role="tab" aria-selected="${activeEvidence === item.key}" data-evidence="${item.key}" data-active="${activeEvidence === item.key}">${item.label}</button>`).join('')}</div>`;
+      }
+
+      function evidenceNav() {
+        return `<div class="ledger-rail__nav" role="tablist" aria-label="Evidence index">${evidence.map((item) => `<button type="button" class="dash-button dash-focus-ring" role="tab" aria-selected="${activeEvidence === item.key}" data-evidence="${item.key}" data-active="${activeEvidence === item.key}"><span>${item.label}</span><small>${item.meta}</small></button>`).join('')}</div>`;
+      }
+
+      function evidencePanel() {
+        if (activeEvidence === 'attempts') {
+          return `<div class="evidence-frame__header"><h3>Attempt evidence</h3><span>aggregate plus latest</span></div><ul class="attempt-list"><li class="attempt-row"><span class="attempt-row__label">Attempts</span><strong class="attempt-row__value">3 total, 3/3 used</strong><span class="attempt-row__meta">retained</span></li><li class="attempt-row"><span class="attempt-row__label">Latest</span><strong class="attempt-row__value">${job.worker} / ${job.latestAttempt}</strong><span class="attempt-row__meta">${job.updated}</span></li><li class="attempt-row"><span class="attempt-row__label">Earlier attempts</span><strong class="attempt-row__value">Not recorded</strong><span class="attempt-row__meta">evidence gap</span></li></ul>`;
+        }
+        if (activeEvidence === 'logs') {
+          return `<div class="evidence-frame__header"><h3>Retained logs</h3><span>3 rows</span></div><pre class="code-block">${job.logs.join('\n')}</pre><button type="button" class="dash-button dash-button--ghost dash-focus-ring" data-action="feedback">Open full log context</button>`;
+        }
+        if (activeEvidence === 'stack') {
+          return `<div class="evidence-frame__header"><h3>Stack trace</h3><span>latest failure</span></div><pre class="code-block">${job.stack}</pre>`;
+        }
+        if (activeEvidence === 'data') {
+          return `<div class="evidence-frame__header"><h3>Job data</h3><span>input retained</span></div><pre class="code-block">${job.data}</pre>`;
+        }
+        if (activeEvidence === 'relationships') {
+          return `<div class="evidence-frame__header"><h3>Relationships</h3><span>bounded context</span></div><p class="evidence-copy">The dossier can identify nearby jobs and Flow context without claiming that it diagnosed the queue, worker, or Flow.</p><ul class="evidence-list"><li class="evidence-row"><span class="evidence-row__label">Parent</span><strong class="evidence-row__value">checkout / checkout-4821</strong><span class="evidence-row__meta">completed</span></li><li class="evidence-row"><span class="evidence-row__label">Current</span><strong class="evidence-row__value">send-invoice / ${job.id}</strong><span class="evidence-row__meta">failed</span></li><li class="evidence-row"><span class="evidence-row__label">Downstream</span><strong class="evidence-row__value">receipt / receipt-4821</strong><span class="evidence-row__meta">waiting</span></li></ul>`;
+        }
+        return `<div class="evidence-frame__header"><h3>Diagnostic summary</h3><span>what the data says</span></div><p class="evidence-copy"><strong>${job.name}</strong> is <strong>failed</strong> after <strong>3 attempts</strong>. The latest retained evidence points to <strong>${job.reason}</strong> on <strong>${job.worker}</strong>. Inspect logs, stack trace, or relationships next.</p>`;
+      }
+
+      function relatedCard() {
+        return `<section class="related-card"><p class="eyebrow">Next investigation</p><h3>Inspect related evidence</h3><p>These are links into existing context, not a cross-entity diagnosis.</p><ul class="related-list"><li><span class="related-list__name">Latest logs</span><span class="related-list__meta">3 rows</span></li><li><span class="related-list__name">Stack trace</span><span class="related-list__meta">retained</span></li><li><span class="related-list__name">Flow relationships</span><span class="related-list__meta">bounded</span></li></ul><button type="button" class="dash-button dash-button--primary dash-focus-ring related-card__action" data-related="relationships">Inspect relationships</button></section>`;
+      }
+
+      function renderVariantA() {
+        return `<article class="variant variant-a">${sourceContext()}<div class="variant-a__layout"><div class="variant-a__main">${identity()}${verdict()}<section class="evidence-frame"><div class="evidence-frame__header"><h3>Evidence</h3><span>select a thread</span></div>${evidenceTabs()}${evidencePanel()}</section></div><aside class="variant-a__rail">${relatedCard()}<div class="rail-note">The primary action is inspection. Retry and remove stay available elsewhere as secondary job actions.</div></aside></div></article>`;
+      }
+
+      function renderVariantB() {
+        return `<article class="variant variant-b">${sourceContext()}<div class="variant-b__layout"><aside class="ledger-rail"><div class="ledger-rail__identity"><p class="eyebrow">Job dossier</p>${identity()}${chip(job.state)}</div>${evidenceNav()}<div class="ledger-gaps"><strong>2 evidence gaps</strong><span>Earlier attempts and queue wait are not retained.</span></div></aside><main class="ledger-main"><header class="ledger-main__header"><div><p class="eyebrow">Diagnostic summary</p><h2>What can we say?</h2><p>Start with the bounded conclusion, then open only the evidence thread that matters.</p></div>${chip(job.state)}</header><section class="ledger-story"><span class="ledger-story__label">Last-known story</span><p>Attempt 3 failed on ${job.worker} after ${job.latestAttempt} with ${job.reason}. Earlier attempt details are not recorded.</p></section><section class="evidence-frame">${evidencePanel()}</section><div style="display:flex;justify-content:flex-end;margin-top:var(--dash-space-4);"><button type="button" class="dash-button dash-button--ghost dash-focus-ring" data-related="relationships">Inspect related context</button></div></main></div></article>`;
+      }
+
+      function contextNode(role, name, state, key, selected) {
+        return `<div class="context-node context-node--${role}" data-selected="${selected}"><button type="button" data-related="${key}" aria-label="Inspect ${name}"><span class="context-node__role">${role === 'current' ? 'selected job' : role}</span><span class="context-node__name">${name}</span><span class="context-node__state context-node__state--${state}">${state}</span></button></div>`;
+      }
+
+      function renderVariantC() {
+        return `<article class="variant variant-c">${sourceContext()}<div class="variant-c__layout"><section class="context-board"><header class="context-board__header"><div><p class="eyebrow">Related context</p><h2>Where this job sits</h2></div><span>context only</span></header><div class="context-map"><div class="context-edge context-edge--left"></div><div class="context-edge context-edge--right"></div>${contextNode('parent', 'checkout / checkout-4821', 'completed', 'parent', selectedRelated === 'parent')}${contextNode('current', 'send-invoice / invoice-4821', 'failed', 'current', selectedRelated === 'current')}${contextNode('child', 'receipt / receipt-4821', 'waiting', 'child', selectedRelated === 'child')}</div><p class="context-board__note">Selecting a related node changes the inspection target. It does not turn this dossier into a queue health or Flow bottleneck diagnosis.</p></section><aside class="inspector"><header class="inspector__header"><div><p class="eyebrow">Job dossier</p><h2>Selected evidence</h2></div><span>${selectedRelated === 'current' ? 'primary' : 'related'}</span></header>${identity()}${selectedRelated === 'current' ? verdict(true) : `<section class="related-card"><p class="eyebrow">Related context</p><h3>${selectedRelated === 'parent' ? 'checkout / checkout-4821' : 'receipt / receipt-4821'}</h3><p>This link preserves context. Open the job to inspect its own last-known story.</p><button type="button" class="dash-button dash-button--primary dash-focus-ring" data-action="feedback">Open job dossier</button></section>`}<section class="evidence-frame"><div class="evidence-frame__header"><h3>Evidence thread</h3><span>choose one</span></div>${evidenceTabs()}${evidencePanel()}</section></aside></div></article>`;
+      }
+
+      function render() {
+        const variant = variants.find((item) => item.key === variantKey) || variants[0];
+        const content = variantKey === 'b' ? renderVariantB() : variantKey === 'c' ? renderVariantC() : renderVariantA();
+        document.getElementById('prototype-root').innerHTML = content;
+        document.querySelector('[data-variant-label]').innerHTML = `${variant.key.toUpperCase()} <small>- ${variant.name}</small>`;
+        bindInteractions();
+      }
+
+      function syncVariant() {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set('variant', variantKey);
+        window.history.replaceState(null, '', nextUrl);
+      }
+
+      function showFeedback(message) {
+        const feedback = document.getElementById('prototype-feedback');
+        feedback.textContent = message;
+        feedback.dataset.visible = 'true';
+        window.clearTimeout(feedbackTimer);
+        feedbackTimer = window.setTimeout(() => {
+          feedback.dataset.visible = 'false';
+        }, 2200);
+      }
+
+      function bindInteractions() {
+        document.querySelectorAll('[data-evidence]').forEach((button) => {
+          button.addEventListener('click', () => {
+            activeEvidence = button.dataset.evidence;
+            render();
+          });
+        });
+        document.querySelectorAll('[data-related]').forEach((button) => {
+          button.addEventListener('click', () => {
+            selectedRelated = button.dataset.related;
+            activeEvidence = 'relationships';
+            render();
+          });
+        });
+        document.querySelectorAll('[data-source]').forEach((link) => {
+          link.addEventListener('click', (event) => {
+            event.preventDefault();
+            showFeedback('Source context preserved: billing / failed jobs');
+          });
+        });
+        document.querySelectorAll('[data-action="feedback"]').forEach((button) => {
+          button.addEventListener('click', () => showFeedback('Prototype action: keep this as an inspection link, not remediation.'));
+        });
+      }
+
+      function cycle(direction) {
+        const index = variants.findIndex((variant) => variant.key === variantKey);
+        variantKey = variants[(index + direction + variants.length) % variants.length].key;
+        syncVariant();
+        render();
+      }
+
+      document.querySelector('[data-previous]').addEventListener('click', () => cycle(-1));
+      document.querySelector('[data-next]').addEventListener('click', () => cycle(1));
+      document.querySelector('[data-theme-toggle]').addEventListener('click', (event) => {
+        const nextTheme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = nextTheme;
+        event.currentTarget.textContent = nextTheme === 'light' ? 'Switch to dark' : 'Switch to light';
+      });
+      window.addEventListener('keydown', (event) => {
+        if (event.target.matches('input, textarea, [contenteditable]')) return;
+        if (event.key === 'ArrowLeft') cycle(-1);
+        if (event.key === 'ArrowRight') cycle(1);
+      });
+
+      render();
+    </script>
+  </body>
+</html>
