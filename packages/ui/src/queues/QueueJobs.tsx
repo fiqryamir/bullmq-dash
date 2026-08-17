@@ -427,7 +427,10 @@ export function QueueJobs({
       )}
 
       <div className="queue-jobs__table-wrap" data-testid="jobs-scroll" ref={scrollRef}>
-        <table className="dash-table">
+        <table
+          className="dash-table queue-jobs__table"
+          data-columns={queue.readOnlyMode ? 'readonly' : 'actions'}
+        >
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>

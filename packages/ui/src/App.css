@@ -255,10 +255,39 @@
 .queue-jobs__table-wrap {
   flex: 1;
   max-height: 60vh;
-  overflow-y: auto;
+  overflow: auto;
   background: var(--dash-surface);
   border: 1px solid var(--dash-border);
   border-radius: 12px;
+}
+
+/* Virtualized rows are taken out of native table layout. Give the header and
+   rows the same explicit tracks so separators and focus states align. */
+.queue-jobs__table {
+  --queue-jobs-table-columns:
+    minmax(220px, 2fr) minmax(160px, 1.35fr) minmax(120px, 0.9fr)
+    minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(150px, 1fr);
+  min-width: 870px;
+}
+
+.queue-jobs__table[data-columns='readonly'] {
+  --queue-jobs-table-columns:
+    minmax(220px, 2fr) minmax(160px, 1.35fr) minmax(120px, 0.9fr)
+    minmax(120px, 1fr) minmax(100px, 0.8fr);
+  min-width: 720px;
+}
+
+.queue-jobs__table thead tr,
+.queue-jobs__table tbody tr {
+  display: grid;
+  grid-template-columns: var(--queue-jobs-table-columns);
+}
+
+.queue-jobs__table th,
+.queue-jobs__table td {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .job-table {

@@ -99,6 +99,22 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
   await expect(page.locator('.queue-jobs__title')).toHaveText('smoke-emails');
   await expect(page.locator('.dash-table')).toContainText('welcome-email');
   await expect(page.locator('.dash-table')).toContainText('receipt-email');
+
+  const headerX = await page.locator('.dash-table thead th').evaluateAll((cells) =>
+    cells.map((cell) => cell.getBoundingClientRect().x)
+  );
+  const rowX = await page
+    .locator('.dash-table tbody tr')
+    .first()
+    .locator('td')
+    .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect().x));
+
+  expect(rowX).toHaveLength(headerX.length);
+  headerX.forEach((x, index) => {
+    const bodyCellX = rowX[index];
+    expect(bodyCellX).toBeDefined();
+    expect(bodyCellX).toBeCloseTo(x, 0);
+  });
 });
 
 test('renders a readable flow graph', async ({ page }) => {
