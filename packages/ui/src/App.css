@@ -290,6 +290,11 @@
   text-overflow: ellipsis;
 }
 
+.queue-jobs__table td {
+  display: flex;
+  align-items: center;
+}
+
 .job-table {
   width: 100%;
   border-collapse: collapse;

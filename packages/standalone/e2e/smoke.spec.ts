@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 import { spawn, type ChildProcess } from 'node:child_process';
 import { FlowProducer, Queue, Worker } from 'bullmq';
 import { expect, test } from '@playwright/test';
@@ -108,6 +110,22 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
     .first()
     .locator('td')
     .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect().x));
+  const cellCenters = await page
+    .locator('.dash-table tbody tr')
+    .first()
+    .locator('td')
+    .evaluateAll((cells) =>
+      cells.map((cell) => {
+        const cellRect = cell.getBoundingClientRect();
+        const contentRange = document.createRange();
+        contentRange.selectNodeContents(cell);
+        const contentRect = contentRange.getBoundingClientRect();
+        return {
+          cellCenter: cellRect.top + cellRect.height / 2,
+          contentCenter: contentRect.top + contentRect.height / 2,
+        };
+      })
+    );
   const rowMetrics = await page.locator('.dash-table tbody tr').evaluateAll((rows) =>
     rows.map((row) => {
       const rowRect = row.getBoundingClientRect();
@@ -125,6 +143,9 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
     const bodyCellX = rowX[index];
     expect(bodyCellX).toBeDefined();
     expect(bodyCellX).toBeCloseTo(x, 0);
+  });
+  cellCenters.forEach(({ cellCenter, contentCenter }) => {
+    expect(Math.abs(contentCenter - cellCenter)).toBeLessThanOrEqual(1);
   });
   rowMetrics.forEach((row) => {
     expect(row.cellBottom).toBeDefined();
