@@ -44,6 +44,14 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
   }, [logsPage, logsPageCount]);
 
   const job = detail?.job;
+  const chipStatus =
+    detail?.status === 'waiting-children'
+      ? 'delayed'
+      : detail?.status === 'prioritized'
+        ? 'active'
+        : detail?.status;
+  const chipClassName =
+    chipStatus && chipStatus !== 'unknown' ? `dash-chip dash-chip--${chipStatus}` : 'dash-chip';
 
   return (
     <section
@@ -51,13 +59,17 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
       aria-label={t('JOB_DETAIL.VIEW_ARIA', { jobId, queue: queue.name })}
     >
       <header className="job-detail__header">
-        <button type="button" className="job-detail__back" onClick={onBack}>
+        <button type="button" className="dash-button dash-button--ghost dash-focus-ring" onClick={onBack}>
           {t('COMMON.BACK')}
         </button>
         <h1 className="job-detail__title">{queue.name}</h1>
         {job?.name && <span className="job-detail__job-name">{job.name}</span>}
         <span className="job-cell__id">#{jobId}</span>
-        {detail && <span className={`chip chip--${detail.status}`}>{t(STATUS_KEY[detail.status as JobStatus])}</span>}
+        {detail && (
+          <span className={chipClassName}>
+            {t(STATUS_KEY[detail.status as JobStatus])}
+          </span>
+        )}
       </header>
 
       {status === 'loading' ? (
@@ -66,7 +78,7 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
         <p className="queues-status queues-status--error">{t('JOB_DETAIL.LOAD_FAILED')}</p>
       ) : (
         <>
-          <dl className="job-detail__meta">
+          <dl className="job-detail__meta dash-panel dash-panel--meta">
             <div>
               <dt>{t('COMMON.PROGRESS')}</dt>
               <dd>{formatProgress(job.progress)}</dd>
@@ -83,25 +95,25 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
 
           <section className="job-detail__section" aria-label={t('JOB_DETAIL.DATA_ARIA')}>
             <h2 className="job-detail__section-title">{t('JOB.TABS.DATA')}</h2>
-            <pre className="job-detail__code">{json(job.data)}</pre>
+            <pre className="dash-panel dash-panel--code">{json(job.data)}</pre>
           </section>
 
           <section className="job-detail__section" aria-label={t('JOB_DETAIL.OPTIONS_ARIA')}>
             <h2 className="job-detail__section-title">{t('JOB.TABS.OPTIONS')}</h2>
-            <pre className="job-detail__code">{json(job.opts)}</pre>
+            <pre className="dash-panel dash-panel--code">{json(job.opts)}</pre>
           </section>
 
           {job.failedReason !== undefined && (
             <section className="job-detail__section" aria-label={t('JOB_DETAIL.FAILED_REASON')}>
               <h2 className="job-detail__section-title">{t('JOB_DETAIL.FAILED_REASON')}</h2>
-              <pre className="job-detail__code">{job.failedReason}</pre>
+              <pre className="dash-panel dash-panel--code">{job.failedReason}</pre>
             </section>
           )}
 
           {job.stacktrace.length > 0 && (
             <section className="job-detail__section" aria-label={t('JOB_DETAIL.STACKTRACE')}>
               <h2 className="job-detail__section-title">{t('JOB_DETAIL.STACKTRACE')}</h2>
-              <pre className="job-detail__code">{job.stacktrace.join('\n')}</pre>
+              <pre className="dash-panel dash-panel--code">{job.stacktrace.join('\n')}</pre>
             </section>
           )}
 
@@ -134,20 +146,19 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
               <p className="queues-status">{t('JOB_DETAIL.NO_LOGS')}</p>
             ) : (
               <>
-                <ul className="job-detail__logs">
+                <ul className="job-detail__logs dash-panel dash-panel--logs">
                   {logs.map((log, index) => (
-                    <li key={index} className="job-detail__log">
-                      {log}
-                    </li>
+                    <li key={index}>{log}</li>
                   ))}
                 </ul>
                 <footer className="job-detail__pager">
-                  <span className="queues-status">
+                  <span className="queues-status dash-pager__status">
                     {t('COMMON.PAGE_OF', { page: logsPage, pageCount: logsPageCount })}
                   </span>
-                  <div className="queue-jobs__pager">
+                  <div className="dash-pager">
                     <button
                       type="button"
+                      className="dash-pager__button dash-focus-ring"
                       aria-label={t('JOB_DETAIL.PREV_LOGS_PAGE')}
                       disabled={logsPage <= 1}
                       onClick={() => setLogsPage((current) => current - 1)}
@@ -156,6 +167,7 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
                     </button>
                     <button
                       type="button"
+                      className="dash-pager__button dash-focus-ring"
                       aria-label={t('JOB_DETAIL.NEXT_LOGS_PAGE')}
                       disabled={logsPage >= logsPageCount}
                       onClick={() => setLogsPage((current) => current + 1)}
