@@ -41,10 +41,10 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
   });
 
   return (
-    <section className="command-palette" aria-label={t('SEARCH.VIEW_ARIA')}>
+    <section className="command-palette dash-dialog" aria-label={t('SEARCH.VIEW_ARIA')}>
       <input
         type="search"
-        className="command-bar"
+        className="dash-input dash-input--command dash-focus-ring"
         placeholder={
           queueName
             ? t('SEARCH.PLACEHOLDER_QUEUE', { queue: queueName })
@@ -60,7 +60,7 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
             key={state}
             type="button"
             aria-pressed={states.includes(state)}
-            className={`state-tab state-tab--${state}${states.includes(state) ? ' state-tab--selected' : ''}`}
+            className={`dash-tab dash-tab--${state} dash-focus-ring${states.includes(state) ? ' dash-tab--selected' : ''}`}
             onClick={() => toggleState(state)}
           >
             {t(STATUS_KEY[state])}
@@ -78,7 +78,11 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
       )}
       {results.length > 0 && (
         <>
-          <div className="command-palette__results" data-testid="palette-scroll" ref={scrollRef}>
+          <div
+            className="command-palette__results dash-dialog__popup"
+            data-testid="palette-scroll"
+            ref={scrollRef}
+          >
             <ul className="command-palette__list" style={{ height: virtualizer.getTotalSize() }}>
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const result = results[virtualRow.index];
@@ -93,12 +97,14 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
                   >
                     <button
                       type="button"
-                      className="command-palette__result"
+                      className="command-palette__result dash-button dash-button--ghost dash-focus-ring"
                       onClick={() => onSelectJob(result)}
                     >
                       <span className="command-palette__id">{result.job.id}</span>
                       <span className="command-palette__name">{result.job.name}</span>
-                      <span className={`chip chip--${result.state}`}>{t(STATUS_KEY[result.state])}</span>
+                      <span className={`dash-chip dash-chip--${result.state}`}>
+                        {t(STATUS_KEY[result.state])}
+                      </span>
                       {!queueName && <span className="command-palette__queue">{result.queue}</span>}
                     </button>
                   </li>
@@ -109,7 +115,7 @@ export function CommandPalette({ onSelectJob, queueName }: CommandPaletteProps) 
           {deepen && (
             <button
               type="button"
-              className="action-btn command-palette__deepen"
+              className="command-palette__deepen dash-button dash-button--ghost dash-focus-ring"
               onClick={() => void deepenSearch()}
               disabled={status === 'loading'}
             >
