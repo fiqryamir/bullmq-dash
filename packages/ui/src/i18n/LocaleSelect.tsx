@@ -13,6 +13,7 @@ export function LocaleSelect() {
     <label className="locale-select">
       <span className="visually-hidden">{t('SETTINGS.LANGUAGE')}</span>
       <select
+        className="dash-input dash-input--select"
         value={i18n.language}
         onChange={(event) => void changeLocale(event.target.value)}
       >

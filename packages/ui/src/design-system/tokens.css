@@ -1,31 +1,163 @@
+/* ============================================================
+   bullmq-dash design tokens
+
+   Two layers in one file:
+     1. PRIMITIVE RAMPS (:root) — theme-independent oklch steps
+     2. SEMANTIC LAYER — redefined per theme (:root dark,
+        [data-theme='light'])
+   tokens.css is the authoritative source; DESIGN.md mirrors its
+   values (source-of-truth banner, lands with the design-system
+   docs ticket). Palette: wayfinder C — Slate Steel (issue #57).
+   State colors are semantic-only — no ramps.
+   ============================================================ */
+
 :root {
   color-scheme: dark;
-  --dash-bg: #0a0a0f;
-  --dash-surface: #101016;
-  --dash-border: #1d1d28;
-  --dash-text: #e4e4ef;
-  --dash-muted: #6b6b7b;
-  --dash-accent: #7c5cff;
-  --dash-state-completed: #3dd68c;
-  --dash-state-failed: #ff5c5c;
-  --dash-state-active: #4da3ff;
-  --dash-state-waiting: #ffb020;
-  --dash-state-delayed: #b380ff;
-  --dash-state-paused: #9aa0b5;
+
+  /* ---- primitive ramps (theme-independent, oklch) ---------------- */
+
+  /* Warm stone neutrals — hue 55°, chroma ~0.008. The C — Slate
+     Steel hex set lands at the ramp steps below (hexes in
+     comments; DESIGN.md mirrors them). */
+  --dash-stone-0: oklch(0.1265 0.0073 42.78); /* #090605 dark bg       */
+  --dash-stone-1: oklch(0.1587 0.0081 48.11); /* #100c0a dark surface  */
+  --dash-stone-2: oklch(0.1905 0.0088 59.04); /* #171310 dark elevated */
+  --dash-stone-3: oklch(0.2086 0.0075 48.27); /* #1b1715 light text    */
+  --dash-stone-4: oklch(0.2511 0.0082 59.22); /* #25211e dark border   */
+  --dash-stone-5: oklch(0.39 0.008 55);       /* dark faint (derived)  */
+  --dash-stone-6: oklch(0.5311 0.0088 61.23); /* #706b67 light muted   */
+  --dash-stone-7: oklch(0.66 0.008 55);       /* light faint (derived) */
+  --dash-stone-8: oklch(0.7855 0.0079 61.24); /* #bdb8b4 dark muted    */
+  --dash-stone-9: oklch(0.8646 0.0078 48.33); /* #d7d1ce light border  */
+  --dash-stone-10: oklch(0.9004 0.0076 61.23); /* #e2ddd9 dark text    */
+  --dash-stone-11: oklch(0.959 0.0076 48.3);  /* #f6f0ed light bg      */
+  --dash-stone-12: oklch(0.974 0.0075 48.29); /* #fbf5f2 light elev    */
+  --dash-stone-13: oklch(0.9856 0.0083 56.05); /* #fff9f5 light surf   */
+
+  /* Slate accent — spans both themes' accents (light end -> dark
+     end), hue 235° chroma ~0.05. */
+  --dash-accent-0: oklch(0.4386 0.0559 236.11); /* #32576d light hover  */
+  --dash-accent-1: oklch(0.5 0.0498 235.75);    /* #47687c light accent */
+  --dash-accent-2: oklch(0.7396 0.0554 234.88); /* #89b1c9 dark accent  */
+  --dash-accent-3: oklch(0.8101 0.0503 234.37); /* #a2c7dd dark hover   */
+
+  /* ---- scales (theme-independent) -------------------------------- */
+
+  /* spacing — 4px grid */
+  --dash-space-0: 0px;
+  --dash-space-1: 4px;
+  --dash-space-2: 8px;
+  --dash-space-3: 12px;
+  --dash-space-4: 16px;
+  --dash-space-5: 24px;
+  --dash-space-6: 32px;
+  --dash-space-7: 48px;
+  --dash-space-8: 64px;
+
+  /* type — 6 sizes x 3 weights x 2 line-heights, sans + mono */
+  --dash-font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --dash-font-mono: ui-monospace, Consolas, monospace;
+  --dash-text-caption: 11px;
+  --dash-text-sm: 12px;
+  --dash-text-base: 13px;
+  --dash-text-md: 16px;
+  --dash-text-lg: 18px;
+  --dash-text-display: 24px;
+  --dash-weight-regular: 400;
+  --dash-weight-semibold: 600;
+  --dash-weight-bold: 700;
+  --dash-leading-tight: 1.3;
+  --dash-leading-base: 1.6;
+
+  /* radius — nested rule: inner radius = max(5px, outer - gap/2) */
+  --dash-radius-sm: 8px;
+  --dash-radius-md: 12px;
+  --dash-radius-lg: 16px;
+  --dash-radius-pill: 999px;
+  --dash-radius-nested: max(5px, calc(var(--dash-radius-sm) - var(--dash-space-1) / 2));
+
+  /* motion — GRADUATED */
+  --dash-duration-fast: 0.1s;
+  --dash-duration-base: 0.15s;
+  --dash-duration-slow: 0.2s;
+  --dash-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* glass — falls back to 0 under prefers-reduced-transparency */
+  --dash-blur-sm: 10px;
+  --dash-blur-lg: 40px;
+
+  /* ---- semantic layer — DARK (default) --------------------------- */
+
+  --dash-bg: var(--dash-stone-0);
+  --dash-surface: var(--dash-stone-1);
+  --dash-surface-elevated: var(--dash-stone-2);
+  --dash-border: var(--dash-stone-4);
+  --dash-text: var(--dash-stone-10);
+  --dash-text-muted: var(--dash-stone-8);
+  --dash-text-faint: var(--dash-stone-5);
+  /* legacy name for unmigrated views; removed as slices land */
+  --dash-muted: var(--dash-text-muted);
+  --dash-accent: var(--dash-accent-2);
+  --dash-accent-hover: var(--dash-accent-3);
+  --dash-accent-contrast: oklch(0.139 0.0091 52.59); /* #0c0806 */
+  --dash-focus-ring: var(--dash-accent-3);
+  --dash-overlay: oklch(0.1265 0.0073 42.78 / 0.55);
+  --dash-selected: color-mix(in oklab, var(--dash-accent-2) 16%, var(--dash-surface));
+
+  /* job state colors — semantic-only, no ramps */
+  --dash-state-waiting: oklch(0.7606 0.1051 82.69);
+  --dash-state-active: oklch(0.7596 0.0976 225.56);
+  --dash-state-delayed: oklch(0.7597 0.0747 295.12);
+  --dash-state-completed: oklch(0.7596 0.0974 151.71);
+  --dash-state-failed: oklch(0.7596 0.1206 27.67);
+  --dash-state-paused: oklch(0.7594 0.0155 1.45);
+
+  /* elevation — 3 shadow levels, dark theme */
+  --dash-shadow-1: 0 1px 2px oklch(0.05 0 0 / 0.4);
+  --dash-shadow-2: 0 4px 12px oklch(0.05 0 0 / 0.5);
+  --dash-shadow-3: 0 12px 32px oklch(0.05 0 0 / 0.55);
 }
 
 [data-theme='light'] {
   color-scheme: light;
-  --dash-bg: #f6f6f9;
-  --dash-surface: #ffffff;
-  --dash-border: #e2e2ea;
-  --dash-text: #1f2028;
-  --dash-muted: #71717f;
-  --dash-accent: #6a4dff;
-  --dash-state-completed: #1f9d55;
-  --dash-state-failed: #e03131;
-  --dash-state-active: #1971c2;
-  --dash-state-waiting: #b26b00;
-  --dash-state-delayed: #7048e8;
-  --dash-state-paused: #5c6373;
+
+  /* ---- semantic layer — LIGHT ------------------------------------ */
+
+  --dash-bg: var(--dash-stone-11);
+  --dash-surface: var(--dash-stone-13);
+  --dash-surface-elevated: var(--dash-stone-12);
+  --dash-border: var(--dash-stone-9);
+  --dash-text: var(--dash-stone-3);
+  --dash-text-muted: var(--dash-stone-6);
+  --dash-text-faint: var(--dash-stone-7);
+  /* legacy name for unmigrated views; removed as slices land */
+  --dash-muted: var(--dash-text-muted);
+  --dash-accent: var(--dash-accent-1);
+  --dash-accent-hover: var(--dash-accent-0);
+  --dash-accent-contrast: var(--dash-stone-11);
+  --dash-focus-ring: var(--dash-accent-0);
+  --dash-overlay: oklch(0.1265 0.0073 42.78 / 0.4);
+  --dash-selected: color-mix(in oklab, var(--dash-accent-1) 14%, var(--dash-surface));
+
+  /* job state colors — semantic-only, no ramps */
+  --dash-state-waiting: oklch(0.4416 0.0923 77.19);
+  --dash-state-active: oklch(0.4472 0.088 228.83);
+  --dash-state-delayed: oklch(0.4413 0.0752 295.12);
+  --dash-state-completed: oklch(0.4388 0.0972 151.84);
+  --dash-state-failed: oklch(0.4407 0.1207 28.21);
+  --dash-state-paused: oklch(0.4395 0.0153 359.23);
+
+  /* elevation — 3 shadow levels, light theme */
+  --dash-shadow-1: 0 1px 2px oklch(0.2 0 0 / 0.08);
+  --dash-shadow-2: 0 4px 12px oklch(0.2 0 0 / 0.1);
+  --dash-shadow-3: 0 12px 32px oklch(0.2 0 0 / 0.12);
+}
+
+/* Glass surfaces fall back to solid for users who opt out of
+   transparency (motion-sensitive / reduced-transparency setting). */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --dash-blur-sm: 0px;
+    --dash-blur-lg: 0px;
+  }
 }

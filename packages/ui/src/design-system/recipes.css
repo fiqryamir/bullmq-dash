@@ -1,0 +1,391 @@
+/* ============================================================
+   bullmq-dash recipe classes (.dash-*)
+
+   Recipes style component LOOK + STATES + FOCUS/PRESS only —
+   page layout (headers, max-widths, view spacing, scroll-wrap
+   heights) stays in view CSS. Recipes style plain HTML by
+   default; Base UI primitives attach them via className with
+   state from data-* selectors (e.g. .dash-switch[data-checked]).
+   BEM naming: .dash-block__element, .dash-block--modifier.
+
+   Families: button, chip, tab, input, table, panel, dialog,
+   pager, focus-ring — plus the shell's .dash-switch.
+   ============================================================ */
+
+/* ---- shared utilities -------------------------------------- */
+
+/* Focus ring — opt-in via class; the single ring definition all
+   interactive recipes and components share (accent, 3:1+). */
+.dash-focus-ring:focus-visible {
+  outline: 2px solid var(--dash-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---- button ------------------------------------------------ */
+
+.dash-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dash-space-2);
+  box-sizing: border-box;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius-sm);
+  padding: var(--dash-space-2) var(--dash-space-3);
+  background: var(--dash-surface);
+  color: var(--dash-text);
+  font: inherit;
+  font-size: var(--dash-text-sm);
+  font-weight: var(--dash-weight-semibold);
+  line-height: var(--dash-leading-tight);
+  cursor: pointer;
+  transition:
+    transform var(--dash-duration-base) var(--dash-ease),
+    background-color var(--dash-duration-base) var(--dash-ease),
+    border-color var(--dash-duration-base) var(--dash-ease),
+    color var(--dash-duration-base) var(--dash-ease);
+}
+
+.dash-button:hover:not(:disabled) {
+  border-color: var(--dash-accent);
+}
+
+.dash-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.dash-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dash-button--primary {
+  background: var(--dash-accent);
+  border-color: var(--dash-accent);
+  color: var(--dash-accent-contrast);
+}
+
+.dash-button--primary:hover:not(:disabled) {
+  background: var(--dash-accent-hover);
+  border-color: var(--dash-accent-hover);
+}
+
+.dash-button--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.dash-button--ghost:hover:not(:disabled) {
+  color: var(--dash-accent);
+}
+
+/* ---- chip -------------------------------------------------- */
+
+.dash-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dash-space-1);
+  border: 1px solid transparent;
+  border-radius: var(--dash-radius-pill);
+  padding: 2px var(--dash-space-2);
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: var(--dash-text-muted);
+  font-size: var(--dash-text-caption);
+  font-weight: var(--dash-weight-semibold);
+  line-height: var(--dash-leading-tight);
+}
+
+.dash-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.dash-chip--waiting { color: var(--dash-state-waiting); }
+.dash-chip--active { color: var(--dash-state-active); }
+.dash-chip--delayed { color: var(--dash-state-delayed); }
+.dash-chip--completed { color: var(--dash-state-completed); }
+.dash-chip--failed { color: var(--dash-state-failed); }
+.dash-chip--paused { color: var(--dash-state-paused); }
+
+/* ---- tab --------------------------------------------------- */
+
+.dash-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dash-space-1);
+  border: 1px solid transparent;
+  border-radius: var(--dash-radius-pill);
+  padding: var(--dash-space-1) var(--dash-space-3);
+  background: transparent;
+  color: var(--dash-text-muted);
+  font: inherit;
+  font-size: var(--dash-text-sm);
+  font-weight: var(--dash-weight-semibold);
+  line-height: var(--dash-leading-tight);
+  cursor: pointer;
+  transition:
+    color var(--dash-duration-fast) var(--dash-ease),
+    background-color var(--dash-duration-fast) var(--dash-ease),
+    border-color var(--dash-duration-fast) var(--dash-ease);
+}
+
+.dash-tab:hover {
+  color: var(--dash-text);
+}
+
+/* selected frost — Zen white-alpha pill + accent whisper */
+.dash-tab--selected,
+.dash-tab[data-active] {
+  border-color: currentColor;
+  background: var(--dash-selected);
+  color: var(--dash-text);
+}
+
+.dash-tab--waiting { color: var(--dash-state-waiting); }
+.dash-tab--active { color: var(--dash-state-active); }
+.dash-tab--delayed { color: var(--dash-state-delayed); }
+.dash-tab--completed { color: var(--dash-state-completed); }
+.dash-tab--failed { color: var(--dash-state-failed); }
+.dash-tab--paused { color: var(--dash-state-paused); }
+
+/* ---- input ------------------------------------------------- */
+
+.dash-input {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius-sm);
+  padding: var(--dash-space-2) var(--dash-space-3);
+  background: var(--dash-surface);
+  color: var(--dash-text);
+  font: inherit;
+  font-size: var(--dash-text-base);
+  line-height: var(--dash-leading-tight);
+  outline: none;
+}
+
+.dash-input::placeholder {
+  color: var(--dash-text-faint);
+}
+
+.dash-input:focus {
+  border-color: var(--dash-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-accent) 13%, transparent);
+}
+
+/* command-bar treatment */
+.dash-input--command {
+  border-radius: var(--dash-radius-md);
+  padding: 14px 18px;
+  font-size: var(--dash-text-md);
+}
+
+/* select (native) — keep content width for in-header use */
+.dash-input--select {
+  width: auto;
+}
+
+/* ---- table ------------------------------------------------- */
+
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--dash-text-base);
+}
+
+.dash-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--dash-space-2) var(--dash-space-4);
+  background: var(--dash-surface);
+  color: var(--dash-text-muted);
+  font-weight: var(--dash-weight-semibold);
+  font-size: var(--dash-text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  text-align: left;
+  border-bottom: 1px solid var(--dash-border);
+}
+
+.dash-table td {
+  padding: var(--dash-space-2) var(--dash-space-4);
+  white-space: nowrap;
+  border-bottom: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
+}
+
+.dash-table tbody tr {
+  cursor: pointer;
+}
+
+.dash-table tbody tr:hover,
+.dash-table tbody tr:focus-visible {
+  background: color-mix(in srgb, var(--dash-accent) 8%, transparent);
+  outline: none;
+}
+
+.dash-table__row--selected {
+  background: color-mix(in srgb, var(--dash-accent) 10%, transparent);
+}
+
+/* ---- panel ------------------------------------------------- */
+
+.dash-panel {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius-md);
+  padding: var(--dash-space-3) var(--dash-space-4);
+}
+
+/* code block variant */
+.dash-panel--code {
+  margin: 0;
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-sm);
+  line-height: var(--dash-leading-base);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* meta grid variant (dl/dt/dd) */
+.dash-panel--meta {
+  margin: 0;
+}
+
+.dash-panel--meta dt {
+  color: var(--dash-text-muted);
+  font-size: var(--dash-text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dash-panel--meta dd {
+  margin: 2px 0 0;
+  font-size: var(--dash-text-base);
+}
+
+/* logs list variant */
+.dash-panel--logs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dash-panel--logs > * {
+  padding: 6px var(--dash-space-4);
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-bottom: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
+}
+
+.dash-panel--logs > *:last-child {
+  border-bottom: none;
+}
+
+/* ---- dialog ------------------------------------------------ */
+
+/* scrim — translucent --dash-overlay + blur-lg; falls back to
+   solid under prefers-reduced-transparency */
+.dash-dialog {
+  background: var(--dash-overlay);
+  backdrop-filter: blur(var(--dash-blur-lg));
+}
+
+.dash-dialog__popup {
+  background: var(--dash-surface-elevated);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius-lg);
+  box-shadow: var(--dash-shadow-3);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .dash-dialog {
+    background: var(--dash-bg);
+    backdrop-filter: none;
+  }
+}
+
+/* ---- pager ------------------------------------------------- */
+
+.dash-pager {
+  display: flex;
+  align-items: center;
+  gap: var(--dash-space-2);
+}
+
+.dash-pager__button {
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius-sm);
+  padding: var(--dash-space-1) var(--dash-space-3);
+  background: var(--dash-surface);
+  color: var(--dash-text);
+  font: inherit;
+  font-size: var(--dash-text-base);
+  cursor: pointer;
+}
+
+.dash-pager__button:hover:not(:disabled) {
+  border-color: var(--dash-accent);
+}
+
+.dash-pager__button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dash-pager__status {
+  color: var(--dash-text-muted);
+  font-size: var(--dash-text-sm);
+}
+
+/* ---- switch (app shell theme toggle) ------------------------ */
+
+.dash-switch {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  width: 42px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius-pill);
+  background: var(--dash-surface);
+  cursor: pointer;
+  transition:
+    transform var(--dash-duration-base) var(--dash-ease),
+    background-color var(--dash-duration-base) var(--dash-ease),
+    border-color var(--dash-duration-base) var(--dash-ease);
+}
+
+.dash-switch:hover {
+  border-color: var(--dash-accent);
+}
+
+.dash-switch:active {
+  transform: scale(0.98);
+}
+
+.dash-switch__thumb {
+  width: 18px;
+  height: 18px;
+  margin: 2px;
+  border-radius: 50%;
+  background: var(--dash-text-muted);
+  transition:
+    transform var(--dash-duration-base) var(--dash-ease),
+    background-color var(--dash-duration-base) var(--dash-ease);
+}
+
+.dash-switch[data-checked] {
+  border-color: var(--dash-accent);
+}
+
+.dash-switch[data-checked] .dash-switch__thumb {
+  transform: translateX(18px);
+  background: var(--dash-accent);
+}
