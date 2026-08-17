@@ -1,10 +1,10 @@
 # @bullmq-dash/fastify
 
-## 1.0.0
+## 1.0.0-alpha.2
 
 ### Patch Changes
 
-- @bullmq-dash/api@1.0.0
+- @bullmq-dash/api@1.0.0-alpha.2
 
 ## 1.0.0-alpha.1
 

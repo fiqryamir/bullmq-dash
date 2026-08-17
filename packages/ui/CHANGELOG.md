@@ -1,6 +1,6 @@
 # @bullmq-dash/ui
 
-## 1.0.0
+## 1.0.0-alpha.2
 
 ### Minor Changes
 
