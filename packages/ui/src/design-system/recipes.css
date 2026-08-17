@@ -223,7 +223,6 @@
 .dash-table tbody tr:hover,
 .dash-table tbody tr:focus-visible {
   background: color-mix(in srgb, var(--dash-accent) 8%, transparent);
-  outline: none;
 }
 
 .dash-table__row--selected {

@@ -448,6 +448,7 @@ export function QueueJobs({
               return (
                 <tr
                   key={row.id}
+                  className="dash-focus-ring"
                   tabIndex={0}
                   onClick={() => onSelectJob(row.original)}
                   onKeyDown={(event) => {

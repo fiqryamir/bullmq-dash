@@ -97,8 +97,8 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
   await page.getByRole('button', { name: /smoke-emails/ }).click();
 
   await expect(page.locator('.queue-jobs__title')).toHaveText('smoke-emails');
-  await expect(page.locator('.job-table')).toContainText('welcome-email');
-  await expect(page.locator('.job-table')).toContainText('receipt-email');
+  await expect(page.locator('.dash-table')).toContainText('welcome-email');
+  await expect(page.locator('.dash-table')).toContainText('receipt-email');
 });
 
 test('renders a readable flow graph', async ({ page }) => {
