@@ -108,6 +108,17 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
     .first()
     .locator('td')
     .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect().x));
+  const rowMetrics = await page.locator('.dash-table tbody tr').evaluateAll((rows) =>
+    rows.map((row) => {
+      const rowRect = row.getBoundingClientRect();
+      const cellRect = row.querySelector('td')?.getBoundingClientRect();
+      return {
+        top: rowRect.top,
+        bottom: rowRect.bottom,
+        cellBottom: cellRect?.bottom,
+      };
+    })
+  );
 
   expect(rowX).toHaveLength(headerX.length);
   headerX.forEach((x, index) => {
@@ -115,6 +126,15 @@ test('browses a queue and sees its waiting jobs', async ({ page }) => {
     expect(bodyCellX).toBeDefined();
     expect(bodyCellX).toBeCloseTo(x, 0);
   });
+  rowMetrics.forEach((row) => {
+    expect(row.cellBottom).toBeDefined();
+    expect(row.cellBottom).toBeCloseTo(row.bottom, 0);
+  });
+  for (let index = 1; index < rowMetrics.length; index += 1) {
+    const previousRow = rowMetrics[index - 1];
+    const currentRow = rowMetrics[index];
+    expect(currentRow?.top).toBeCloseTo(previousRow?.bottom ?? Number.NaN, 0);
+  }
 });
 
 test('renders a readable flow graph', async ({ page }) => {

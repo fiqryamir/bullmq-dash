@@ -36,6 +36,7 @@ export const JOB_STATES: JobStatus[] = [
 ];
 
 const JOBS_PER_PAGE = 100;
+const ESTIMATED_ROW_HEIGHT = 36;
 
 function stateCount(queue: AppQueue, state: JobStatus): number {
   if (state === 'paused' && queue.isPaused) {
@@ -330,7 +331,8 @@ export function QueueJobs({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 36,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    measureElement: (element) => element.getBoundingClientRect().height || ESTIMATED_ROW_HEIGHT,
     overscan: 10,
   });
 
@@ -452,6 +454,8 @@ export function QueueJobs({
                 <tr
                   key={row.id}
                   className="dash-focus-ring"
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
                   tabIndex={0}
                   onClick={() => onSelectJob(row.original)}
                   onKeyDown={(event) => {
