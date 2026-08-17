@@ -1,11 +1,14 @@
 name: Deploy docs
 
-# The docs site goes live when the version-bump merge lands - the changesets
-# action merges its "chore: version packages" PR on every release, and that
-# merge is the signal that the published packages' docs are current.
+# Builds and deploys the Starlight docs site to GitHub Pages on every master
+# push (so the deployed site always matches the published packages - the
+# releases land as PR merges, whose commit message is the merge title, not
+# the changesets "chore: version packages" text, so gating on that message is
+# unreliable). Manual deploys can be triggered with `gh workflow run docs.yml`.
 on:
   push:
     branches: [master]
+  workflow_dispatch:
 
 concurrency:
   group: pages
@@ -19,7 +22,6 @@ permissions:
 jobs:
   deploy:
     name: Build and deploy to GitHub Pages
-    if: startsWith(github.event.head_commit.message, 'chore: version packages')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -29,7 +31,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @bullmq-dash/website run build
