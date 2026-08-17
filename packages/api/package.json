@@ -1,6 +1,6 @@
 {
   "name": "@bullmq-dash/api",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0",
   "description": "Framework-free core of the bullmq-dash dashboard — drop-in mirror of @bull-board/api",
   "license": "MIT",
   "type": "module",
