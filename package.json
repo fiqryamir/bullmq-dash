@@ -16,7 +16,7 @@
     "onlyBuiltDependencies": ["esbuild"]
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.5",
+    "@changesets/cli": "^3.0.0",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.8.1",
     "typescript": "^5.8.3",
