@@ -42,17 +42,17 @@
     "recharts": "^3.10.1"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "~6.9.1",
+    "@testing-library/jest-dom": "~7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.19.43",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "^6.0.5",
     "i18next-locales-sync": "^2.1.1",
-    "jsdom": "^26.1.0",
+    "jsdom": "^30.0.1",
     "typescript": "^5.8.3",
-    "vite": "^7.3.6",
+    "vite": "^8.2.1",
     "vitest": "^3.2.4"
   }
 }
