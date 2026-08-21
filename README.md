@@ -8,7 +8,7 @@ evidence into a job's last-known story — state and latest outcome first,
 then attempts, logs, stack trace, payload and result, and flow relationships,
 with every missing fact named as an explicit gap instead of an empty value.
 Around it: queue lists with live counts, job search across every queue,
-whole-queue flow graphs, and historical metrics — embeddable in your Express,
+whole-queue flow graphs, and historical queue metrics — embeddable in your Express,
 Fastify or NestJS app, or runnable as its own server with the `bullmq-dash`
 bin. The core API is a [drop-in mirror of bull-board](https://fiqryamir.github.io/bullmq-dash/guides/migration/),
 with the gaps that ecosystem left open for years filled in.

@@ -42,8 +42,8 @@ async function readGuide(slug: string): Promise<{ frontmatter: Record<string, st
   return { frontmatter, body: file.replace(frontmatterMatch[0], '') };
 }
 
-describe('the five guides', () => {
-  it('exists as exactly the spec pages', async () => {
+describe('the guides', () => {
+  it('exists as exactly the published pages', async () => {
     const files = (await readdir(GUIDES_DIR)).filter((f) => f.endsWith('.md'));
     expect(files.sort()).toEqual([...GUIDE_SLUGS].map((slug) => `${slug}.md`).sort());
   });

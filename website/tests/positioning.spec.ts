@@ -11,6 +11,7 @@ const DOCS_DIR = path.join(WEBSITE_DIR, 'src', 'content', 'docs');
 const POSITIONING_SURFACES = {
   'README.md': path.join(REPO_ROOT, 'README.md'),
   'docs index': path.join(DOCS_DIR, 'index.md'),
+  'quick start': path.join(DOCS_DIR, 'guides', 'quick-start.md'),
   'job detail guide': path.join(DOCS_DIR, 'guides', 'job-detail.md'),
 } as const;
 
@@ -74,7 +75,8 @@ describe('Job detail guidance', () => {
     expect(source).toContain('Job detail');
     expect(source).toContain('job dossier');
     expect(source).toContain('Evidence ledger');
-    expect(source).toMatch(/same (surface|route|page)/i);
+    expect(source).toMatch(/one route,\s+one\s+page,\s+three names for the same thing/i);
+    expect(source).toMatch(/same surface/i);
   });
 
   it('documents every entry route with preserved context', async () => {

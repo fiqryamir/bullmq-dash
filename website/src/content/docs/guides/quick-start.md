@@ -3,9 +3,10 @@ title: Quick start
 description: Get a bullmq-dash dashboard running in two minutes - standalone with one command, or embedded in your own server.
 ---
 
-bullmq-dash runs in two modes. If you just want to look at a Redis instance,
-[run it standalone](/guides/standalone). If you want the dashboard mounted in
-your own application, [embed it](/guides/express) through a server adapter.
+bullmq-dash is BullMQ DevTools - it helps you see what happened to a job
+from the evidence BullMQ still retains. It runs in two modes: [run it
+standalone](/guides/standalone) to look at a Redis instance, or [embed
+it](/guides/express) in your own application through a server adapter.
 
 Both modes need a reachable Redis server and BullMQ `>=5.79.2 <7`.
 
