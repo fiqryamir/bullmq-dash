@@ -1,11 +1,11 @@
 ---
 title: bullmq-dash
-description: A modern, open-source BullMQ dashboard - embeddable in Node apps, runnable standalone.
+description: BullMQ DevTools - see what happened to a job from the evidence BullMQ still retains. Embeddable in Node apps, runnable standalone.
 ---
 
-A modern, open-source BullMQ dashboard: monitor and manage your queues with a
-calm, dark-first UI - embeddable in your Node application, or runnable as its
-own server.
+bullmq-dash is open-source **BullMQ DevTools**: it helps you see what
+happened to a job from the evidence BullMQ still retains - embeddable in
+your Node application, or runnable as its own server.
 
 bullmq-dash follows bull-board's architecture - a framework-free core plus
 per-framework server adapters - while closing the gaps that ecosystem left
@@ -33,13 +33,23 @@ Start with the [quick start](/guides/quick-start).
 
 - **Queue list** with live counts, per-state job lists, workers and
   schedulers
-- **Job detail** with data, return values, paginated logs, and retries
+- **[Job detail](/guides/job-detail)** - the fastest truthful path from a
+  known job to its last-known story: state and outcome first, then attempts,
+  logs, stack trace, payload, and flow relationships, with evidence gaps
+  named instead of inferred
 - **Job search** - find jobs by id or name across every queue
 - **Flow view** - the live pipeline as a graph, flows included
 - **Historical metrics** - throughput, duration and wait time, captured from
   the event stream
 - **Both themes, fully tokenized** - dark-first with light as a first-class
   citizen, every state color tuned per theme
+
+## Where it stops
+
+alpha.3 reads retained evidence only: no complete lifecycle history, no
+durable per-attempt record, no root-cause proof, no cross-entity diagnosis,
+and no instrumentation in your workers. No incident views and no health
+scores either - those are future concepts, not alpha.3 promises.
 
 ## Reference
 

@@ -83,7 +83,9 @@ The command palette is the search surface: 300ms debounce, state-chip
 filters, a virtualized result list, and automatic continuation fetches when
 `deepen` is true. On the home view it searches every queue; inside a queue's
 jobs view the same palette mounts scoped to that queue, hitting the
-per-queue endpoint and dropping the queue column from its rows.
+per-queue endpoint and dropping the queue column from its rows. Opening a
+result lands in that job's [Job detail](/guides/job-detail) with the search
+context preserved for back navigation.
 
 Search is read-only: `readOnly` does not gate it, and visibility guards apply
 as everywhere else.

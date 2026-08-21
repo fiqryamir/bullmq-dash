@@ -5,9 +5,9 @@ description: See the whole live pipeline as a graph - queue-level roots expanded
 
 The flow view shows the whole live pipeline of a queue at once: every root
 job - plain jobs and flow parents - expanded into its child tree, with
-state-colored nodes you can click through to a job's detail. bull-board only
-renders the tree on a parent job's detail page; the queue-level graph is the
-gap bullmq-dash closes.
+state-colored nodes you can click through to [Job detail](/guides/job-detail).
+bull-board only renders the tree on a parent job's detail page; the
+queue-level graph is the gap bullmq-dash closes.
 
 ## Two endpoints
 
@@ -67,4 +67,4 @@ Nodes are state-colored with the dashboard's state palette - `waiting`,
 `active`, `delayed`, `completed`, `failed`, `paused`, plus
 `waiting-children` for parents awaiting children. A plain childless live job
 is a single-node root, so the graph is the whole live pipeline, not only
-flows. Clicking any node opens that job's detail view.
+flows. Clicking any node opens that job's [Job detail](/guides/job-detail).

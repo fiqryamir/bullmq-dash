@@ -11,7 +11,7 @@ import { CLI_ENV_VARS, CLI_OPTIONS } from '../../packages/standalone/src/config'
 const WEBSITE_DIR = fileURLToPath(new URL('..', import.meta.url));
 const GUIDES_DIR = path.join(WEBSITE_DIR, 'src', 'content', 'docs', 'guides');
 
-/** The five guides from the spec, one page per adapter/feature. */
+/** The guides, one page per adapter/feature. */
 const GUIDE_SLUGS = [
   'quick-start',
   'express',
@@ -19,6 +19,7 @@ const GUIDE_SLUGS = [
   'nestjs',
   'standalone',
   'migration',
+  'job-detail',
   'search',
   'flow',
   'metrics',
@@ -26,12 +27,13 @@ const GUIDE_SLUGS = [
 
 async function readGuide(slug: string): Promise<{ frontmatter: Record<string, string>; body: string }> {
   const file = await readFile(path.join(GUIDES_DIR, `${slug}.md`), 'utf8');
-  const frontmatterMatch = file.match(/^---\n([\s\S]*?)\n---\n/);
+  // Tolerate CRLF checkouts (core.autocrlf) as well as LF ones.
+  const frontmatterMatch = file.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
   if (!frontmatterMatch) {
     throw new Error(`guide '${slug}' has no YAML frontmatter`);
   }
   const frontmatter: Record<string, string> = {};
-  for (const line of frontmatterMatch[1].split('\n')) {
+  for (const line of frontmatterMatch[1].split(/\r?\n/)) {
     const kv = line.match(/^([A-Za-z-]+):\s*(.*)$/);
     if (kv) {
       frontmatter[kv[1]] = kv[2];

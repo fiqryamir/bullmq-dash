@@ -2,12 +2,20 @@
 
 A modern BullMQ dashboard UI — open-source, embeddable, and standalone.
 
-Monitor and manage BullMQ queues with a calm, dark-first UI: queue lists with
-live counts, job detail with paginated logs, job search across every queue,
+bullmq-dash is **BullMQ DevTools**: it helps developers see what happened to
+a job from the evidence BullMQ still retains. Job detail turns that retained
+evidence into a job's last-known story — state and latest outcome first,
+then attempts, logs, stack trace, payload and result, and flow relationships,
+with every missing fact named as an explicit gap instead of an empty value.
+Around it: queue lists with live counts, job search across every queue,
 whole-queue flow graphs, and historical metrics — embeddable in your Express,
 Fastify or NestJS app, or runnable as its own server with the `bullmq-dash`
 bin. The core API is a [drop-in mirror of bull-board](https://fiqryamir.github.io/bullmq-dash/guides/migration/),
 with the gaps that ecosystem left open for years filled in.
+
+The DevTools read only what BullMQ and Redis still hold: no complete
+lifecycle history, no durable per-attempt record, no root-cause proof, no
+cross-entity diagnosis, and no instrumentation in your workers.
 
 ## Docs
 
@@ -17,7 +25,7 @@ Documentation lives on the [docs site](https://fiqryamir.github.io/bullmq-dash/)
 - [Standalone CLI](https://fiqryamir.github.io/bullmq-dash/guides/standalone/) — flags, env vars, JSON config, queue allow-list
 - [Express](https://fiqryamir.github.io/bullmq-dash/guides/express/) / [Fastify](https://fiqryamir.github.io/bullmq-dash/guides/fastify/) / [NestJS](https://fiqryamir.github.io/bullmq-dash/guides/nestjs/) adapters
 - [Migrating from bull-board](https://fiqryamir.github.io/bullmq-dash/guides/migration/)
-- [Job search](https://fiqryamir.github.io/bullmq-dash/guides/search/) / [Flow view](https://fiqryamir.github.io/bullmq-dash/guides/flow/) / [Historical metrics](https://fiqryamir.github.io/bullmq-dash/guides/metrics/)
+- [Job detail](https://fiqryamir.github.io/bullmq-dash/guides/job-detail/) / [Job search](https://fiqryamir.github.io/bullmq-dash/guides/search/) / [Flow view](https://fiqryamir.github.io/bullmq-dash/guides/flow/) / [Historical metrics](https://fiqryamir.github.io/bullmq-dash/guides/metrics/)
 - [API reference](https://fiqryamir.github.io/bullmq-dash/reference/) (TypeDoc, generated from the core's types)
 
 ## Quick start

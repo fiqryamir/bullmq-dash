@@ -61,7 +61,9 @@ any existing `createBullBoard` setup moves over by changing the package names.
 
 - Queue list with live counts and per-state job lists, plus workers and
   schedulers
-- Job detail with data, return values, logs (paginated), and retries
+- [Job detail](/guides/job-detail) - the job's last-known story from
+  retained evidence: state and outcome first, then attempts, logs, stack
+  trace, payload, and relationships
 - [Job search](/guides/search) across every queue or scoped to one
 - [Flow view](/guides/flow) - the whole live pipeline as a graph
 - [Historical metrics](/guides/metrics) - per-queue throughput, duration and

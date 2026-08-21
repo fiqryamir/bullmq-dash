@@ -66,6 +66,9 @@ These are deliberate (each is an ADR; see `docs/adr/` in the repo):
 
 ## Step 4 - adopt the new features
 
+- **[Job detail](/guides/job-detail)** - the same routes, reorganized as an
+  evidence ledger: state and outcome first, attempts with their gaps named,
+  logs, stack trace, payload, and relationships.
 - **[Job search](/guides/search)** - `/api/search` across queues or
   `/api/queues/:queueName/search`, with a bounded scan and continuation.
 - **[Flow view](/guides/flow)** - the per-job flow route mirrors bull-board's;

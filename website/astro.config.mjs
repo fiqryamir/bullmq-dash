@@ -35,6 +35,7 @@ export default defineConfig({
         {
           label: 'Features',
           items: [
+            { label: 'Job detail', link: '/guides/job-detail' },
             { label: 'Job search', link: '/guides/search' },
             { label: 'Flow view', link: '/guides/flow' },
             { label: 'Historical metrics', link: '/guides/metrics' },
