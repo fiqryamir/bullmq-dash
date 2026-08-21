@@ -38,6 +38,7 @@ describe('jobHandler', () => {
   let worker: Worker;
   let failingJobId: string;
   let happyJobId: string;
+  let delayedJobId: string;
   let request: BullBoardRequest;
 
   beforeAll(async () => {
@@ -52,7 +53,7 @@ describe('jobHandler', () => {
         await job.updateProgress(42);
         return { delivered: true };
       },
-      { connection }
+      { connection, name: 'test-worker' }
     );
 
     const failing = await queue.add(
@@ -61,11 +62,14 @@ describe('jobHandler', () => {
       { attempts: 2, backoff: 100, priority: 3 }
     );
     const happy = await queue.add('happy-job', { payload: { ok: true } }, { removeOnComplete: false });
+    const delayed = await queue.add('delayed-job', { payload: { later: true } }, { delay: 60_000 });
 
     failingJobId = failing.id!;
     happyJobId = happy.id!;
+    delayedJobId = delayed.id!;
     await waitForState(queue, failingJobId, 'failed');
     await waitForState(queue, happyJobId, 'completed');
+    await waitForState(queue, delayedJobId, 'delayed');
 
     const queues: BullBoardQueues = new Map();
     queues.set(queueName, new BullMQAdapter(queue));
@@ -120,6 +124,15 @@ describe('jobHandler', () => {
     }
   });
 
+  it('retains the worker attribution and timing of the failed job', async () => {
+    const { body } = await send({ queueName, jobId: failingJobId });
+
+    expect(body.job.processedBy).toEqual(expect.any(String));
+    expect(body.job.processedBy).not.toBe('');
+    expect(body.job.processedOn).toEqual(expect.any(Number));
+    expect(body.job.finishedOn).toEqual(expect.any(Number));
+  });
+
   it('returns the completed job with its return value and progress', async () => {
     const { status, body } = await send({ queueName, jobId: happyJobId });
 
@@ -131,6 +144,47 @@ describe('jobHandler', () => {
     expect(body.job.isFailed).toBe(false);
     expect(body.job.stacktrace).toEqual([]);
     expect(body.job.failedReason).toBeUndefined();
+  });
+
+  it('leaves the run evidence of a never-processed job absent instead of empty', async () => {
+    const { status, body } = await send({ queueName, jobId: delayedJobId });
+
+    expect(status).toBeUndefined();
+    expect(body.status).toBe('delayed');
+    expect('processedOn' in body.job).toBe(false);
+    expect('processedBy' in body.job).toBe(false);
+    expect('finishedOn' in body.job).toBe(false);
+    expect(body.job.attempts).toBe(0);
+    expect(body.job.failedReason).toBeUndefined();
+    expect(body.job.stacktrace).toEqual([]);
+  });
+
+  it('reports a waiting job on an idle queue with its live state and no run evidence', async () => {
+    const idleQueueName = `${queueName}-idle`;
+    const idleQueue = new Queue(idleQueueName, { connection });
+    const idleQueues: BullBoardQueues = new Map();
+    idleQueues.set(idleQueueName, new BullMQAdapter(idleQueue));
+
+    try {
+      const waiting = await idleQueue.add('waiting-job', { payload: { ok: true } });
+      await waitForState(idleQueue, waiting.id!, 'waiting');
+
+      const response = await jobHandler({
+        ...request,
+        queues: idleQueues,
+        params: { queueName: idleQueueName, jobId: waiting.id },
+      });
+      const body = response.body as unknown as JobDetailResponse;
+
+      expect(body.status).toBe('waiting');
+      expect('processedOn' in body.job).toBe(false);
+      expect('processedBy' in body.job).toBe(false);
+      expect('finishedOn' in body.job).toBe(false);
+      expect(body.job.attempts).toBe(0);
+    } finally {
+      await idleQueue.obliterate({ force: true });
+      await idleQueue.close();
+    }
   });
 
   it('reports an unregistered queue as not found', async () => {

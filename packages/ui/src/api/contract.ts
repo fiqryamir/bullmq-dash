@@ -35,6 +35,7 @@ export interface AppJob {
   attempts: number;
   timestamp: number;
   processedOn?: number;
+  processedBy?: string;
   finishedOn?: number;
   failedReason?: string;
   stacktrace: string[];
@@ -42,6 +43,7 @@ export interface AppJob {
   opts: object;
   data: unknown;
   returnValue?: unknown;
+  isFailed?: boolean;
 }
 
 export interface JobsPagination {

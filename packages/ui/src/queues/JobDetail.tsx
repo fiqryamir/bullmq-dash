@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppQueue, FlowNode, JobStatus } from '../api/contract';
+import { DiagnosticSummary } from './DiagnosticSummary';
 import { FlowGraph } from './FlowGraph';
 import { formatProgress } from './formatProgress';
+import { formatMs } from './QueueMetrics';
 import { stateColor, STATUS_KEY } from './statusKeys';
 import { useJobDetail } from './useJobDetail';
 import { useJobFlow } from './useJobFlow';
@@ -46,6 +48,13 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
   const job = detail?.job;
   const chipStatus = detail ? stateColor(detail.status) : undefined;
   const chipClassName = chipStatus ? `dash-chip dash-chip--${chipStatus}` : 'dash-chip';
+  const runDurationMs =
+    job &&
+    job.processedOn !== undefined &&
+    job.finishedOn !== undefined &&
+    job.finishedOn >= job.processedOn
+      ? job.finishedOn - job.processedOn
+      : null;
 
   return (
     <section
@@ -72,20 +81,47 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
         <p className="dash-status dash-status--error">{t('JOB_DETAIL.LOAD_FAILED')}</p>
       ) : (
         <>
-          <dl className="job-detail__meta dash-panel dash-panel--meta">
-            <div>
-              <dt>{t('COMMON.PROGRESS')}</dt>
-              <dd>{formatProgress(job.progress)}</dd>
-            </div>
-            <div>
-              <dt>{t('COMMON.ATTEMPTS')}</dt>
-              <dd>{job.attempts}</dd>
-            </div>
-            <div>
-              <dt>{t('JOB_DETAIL.ADDED_ON')}</dt>
-              <dd>{new Date(job.timestamp).toISOString()}</dd>
-            </div>
-          </dl>
+          <section className="job-detail__summary" aria-label={t('JOB_DETAIL.SUMMARY_ARIA')}>
+            {detail && <DiagnosticSummary job={job} status={detail.status} />}
+            <dl className="job-detail__meta dash-panel dash-panel--meta">
+              <div>
+                <dt>{t('COMMON.PROGRESS')}</dt>
+                <dd>{formatProgress(job.progress)}</dd>
+              </div>
+              <div>
+                <dt>{t('COMMON.ATTEMPTS')}</dt>
+                <dd>{job.attempts}</dd>
+              </div>
+              <div>
+                <dt>{t('JOB_DETAIL.ADDED_ON')}</dt>
+                <dd>{new Date(job.timestamp).toISOString()}</dd>
+              </div>
+              {job.processedOn !== undefined && (
+                <div>
+                  <dt>{t('JOB_DETAIL.STARTED_ON')}</dt>
+                  <dd>{new Date(job.processedOn).toISOString()}</dd>
+                </div>
+              )}
+              {job.finishedOn !== undefined && (
+                <div>
+                  <dt>{t('JOB_DETAIL.FINISHED_ON')}</dt>
+                  <dd>{new Date(job.finishedOn).toISOString()}</dd>
+                </div>
+              )}
+              {runDurationMs !== null && (
+                <div>
+                  <dt>{t('JOB_DETAIL.RUN_DURATION')}</dt>
+                  <dd>{formatMs(runDurationMs)}</dd>
+                </div>
+              )}
+              {job.processedBy !== undefined && (
+                <div>
+                  <dt>{t('JOB_DETAIL.PROCESSED_BY')}</dt>
+                  <dd>{job.processedBy}</dd>
+                </div>
+              )}
+            </dl>
+          </section>
 
           <section className="job-detail__section" aria-label={t('JOB_DETAIL.DATA_ARIA')}>
             <h2 className="dash-section-title">{t('JOB.TABS.DATA')}</h2>
@@ -96,6 +132,13 @@ export function JobDetail({ queue, jobId, pollingInterval, onBack, onSelectNode 
             <h2 className="dash-section-title">{t('JOB.TABS.OPTIONS')}</h2>
             <pre className="dash-panel dash-panel--code">{json(job.opts)}</pre>
           </section>
+
+          {job.returnValue !== undefined && (
+            <section className="job-detail__section" aria-label={t('JOB_DETAIL.RESULT_ARIA')}>
+              <h2 className="dash-section-title">{t('JOB_DETAIL.RESULT')}</h2>
+              <pre className="dash-panel dash-panel--code">{json(job.returnValue)}</pre>
+            </section>
+          )}
 
           {job.failedReason !== undefined && (
             <section className="job-detail__section" aria-label={t('JOB_DETAIL.FAILED_REASON')}>

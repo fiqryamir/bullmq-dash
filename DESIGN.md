@@ -210,7 +210,7 @@ Recipes style component **look + states + focus/press only** — page layout (he
 
 - **`.dash-shell` / `.dash-shell__header` / `.dash-shell__brand`** — app shell surface, separator, and brand typography.
 - **`.dash-tab-list`** — the shared rounded container around navigation and range tabs.
-- **`.dash-status`** — loading, empty, notice, and error copy; combine with `--error` for failed states and `--summary` for metrics summaries.
+- **`.dash-status`** — loading, empty, notice, and error copy; combine with `--error` for failed states and `--summary` for plain-language summary paragraphs (metrics summaries, the job diagnostic summary).
 - **`.dash-view-title` / `.dash-view-subtitle` / `.dash-view-job-name` / `.dash-section-title`** — shared view and section typography.
 - **`.dash-job-id` / `.dash-code-inline` / `.dash-meta`** — tokenized monospace and muted metadata treatment.
 - **`.dash-text-muted` / `.dash-text-small` / `.dash-text-italic`** — compact muted metadata variants.

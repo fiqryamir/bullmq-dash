@@ -94,6 +94,69 @@ describe('JobDetail', () => {
     expect(screen.getByText(new Date(1700000000000).toISOString())).toBeInTheDocument();
   });
 
+  it('leads with a diagnostic summary naming the failure and the latest retained run', async () => {
+    stubDetailApi({ ...failedJob, processedBy: 'worker-1' });
+    render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
+
+    const summary = await screen.findByTestId('diagnostic-summary');
+    expect(summary).toHaveTextContent(/failed with: kaboom/i);
+    expect(summary).toHaveTextContent(/2 attempts/i);
+
+    const region = screen.getByRole('region', { name: 'Diagnostic summary' });
+    expect(within(region).getByText('Started on')).toBeInTheDocument();
+    expect(within(region).getByText(new Date(1700000000100).toISOString())).toBeInTheDocument();
+    expect(within(region).getByText('Finished on')).toBeInTheDocument();
+    expect(within(region).getByText('Processed by')).toBeInTheDocument();
+    expect(within(region).getByText('worker-1')).toBeInTheDocument();
+    expect(within(region).getByText('100 ms')).toBeInTheDocument();
+  });
+
+  it('names missing run evidence as a gap instead of rendering inferred values', async () => {
+    const gapJob: Partial<AppJob> = {
+      id: 'f1',
+      name: 'welcome-email',
+      timestamp: 1700000000000,
+      progress: 20,
+      attempts: 3,
+      stacktrace: ['Error: boom'],
+      data: { to: 'a@example.com' },
+      opts: { attempts: 3 },
+    };
+    stubDetailApi(gapJob);
+    render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
+
+    const summary = await screen.findByTestId('diagnostic-summary');
+    expect(summary).toHaveTextContent(/latest retained run of this job failed/i);
+    expect(summary).toHaveTextContent(/3 attempts/i);
+    expect(summary).toHaveTextContent(/earlier attempts are not retained/i);
+    expect(summary).toHaveTextContent(/no timing or worker evidence is retained/i);
+
+    const region = screen.getByRole('region', { name: 'Diagnostic summary' });
+    expect(within(region).queryByText('Started on')).not.toBeInTheDocument();
+    expect(within(region).queryByText('Finished on')).not.toBeInTheDocument();
+    expect(within(region).queryByText('Processed by')).not.toBeInTheDocument();
+
+    expect(await screen.findByText(/no logs are retained for this job/i)).toBeInTheDocument();
+    expect(screen.getByText(/not part of a flow/i)).toBeInTheDocument();
+  });
+
+  it('renders the return value of a completed job as its result', async () => {
+    stubDetailApi({ ...failedJob, returnValue: { delivered: true } }, [], 1, 0, 'completed');
+    render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
+
+    await screen.findByText('Completed');
+    const result = screen.getByRole('region', { name: 'Job return value' });
+    expect(within(result).getByText(/delivered/)).toBeInTheDocument();
+  });
+
+  it('renders no result section when no return value is retained', async () => {
+    stubDetailApi(failedJob);
+    render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
+
+    await screen.findByText('Failed');
+    expect(screen.queryByRole('region', { name: 'Job return value' })).not.toBeInTheDocument();
+  });
+
   it('renders the job data and options as JSON', async () => {
     stubDetailApi(failedJob);
     render(<JobDetail queue={makeQueue()} jobId="f1" pollingInterval={0} onBack={() => {}} onSelectNode={() => {}} />);
