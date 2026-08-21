@@ -552,7 +552,7 @@
       "ATTEMPTS_RETRIED": "BullMQ counts {{count}} attempts; the details of earlier attempts are not retained.",
       "GAP_RUN_EVIDENCE": "No timing or worker evidence is retained for its latest run.",
       "GAP_WORKER": "No worker attribution is retained for its latest run.",
-      "GAP_TIMING": "No processing timing is retained for its latest run.",
+      "GAP_TIMING": "No complete timing is retained for its latest run.",
       "NEXT_REFRESH": "This summary updates as the job progresses.",
       "NEXT_STACKTRACE": "Inspect its stack trace below for where the latest run threw.",
       "NEXT_RESULT": "Compare its result below with the input data."
@@ -563,7 +563,7 @@
     "NOT_PART_OF_FLOW": "This job is not part of a flow.",
     "LOADING_LOGS": "Loading logs…",
     "LOAD_LOGS_FAILED": "Failed to load logs",
-    "NO_LOGS": "No logs",
+    "NO_LOGS": "No logs are retained for this job.",
     "PREV_LOGS_PAGE": "Previous logs page",
     "NEXT_LOGS_PAGE": "Next logs page",
     "DATA_ARIA": "Job data",
